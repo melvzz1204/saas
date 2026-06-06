@@ -5,23 +5,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patient Dashboard | Clinic Portal</title>
+    <!-- Tailwind v4 CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+<body
+    class="bg-slate-50 text-slate-800 font-sans min-h-screen antialiased selection:bg-teal-500/10 selection:text-teal-700">
 
-    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-xs">
+    <!-- Premium Navigation Header Matrix -->
+    <nav class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-50 shadow-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center space-x-2">
-                    <span class="text-2xl">🦷</span>
-                    <span id="clinic-name-heading" class="font-bold text-xl tracking-tight text-teal-600">Loading
-                        Clinic...</span>
+                <!-- Branding Unit Container -->
+                <div class="flex items-center space-x-3 group">
+                    <div
+                        class="flex items-center justify-center w-10 h-10 bg-teal-50 border border-teal-100 rounded-xl text-xl shadow-xs transform group-hover:scale-105 transition-all">
+                        🦷
+                    </div>
+                    <div class="flex flex-col">
+                        <span id="clinic-name-heading"
+                            class="font-black text-base tracking-tight text-slate-900">Loading Clinic...</span>
+                        <span class="text-[10px] font-bold text-teal-600 uppercase tracking-widest -mt-0.5">Healthcare
+                            Node</span>
+                    </div>
                 </div>
+
+                <!-- Action & User Panel Access Node -->
                 <div class="flex items-center space-x-4">
-                    <span id="user-greeting" class="text-sm font-medium text-slate-600">Loading user...</span>
+                    <div class="hidden sm:flex flex-col text-right">
+                        <span id="user-greeting" class="text-xs font-bold text-slate-900">Loading user...</span>
+                        <span class="text-[10px] text-slate-400 font-medium">Verified Identity Session</span>
+                    </div>
                     <button id="logout-btn"
-                        class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-4 py-2 rounded-lg text-sm font-semibold transition cursor-pointer">
+                        class="inline-flex items-center justify-center px-4 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200/40 text-rose-600 text-xs font-bold rounded-xl tracking-wide transition-all uppercase cursor-pointer shadow-xs active:scale-[0.98]">
+                        <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" stroke-width="2.5"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                        </svg>
                         Log Out
                     </button>
                 </div>
@@ -29,44 +50,95 @@
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Main Core Operational Stage Panel -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
 
-        <div class="mb-8">
-            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Patient Dashboard</h1>
-            <p class="text-slate-500 mt-1">Manage your oral health, schedule sessions, and view booking statuses.</p>
+        <!-- Welcoming Jumbotron Module Header -->
+        <div
+            class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 md:p-8 rounded-3xl bg-gradient-to-r from-slate-900 to-slate-950 text-white relative overflow-hidden shadow-xl">
+            <!-- Background Radial Glow Accents -->
+            <div class="absolute right-0 top-0 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl pointer-events-none">
+            </div>
+            <div
+                class="absolute left-1/3 bottom-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none">
+            </div>
+
+            <div class="space-y-1.5 relative z-10">
+                <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white">Patient Diagnostics Hub</h1>
+                <p class="text-slate-400 text-xs md:text-sm max-w-xl leading-relaxed">
+                    Manage your oral health profiles, monitor scheduling status nodes, and initialize custom treatment
+                    consultations below.
+                </p>
+            </div>
+            <div
+                class="shrink-0 relative z-10 bg-white/5 border border-white/10 backdrop-blur-md px-4 py-2.5 rounded-2xl text-[11px] text-slate-300 font-medium">
+                📅 Current Verification Cycle: <span class="text-teal-400 font-bold">Live Synced</span>
+            </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
-                <div class="text-slate-400 text-xs font-bold uppercase tracking-wider">Next Confirmed Visit</div>
-                <div id="stat-next-visit" class="text-lg font-bold text-slate-800 mt-2">None Scheduled</div>
-            </div>
-            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
-                <div class="text-slate-400 text-xs font-bold uppercase tracking-wider">Pending Approvals</div>
-                <div id="stat-pending" class="text-3xl font-black text-amber-500 mt-1">0</div>
-            </div>
-            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
-                <div class="text-slate-400 text-xs font-bold uppercase tracking-wider">Account Status</div>
-                <div class="text-lg font-bold text-emerald-600 mt-2 flex items-center space-x-1">
-                    <span class="h-2 w-2 rounded-full bg-emerald-500 inline-block"></span>
-                    <span>Active Patient</span>
+        <!-- Metric Scoreboard Row Section Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Metric Node 1 -->
+            <div
+                class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-slate-300 transition-colors">
+                <div class="space-y-2">
+                    <div class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Next Confirmed Visit
+                    </div>
+                    <div id="stat-next-visit" class="text-base font-black text-slate-800">None Scheduled</div>
                 </div>
+                <div
+                    class="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-lg text-slate-400">
+                    📅</div>
+            </div>
+
+            <!-- Metric Node 2 -->
+            <div
+                class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-slate-300 transition-colors">
+                <div class="space-y-1">
+                    <div class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Pending Approvals</div>
+                    <div id="stat-pending" class="text-3xl font-black text-amber-500 tracking-tight">0</div>
+                </div>
+                <div
+                    class="w-10 h-10 bg-amber-50 border border-amber-100 rounded-xl flex items-center justify-center text-lg text-amber-500 animate-pulse">
+                    ⏳</div>
+            </div>
+
+            <!-- Metric Node 3 -->
+            <div
+                class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-slate-300 transition-colors">
+                <div class="space-y-2">
+                    <div class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Account Diagnostics</div>
+                    <div
+                        class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/50 text-[11px] font-bold uppercase tracking-wide">
+                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                        <span>Active Patient</span>
+                    </div>
+                </div>
+                <div
+                    class="w-10 h-10 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-center text-lg text-emerald-600">
+                    🛡️</div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Operational Panel Hub Splits -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs h-fit">
-                <h2 class="text-xl font-bold text-slate-900 mb-4 flex items-center space-x-2">
-                    <span>📅</span>
-                    <span>Request an Appointment</span>
-                </h2>
+            <!-- COLUMN LEFT: APPOINTMENT INTAKE STACK CONTAINER -->
+            <div
+                class="lg:col-span-4 bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden sticky top-24">
+                <div class="p-5 border-b border-slate-100 bg-linear-to-b from-slate-50/50 to-white">
+                    <h2 class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                        <span class="text-teal-600">✨</span>
+                        <span>Request Session Entry</span>
+                    </h2>
+                </div>
 
-                <form id="booking-form" class="space-y-4">
+                <form id="booking-form" class="p-6 space-y-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Select Service</label>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Select
+                            Service Track</label>
                         <select id="booking-service" required
-                            class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-teal-500">
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-1 focus:ring-teal-500/20 transition-all cursor-pointer">
                             <option value="General Checkup">Routine Consultation & Cleaning</option>
                             <option value="Tooth Extraction">Tooth Extraction</option>
                             <option value="Root Canal Treatment">Root Canal Treatment</option>
@@ -76,49 +148,68 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Preferred Date</label>
+                        <label
+                            class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Preferred
+                            Target Date</label>
                         <input type="date" id="booking-date" required
-                            class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-teal-500">
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-700 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-1 focus:ring-teal-500/20 transition-all cursor-pointer">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Preferred Time Slot</label>
+                        <label
+                            class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Preferred
+                            Structural Window</label>
                         <select id="booking-time" required
-                            class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-teal-500">
-                            <option value="09:00 AM">09:00 AM (Morning)</option>
-                            <option value="11:00 AM">11:00 AM (Morning)</option>
-                            <option value="02:00 PM">02:00 PM (Afternoon)</option>
-                            <option value="04:00 PM">04:00 PM (Late Afternoon)</option>
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-1 focus:ring-teal-500/20 transition-all cursor-pointer">
+                            <option value="09:00 AM">09:00 AM (Morning Structural Node)</option>
+                            <option value="11:00 AM">11:00 AM (Midday Window)</option>
+                            <option value="02:00 PM">02:00 PM (Afternoon Shift)</option>
+                            <option value="04:00 PM">04:00 PM (Late Treatment Block)</option>
                         </select>
                     </div>
 
                     <button type="submit" id="book-btn"
-                        class="w-full bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold p-3 rounded-lg transition mt-2 cursor-pointer shadow-xs">
+                        class="w-full bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold py-3.5 rounded-xl shadow-lg shadow-teal-900/10 transition-all uppercase tracking-wider mt-2 cursor-pointer active:scale-[0.99]">
                         Submit Booking Request
                     </button>
                 </form>
             </div>
 
-            <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
-                <h2 class="text-xl font-bold text-slate-900 mb-4 flex items-center space-x-2">
-                    <span>📋</span>
-                    <span>Your Scheduled Sessions & Statuses</span>
-                </h2>
+            <!-- COLUMN RIGHT: CHRONOLOGICAL ROSTER VISITS MATRIX -->
+            <div class="lg:col-span-8 bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+                <div
+                    class="p-5 border-b border-slate-100 bg-linear-to-b from-slate-50/50 to-white flex justify-between items-center">
+                    <h2 class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                        <span class="text-indigo-500">📋</span>
+                        <span>Scheduled Sessions & Core Statuses</span>
+                    </h2>
+                    <span class="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md">Live
+                        Array</span>
+                </div>
 
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr
-                                class="border-b border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-wider">
-                                <th class="py-3 px-4">Service</th>
-                                <th class="py-3 px-4">Date & Time</th>
-                                <th class="py-3 px-4">Status</th>
+                                class="border-b border-slate-100 bg-slate-50/70 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                                <th class="py-3.5 px-6">Service Category</th>
+                                <th class="py-3.5 px-6">Allocated Schedule</th>
+                                <th class="py-3.5 px-6 text-right">Verification Status</th>
                             </tr>
                         </thead>
-                        <tbody id="bookings-table-body" class="divide-y divide-slate-100 text-sm">
-                            <tr>
-                                <td colspan="3" class="py-8 text-center text-slate-400 italic">Loading your
-                                    appointments...</td>
+                        <tbody id="bookings-table-body"
+                            class="divide-y divide-slate-100 text-xs font-medium text-slate-700">
+                            <!-- Baseline Loading Roster Node Block -->
+                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                <td colspan="3" class="py-12 text-center text-slate-400 italic">
+                                    <div class="flex flex-col items-center justify-center space-y-2">
+                                        <div
+                                            class="w-5 h-5 border-2 border-teal-500/30 border-t-teal-600 rounded-full animate-spin">
+                                        </div>
+                                        <span class="text-xs font-medium text-slate-400 mt-2">Assembling clinic care
+                                            matrix tables...</span>
+                                    </div>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -128,6 +219,19 @@
         </div>
     </main>
 
+    <!-- 🔐 Route Verification Guard Loop -->
+    <script>
+        (function () {
+            const token = localStorage.getItem("token");
+            const user = localStorage.getItem("user");
+            if (!token || !user) {
+                console.warn("⚠️ Unauthorized state caught. Evicting worker session.");
+                window.location.replace("/patientLogin.html?clinic=radiant-smiles");
+            }
+        })();
+    </script>
+
+    <!-- Core Controller Module Wireup -->
     <script type="module" src="/src/pages/patientDashboard.js"></script>
 </body>
 

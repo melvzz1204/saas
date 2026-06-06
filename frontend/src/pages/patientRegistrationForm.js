@@ -1,51 +1,64 @@
-// src/pages/patientRegistration.js
+// /src/pages/patientRegistrationForm.js
 
-const registrationForm = document.getElementById("registration-form");
+// 🎯 FIX: Declare both contextClinicId and urlParams globally at the top level
+let contextClinicId = null;
+const urlParams = new URLSearchParams(window.location.search);
 
-async function getActiveClinicId() {
-  const pathSegments = window.location.pathname.split("/");
-  let clinicSlug = pathSegments[1];
+document.addEventListener("DOMContentLoaded", async () => {
+  const titleElement = document.getElementById("clinic-title");
+  const formElement = document.getElementById("registration-form");
 
-  // 🔄 SMART FALLBACK: If slug is empty, missing, or just a filename, force 'apex-dental'
-  if (
-    !clinicSlug ||
-    clinicSlug === "" ||
-    clinicSlug.endsWith(".html") ||
-    clinicSlug === "register"
-  ) {
-    clinicSlug = "apex-dental";
+  const clinicSlug = urlParams.get("clinic");
+
+  if (!clinicSlug) {
+    showBanner(
+      "Invalid Portal Link: Missing workspace identifier code.",
+      "error",
+    );
+    titleElement.textContent = "Access Portal Error";
+    formElement.style.pointerEvents = "none";
+    formElement.style.opacity = "0.3";
+    return;
   }
 
-  console.log("🔍 System is attempting to find clinic with slug:", clinicSlug);
-
+  // 2. Fetch the true Clinic Data from your backend tenant router via Slug lookup
   try {
     const response = await fetch(
       `http://localhost:5000/api/v1/tenants/slug/${clinicSlug}`,
     );
     const result = await response.json();
 
-    if (response.ok && result.data) {
-      return result.data._id; // Returns your real 6a2127a732ade6c6dd4f3dae ID!
+    if (result.success && result.data) {
+      contextClinicId = result.data._id; // 🔗 Safely store your bound Mongo clinicId
+      titleElement.textContent = `${result.data.name} Patient Portal`;
     } else {
-      console.error("Clinic slug not recognized by backend database.");
-      return null;
+      throw new Error(
+        "Specified clinic workspace does not exist inside our SaaS directory.",
+      );
     }
   } catch (error) {
-    console.error("Error identifying tenant context:", error);
-    return null;
-  }
-}
-async function handleRegistration(event) {
-  event.preventDefault();
-
-  // Find the submit button to provide visual feedback
-  const submitBtn = registrationForm.querySelector('button[type="submit"]');
-  if (submitBtn) {
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Registering...";
+    showBanner(error.message, "error");
+    titleElement.textContent = "Portal Offline";
+    formElement.style.pointerEvents = "none";
+    formElement.style.opacity = "0.3";
+    return;
   }
 
-  const userData = {
+  // 3. Attach Submit Request Listener to Form
+  formElement.addEventListener("submit", handlePatientSubmit);
+});
+
+// 🚀 Form Submission Handler
+async function handlePatientSubmit(e) {
+  e.preventDefault();
+
+  const submitBtn = document.getElementById("submit-btn");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Processing Registration...";
+
+  // Construct payload, injecting the dynamically resolved contextClinicId
+  const payload = {
+    clinicId: contextClinicId,
     firstName: document.getElementById("firstName").value,
     lastName: document.getElementById("lastName").value,
     email: document.getElementById("email").value,
@@ -55,57 +68,75 @@ async function handleRegistration(event) {
     role: "PATIENT",
   };
 
-  // 🔄 DYNAMIC SWITCH HERE: Fetching the ID dynamically instead of hardcoding
-  const dynamicClinicId = await getActiveClinicId();
-
-  if (!dynamicClinicId) {
-    alert(
-      "❌ Error: Could not determine which dental clinic you are registering for.",
-    );
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Register";
-    }
-    return;
-  }
-
   try {
+    // Fire straight into your app's patient entry route file
     const response = await fetch(
       "http://localhost:5000/api/v1/patients/register",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Clinic-ID": dynamicClinicId, // Passing dynamic context header
+          "X-Clinic-ID": contextClinicId,
         },
-        body: JSON.stringify(userData),
+        body: JSON.stringify(payload),
       },
     );
 
     const result = await response.json();
 
-    if (response.ok) {
-      alert("🎉 Registered successfully!");
-      registrationForm.reset(); // Clears out the form inputs cleanly
+    if (result.success) {
+      showBanner(
+        "🎉 Registration complete! Redirecting to login context...",
+        "success",
+      );
+      document.getElementById("registration-form").reset();
 
-      // Optional: Send them straight to login after a successful registration
-      window.location.href = "/login.html";
+      // Smooth handoff to your system login portal after 2.5 seconds
+      setTimeout(() => {
+        // 🎯 Safely reads urlParams globally now with no reference errors!
+        window.location.href = `/patientLogin.html?clinic=${urlParams.get("clinic") || ""}`;
+      }, 2500);
     } else {
-      alert(`❌ Error: ${result.message}`);
+      showBanner(`Registration Blocked: ${result.message}`, "error");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Register Account Node";
     }
   } catch (error) {
-    console.error("Connection issue:", error);
-    alert("❌ Network error. Check if your backend server is online.");
-  } finally {
-    // Re-enable the button if registration fails
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Register";
-    }
+    showBanner(`Network Connection Failed: ${error.message}`, "error");
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Register Account Node";
   }
 }
 
-// 3. THE BINDING STEP: Tell the form to listen for the 'submit' event safely
-if (registrationForm) {
-  registrationForm.addEventListener("submit", handleRegistration);
+// UI helper to toggle styling on notification banners
+function showBanner(text, type) {
+  const banner = document.getElementById("status-banner");
+  if (!banner) return;
+
+  banner.textContent = text;
+  banner.classList.remove(
+    "hidden",
+    "bg-rose-500/10",
+    "text-rose-400",
+    "border-rose-500/20",
+    "bg-emerald-500/10",
+    "text-emerald-400",
+    "border-emerald-500/20",
+  );
+
+  if (type === "error") {
+    banner.classList.add(
+      "bg-rose-500/10",
+      "text-rose-400",
+      "border",
+      "border-rose-500/20",
+    );
+  } else {
+    banner.classList.add(
+      "bg-emerald-500/10",
+      "text-emerald-400",
+      "border",
+      "border-emerald-500/20",
+    );
+  }
 }

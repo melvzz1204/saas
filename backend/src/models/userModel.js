@@ -1,3 +1,4 @@
+// src/models/userModel.js
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 
@@ -10,8 +11,6 @@ const userSchema = new mongoose.Schema(
         return this.role !== "SUPER_ADMIN";
       },
     },
-
-    // Requested Profile Fields
     firstName: {
       type: String,
       required: true,
@@ -35,14 +34,15 @@ const userSchema = new mongoose.Schema(
     },
     dateOfBirth: {
       type: Date,
-      required: true,
+      required: function () {
+        // 🎯 Dynamically required for Patients, completely optional for CLINIC_ADMIN
+        return this.role === "PATIENT";
+      },
     },
     password: {
       type: String,
       required: true,
     },
-
-    // Requested Roles Enum
     role: {
       type: String,
       enum: [
@@ -54,7 +54,6 @@ const userSchema = new mongoose.Schema(
       ],
       default: "PATIENT",
     },
-
     isActive: {
       type: Boolean,
       default: true,
@@ -63,7 +62,22 @@ const userSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-userSchema.index({ clinicId: 1, email: 1 }, { unique: true });
+// SaaS Index Rules
+userSchema.index(
+  { clinicId: 1, email: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { clinicId: { $exists: true } },
+  },
+);
+
+userSchema.index(
+  { email: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { clinicId: { $exists: false } },
+  },
+);
 
 // Automatically hash password before saving to MongoDB
 userSchema.pre("save", async function (next) {

@@ -1,101 +1,178 @@
-// src/pages/login.js
+// /src/pages/patientLogin.js
 
-const loginForm = document.getElementById("login-form");
-const loginBtn = document.getElementById("login-btn");
+let contextClinicId = null;
 
-// src/pages/patientLogin.js
+document.addEventListener("DOMContentLoaded", async () => {
+  const titleElement = document.getElementById("clinic-title");
+  const formElement = document.getElementById("login-form");
+  const registerLink = document.getElementById("register-redirect-link");
 
-async function getActiveClinicId() {
-  const pathSegments = window.location.pathname.split("/");
-  let clinicSlug = pathSegments[1];
+  const urlParams = new URLSearchParams(window.location.search);
+  const clinicSlug = urlParams.get("clinic");
 
-  // 🔄 SMART FALLBACK: If slug is empty, missing, or points to a system filename like 'login', force 'apex-dental'
-  if (
-    !clinicSlug ||
-    clinicSlug === "" ||
-    clinicSlug.endsWith(".html") ||
-    clinicSlug === "login" ||
-    clinicSlug === "index"
-  ) {
-    clinicSlug = "apex-dental";
+  if (!clinicSlug) {
+    showBanner(
+      "Access Terminated: Missing clinic workspace tracking parameter.",
+      "error",
+    );
+    if (titleElement) titleElement.textContent = "Identity Error";
+    if (formElement) {
+      formElement.style.pointerEvents = "none";
+      formElement.style.opacity = "0.3";
+    }
+    return;
   }
 
-  console.log(
-    "🔍 Login system attempting to find clinic with slug:",
-    clinicSlug,
-  );
+  if (registerLink) {
+    registerLink.href = `/patientRegistration?clinic=${clinicSlug}`;
+  }
 
+  // 1. Fetch structural clinic metadata via your adaptive identity endpoint
   try {
     const response = await fetch(
       `http://localhost:5000/api/v1/tenants/slug/${clinicSlug}`,
     );
     const result = await response.json();
 
-    if (response.ok && result.data) {
-      return result.data._id; // Returns your real MongoDB hex string ID
+    if (result.success && result.data) {
+      contextClinicId = result.data._id;
+      if (titleElement) titleElement.textContent = `${result.data.name}`;
     } else {
-      console.error("Clinic slug not recognized by backend database.");
-      return null;
+      throw new Error(
+        "Target clinical location context not registered in our SaaS directory.",
+      );
     }
   } catch (error) {
-    console.error("Error identifying tenant context:", error);
-    return null;
-  }
-}
-
-loginForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-
-  loginBtn.disabled = true;
-  loginBtn.textContent = "Logging in...";
-
-  const email = document.getElementById("login-email").value;
-  const password = document.getElementById("login-password").value;
-
-  // 🔄 DYNAMIC SWITCH HERE:
-  const dynamicClinicId = await getActiveClinicId();
-
-  if (!dynamicClinicId) {
-    alert(
-      "❌ Error: Could not verify which dental clinic you are trying to log into.",
-    );
-    loginBtn.disabled = false;
-    loginBtn.textContent = "Log In";
+    showBanner(error.message, "error");
+    if (titleElement) titleElement.textContent = "Offline Portal Container";
+    if (formElement) {
+      formElement.style.pointerEvents = "none";
+      formElement.style.opacity = "0.3";
+    }
     return;
   }
 
+  if (formElement) {
+    formElement.addEventListener("submit", handlePatientLoginSubmit);
+  }
+});
+
+// 🚀 Fixed & Consolidated Authentication Form Handler
+async function handlePatientLoginSubmit(e) {
+  e.preventDefault();
+
+  const loginBtn = document.getElementById("login-btn");
+  if (loginBtn) {
+    loginBtn.disabled = true;
+    loginBtn.textContent = "Authorizing Token Session...";
+  }
+
+  const emailValue = document.getElementById("login-email").value;
+  const passwordValue = document.getElementById("login-password").value;
+
+  const payload = {
+    email: emailValue,
+    password: passwordValue,
+  };
+
   try {
+    // 🔗 Hit the central authentication node and pass the critical tenant header context!
     const response = await fetch(
       "http://localhost:5000/api/v1/patients/login",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Clinic-ID": dynamicClinicId, // Pass the dynamic lookup ID to the backend middleware
+          "x-clinic-id": contextClinicId, // 👈 Keeps tenant workspace clean
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(payload),
       },
     );
 
     const result = await response.json();
 
-    if (response.ok) {
-      alert("🎉 Login Successful!");
+    if (response.ok && (result.success || result.token)) {
+      console.log("📥 Clean Login Server Response:", result);
 
-      localStorage.setItem("token", result.token);
+      // Extract properties checking both standard root structures and data objects safely
+      const cleanToken = result.token || result.data?.token;
+      const userPayload = result.user || result.data?.user;
 
-      // 💡 PRO TIP: Save the clinic ID inside the user object session so the dashboard can access it later!
-      const userSessionData = { ...result.user, clinicId: dynamicClinicId };
-      localStorage.setItem("user", JSON.stringify(userSessionData));
+      console.log("👤 Extracted User Payload:", userPayload);
 
-      window.location.href = "/patientDashboard.html";
+      if (!userPayload) {
+        throw new Error(
+          "Authentication failed: Server did not return a valid user payload structure.",
+        );
+      }
+
+      // Enforce uppercase PATIENT role match rule parameters
+      if (userPayload.role && userPayload.role.toUpperCase() !== "PATIENT") {
+        throw new Error(
+          "Access Blocked: Workspace personnel must log into the administrative hub.",
+        );
+      }
+
+      showBanner(
+        "Identity Verified! Syncing encrypted dashboard node...",
+        "success",
+      );
+
+      // Save credentials cleanly to localStorage compartments
+      localStorage.setItem("token", String(cleanToken).trim());
+      localStorage.setItem("user", JSON.stringify(userPayload));
+
+      // Redirect out smoothly
+      setTimeout(() => {
+        window.location.href = "/patientDashboard.html";
+      }, 1500);
     } else {
-      alert(`❌ Login Failed: ${result.message}`);
+      showBanner(
+        `Authentication Blocked: ${result.message || "Invalid credentials"}`,
+        "error",
+      );
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.textContent = "Verify Secure Session";
+      }
     }
   } catch (error) {
-    console.error("Network Error:", error);
-  } finally {
-    loginBtn.disabled = false;
-    loginBtn.textContent = "Log In";
+    showBanner(error.message, "error");
+    if (loginBtn) {
+      loginBtn.disabled = false;
+      loginBtn.textContent = "Verify Secure Session";
+    }
   }
-});
+}
+
+function showBanner(text, type) {
+  const banner = document.getElementById("status-banner");
+  if (!banner) return;
+
+  banner.textContent = text;
+  banner.classList.remove(
+    "hidden",
+    "bg-rose-500/10",
+    "text-rose-400",
+    "border-rose-500/20",
+    "bg-emerald-500/10",
+    "text-emerald-400",
+    "border-emerald-500/20",
+  );
+
+  if (type === "error") {
+    banner.classList.add(
+      "bg-rose-500/10",
+      "text-rose-400",
+      "border",
+      "border-rose-500/20",
+    );
+  } else {
+    banner.classList.add(
+      "bg-emerald-500/10",
+      "text-emerald-400",
+      "border",
+      "border-emerald-500/20",
+    );
+  }
+}

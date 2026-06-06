@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Clinic Workspace | SaaS Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex items-center justify-center p-6">
+
+    <div class="max-w-xl w-full bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8 space-y-6">
+
+        <div class="text-center space-y-2">
+            <div class="inline-block bg-emerald-600 p-3 rounded-xl text-white font-black text-2xl shadow-md">🏢</div>
+            <h2 class="text-2xl font-bold text-white tracking-tight">Register New Clinic</h2>
+            <p class="text-xs text-slate-400">Deploy a dedicated, isolated tenant workspace instance</p>
+        </div>
+
+        <div id="notification-box" class="hidden text-xs p-3.5 rounded-lg font-medium"></div>
+
+        <form id="clinic-registration-form" class="space-y-6">
+
+            <!-- Sub-Section 1: Clinic Metadata Properties -->
+            <div class="space-y-4">
+                <h3
+                    class="text-xs font-bold text-emerald-400 uppercase tracking-wider border-b border-slate-800/60 pb-2">
+                    1. Workspace Profile
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                            Clinic Name
+                        </label>
+                        <input type="text" id="clinic-name" required placeholder="Apex Dental Care"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                            Desired URL Slug
+                        </label>
+                        <input type="text" id="clinic-slug" required placeholder="apexdental"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition-colors lowercase">
+                    </div>
+                </div>
+
+                <p class="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
+                    Patient Entry Terminal:
+                    <span
+                        class="text-slate-400 font-mono block mt-0.5 bg-slate-950/50 p-1.5 rounded border border-slate-800/40 truncate">
+                        /patientLogin.html?clinic=<span id="slug-preview" class="text-emerald-400 font-bold">...</span>
+                    </span>
+                </p>
+            </div>
+
+            <!-- Sub-Section 2: Primary Administrator Account Configuration -->
+            <div class="space-y-4">
+                <h3
+                    class="text-xs font-bold text-emerald-400 uppercase tracking-wider border-b border-slate-800/60 pb-2">
+                    2. Primary Administrator Account
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                            First Name
+                        </label>
+                        <input type="text" id="admin-firstname" required placeholder="e.g. Clinic"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                            Last Name
+                        </label>
+                        <input type="text" id="admin-lastname" required placeholder="e.g. Admin"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                            Workspace Email
+                        </label>
+                        <input type="email" id="admin-email" required placeholder="admin@apexdental.com"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                            Phone Number
+                        </label>
+                        <input type="tel" id="admin-phone" required placeholder="555-0199"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                </div>
+
+                <!-- Placed outside the grid block so the security credential input scales fluidly to full width -->
+                <div class="pt-2">
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                        Security Password
+                    </label>
+                    <input type="password" id="admin-password" required placeholder="••••••••"
+                        class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition-colors">
+                </div>
+            </div>
+
+            <button type="submit"
+                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm py-3.5 rounded-xl shadow-lg transition-all transform active:scale-[0.98] mt-2">
+                Provision Workspace
+            </button>
+        </form>
+
+        <div class="border-t border-slate-800/60 pt-4 text-center flex justify-between items-center px-1">
+            <a href="/clinicLogin.html" class="text-xs text-slate-500 hover:text-slate-400 transition-colors">📄 Staff
+                Entry</a>
+            <a href="/index.html" class="text-xs text-slate-500 hover:text-slate-400 transition-colors">Main Portal
+                ◀</a>
+        </div>
+
+    </div>
+
+    <script src="/src/pages/clinicRegistration.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Our Practice | Patient Portal Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Smooth zoom overlay scaling keyframes for the modal entry popping transition */
+        @keyframes modalPop {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .animate-modal-pop {
+            animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-slate-950 text-slate-100 font-sans min-h-screen flex items-center justify-center p-4 md:p-8 lg:p-12 relative overflow-x-hidden">
+
+    <div
+        class="absolute inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]">
+    </div>
+    <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-500/5 blur-[120px]"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-emerald-500/5 blur-[120px]">
+    </div>
+
+    <div
+        class="w-full max-w-5xl bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 relative z-10">
+
+        <div class="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-500">
+        </div>
+
+        <div
+            class="lg:col-span-7 p-8 md:p-12 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-800/60 bg-gradient-to-br from-slate-900/50 to-slate-950/30">
+            <div class="space-y-6">
+                <div
+                    class="inline-flex items-center space-x-2.5 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold tracking-wide">
+                    <span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Digital Health Node Active</span>
+                </div>
+
+                <div class="space-y-3">
+                    <h1 id="clinic-title"
+                        class="text-3xl md:text-4xl font-black tracking-tight text-white bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-slate-400">
+                        Loading Practice Details...
+                    </h1>
+                    <p class="text-sm text-slate-400 max-w-md leading-relaxed">
+                        Welcome to our digital patient portal. Manage your upcoming reservations, coordinate care
+                        rosters with practitioners, and keep records up to date.
+                    </p>
+                </div>
+            </div>
+
+            <div class="my-10 space-y-4 max-w-lg">
+                <div
+                    class="flex items-start space-x-3.5 p-3 rounded-2xl border border-transparent hover:border-slate-800/60 hover:bg-slate-900/30 transition-all duration-300">
+                    <div
+                        class="flex items-center justify-center w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shrink-0">
+                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-200">24/7 Automated Scheduling
+                        </h4>
+                        <p class="text-xs text-slate-400 mt-0.5">Book consultations instantly online anytime without
+                            manual phone queue waits.</p>
+                    </div>
+                </div>
+
+                <div
+                    class="flex items-start space-x-3.5 p-3 rounded-2xl border border-transparent hover:border-slate-800/60 hover:bg-slate-900/30 transition-all duration-300">
+                    <div
+                        class="flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shrink-0">
+                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-200">Real-Time Queue
+                            Diagnostics</h4>
+                        <p class="text-xs text-slate-400 mt-0.5">Track live review decisions made regarding file
+                            admissions immediately.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                class="pt-6 border-t border-slate-800/40 flex flex-wrap gap-x-8 gap-y-3 text-slate-500 text-[11px] font-medium tracking-wide">
+                <div class="flex items-center space-x-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+                    <span>Mon - Fri: 8:00 AM - 5:00 PM</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+                    <span>Emergency On-Call 24/7</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-5 p-8 md:p-12 flex flex-col justify-center bg-slate-950/40">
+            <div class="w-full space-y-6">
+                <header class="space-y-2">
+                    <div
+                        class="inline-flex items-center justify-center w-11 h-11 bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 rounded-2xl text-sm shadow-md">
+                        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-extrabold tracking-tight text-white">Access Verification</h2>
+                    <p class="text-xs text-slate-400 leading-relaxed">Provide your verified medical credentials to sign
+                        into your file.</p>
+                </header>
+
+                <div id="status-banner" class="hidden p-3.5 rounded-xl text-xs font-bold text-center border"></div>
+
+                <form id="login-form" class="space-y-4">
+                    <div>
+                        <label for="login-email"
+                            class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Registered
+                            Email Address</label>
+                        <input type="email" id="login-email" required placeholder="name@example.com"
+                            class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white placeholder-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition-all">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label for="login-password"
+                                class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Account
+                                Security Password</label>
+                            <a href="#"
+                                class="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold hover:underline transition-colors">Forgot
+                                password?</a>
+                        </div>
+                        <input type="password" id="login-password" required placeholder="••••••••"
+                            class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white placeholder-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition-all">
+                    </div>
+
+                    <button type="submit" id="login-btn"
+                        class="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold text-xs py-3.5 rounded-xl shadow-xl shadow-indigo-950/50 mt-2 transition-all uppercase tracking-wider active:scale-[0.99]">
+                        Verify Secure Session
+                    </button>
+                </form>
+
+                <footer class="text-center pt-4 border-t border-slate-800/60">
+                    <p class="text-xs text-slate-400">
+                        New to this practice?
+                        <button type="button" id="open-register-btn"
+                            class="text-indigo-400 font-bold hover:text-indigo-300 hover:underline ml-1 transition-colors cursor-pointer bg-transparent border-none outline-none">Register
+                            here</button>
+                    </p>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="register-modal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm transition-all duration-300">
+
+        <div
+            class="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 md:p-10 space-y-6 relative animate-modal-pop max-h-[90vh] overflow-y-auto">
+
+            <div
+                class="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full blur-sm">
+            </div>
+
+            <button type="button" id="close-register-btn"
+                class="absolute top-4 right-4 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800/60 transition-all cursor-pointer">
+                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke-width="2.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <header class="text-center space-y-2 pt-2">
+                <div
+                    class="inline-flex items-center justify-center w-11 h-11 bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 rounded-xl text-sm font-bold mb-1 shadow-md">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                    </svg>
+                </div>
+                <h1 id="modal-clinic-title" class="text-xl font-black tracking-tight text-white">Create Account Node
+                </h1>
+                <p class="text-xs text-slate-400">Initialize your personal digital health card to start tracking medical
+                    records.</p>
+            </header>
+
+            <div id="registration-status-banner" class="hidden p-3 rounded-xl text-xs font-semibold text-center border">
+            </div>
+
+            <form id="registration-form" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">First
+                            Legal Name</label>
+                        <input type="text" id="firstName" required placeholder="Jane"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-700 focus:outline-none focus:border-indigo-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Last
+                            Legal Name</label>
+                        <input type="text" id="lastName" required placeholder="Doe"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-700 focus:outline-none focus:border-indigo-500 transition-colors">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Primary
+                        Email Address</label>
+                    <input type="email" id="email" required placeholder="jane.doe@example.com"
+                        class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-700 focus:outline-none focus:border-indigo-500 transition-colors">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label
+                            class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Contact
+                            Phone</label>
+                        <input type="tel" id="phone" required placeholder="(555) 000-0000"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-700 focus:outline-none focus:border-indigo-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Date
+                            of Birth</label>
+                        <input type="date" id="dateOfBirth" required
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-indigo-500 transition-colors text-slate-400">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Account
+                        Password</label>
+                    <input type="password" id="password" required placeholder="••••••••••••"
+                        class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-700 focus:outline-none focus:border-indigo-500 transition-colors">
+                </div>
+
+                <button type="submit" id="submit-btn"
+                    class="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold text-xs py-3 rounded-xl shadow-lg shadow-indigo-950/50 mt-2 transition-all uppercase tracking-wider">
+                    Register Account Node
+                </button>
+            </form>
+
+            <footer class="text-center pt-2">
+                <p class="text-[10px] text-slate-500 tracking-wide">🔒 AES-256 Cloud Infrastructure Secured Connection
+                </p>
+            </footer>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const registerModal = document.getElementById("register-modal");
+            const openRegisterBtn = document.getElementById("open-register-btn");
+            const closeRegisterBtn = document.getElementById("close-register-btn");
+
+            // Open Modal Handler
+            if (openRegisterBtn && registerModal) {
+                openRegisterBtn.addEventListener("click", () => {
+                    registerModal.classList.remove("hidden");
+                    document.body.classList.add("overflow-hidden"); // Stops baseline background scrolling
+                });
+            }
+
+            // Close Modal Handler
+            if (closeRegisterBtn && registerModal) {
+                closeRegisterBtn.addEventListener("click", () => {
+                    registerModal.classList.add("hidden");
+                    document.body.classList.remove("overflow-hidden");
+                });
+            }
+
+            // Close Modal on Backdrop Outside-Click
+            if (registerModal) {
+                registerModal.addEventListener("click", (e) => {
+                    if (e.target === registerModal) {
+                        registerModal.classList.add("hidden");
+                        document.body.classList.remove("overflow-hidden");
+                    }
+                });
+            }
+        });
+    </script>
+
+    <script type="module" src="/src/pages/patientLogin.js"></script>
+    <script type="module" src="/src/pages/patientRegistrationForm.js"></script>
+</body>
+
+</html>
