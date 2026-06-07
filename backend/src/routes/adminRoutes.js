@@ -5,6 +5,7 @@ import {
   getClinicStaff,
   loginAdmin,
 } from "../controllers/adminController.js";
+import { registerClinicalStaff } from "../controllers/staffController.js";
 
 // 🎯 FIX: Import the populated appointment engines from the appointment controller file
 import {
@@ -24,5 +25,6 @@ router.patch("/appointments/:appointmentId", modifyAppointmentStatus);
 // 🩺 Internal Clinic Staff Framework
 router.post("/staff", addStaffMember);
 router.get("/staff", getClinicStaff);
+router.post("/staff/register", registerClinicalStaff);
 
 export default router;

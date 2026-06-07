@@ -1,10 +1,11 @@
 // adminDashboard.js
 
+// =========================================================================
 // 🛡️ SECURITY GUARD: Block unauthenticated traffic instantly
+// =========================================================================
 const token = localStorage.getItem("token");
 const userData = JSON.parse(localStorage.getItem("user") || "null");
 
-// 🎯 FIX 1: Expand authorization matrix to accept all allowed personnel tiers
 const authorizedPersonnel = [
   "SUPER_ADMIN",
   "CLINIC_ADMIN",
@@ -19,50 +20,55 @@ if (!token || !userData || !authorizedPersonnel.includes(userData.role)) {
   window.location.href = "/clinicLogin.html";
 }
 
-// 🏢 EXTRACTION: Capture tenant identifier context strings safely
+// Extraction: Capture tenant identifier context strings safely
 const clinicId = userData.clinicId;
 
+// =========================================================================
+// 🔌 UNIFIED INITIALIZATION LAYER (DOM Content Loaded)
+// =========================================================================
 document.addEventListener("DOMContentLoaded", () => {
-  const viewLiveSiteBtn = document.getElementById("viewLiveSiteBtn");
+  // 1. Render logged-in user context profiles
+  const displayEmailEl = document.getElementById("display-user-email");
+  if (displayEmailEl) displayEmailEl.textContent = userData.email;
 
+  // 2. Initial Data Sync Triggers
+  fetchClinicMetadata();
+  fetchDashboardData();
+
+  // 3. View Patient Live Terminal Site Event Listener
+  const viewLiveSiteBtn = document.getElementById("viewLiveSiteBtn");
   if (viewLiveSiteBtn) {
     viewLiveSiteBtn.addEventListener("click", () => {
-      // 🎯 FIX 2: Harvest the readable workspace slug string instead of the raw database object ID
       const cachedSlug = localStorage.getItem("activeClinicSlug");
-
       if (!cachedSlug) {
         alert(
           "Sync Error: Clinic route context is initializing. Please wait a moment and try again.",
         );
         return;
       }
-
       console.log(
         `🔗 Redirecting to live patient terminal matching route slug: ${cachedSlug}`,
       );
       window.open(`/patientLogin.html?clinic=${cachedSlug}`, "_blank");
     });
   }
-});
 
-// Initialize Dashboard Components on Window Load
-document.addEventListener("DOMContentLoaded", () => {
-  const displayEmailEl = document.getElementById("display-user-email");
-  if (displayEmailEl) displayEmailEl.textContent = userData.email;
-
-  fetchClinicMetadata();
-  fetchDashboardData();
-
-  // Attach Event Listeners safely with optional chain verification guards
+  // 4. Data Refresh / Synchronization Click Listener
   const refreshBtn = document.getElementById("refresh-appointments");
   if (refreshBtn) refreshBtn.addEventListener("click", fetchDashboardData);
 
+  // 5. Staff Onboarding Form Submit Binder
   const staffForm = document.getElementById("add-staff-form");
   if (staffForm) staffForm.addEventListener("submit", handleStaffOnboarding);
 
+  // 6. Logout Core Trigger Link
   const logoutBtn = document.getElementById("logout-btn");
   if (logoutBtn) logoutBtn.addEventListener("click", handleLogout);
 });
+
+// =========================================================================
+// 📊 METRICS & CODES SYNCHRONIZATION ENGINES
+// =========================================================================
 
 // Fetch Tenant Profile Metadata Name
 async function fetchClinicMetadata() {
@@ -79,7 +85,6 @@ async function fetchClinicMetadata() {
       const nameDisplayEl = document.getElementById("display-clinic-name");
       if (nameDisplayEl) nameDisplayEl.textContent = resData.data.name;
 
-      // Cache the lookup slug inside local memory so our live button path generator reads it
       if (resData.data.slug) {
         localStorage.setItem("activeClinicSlug", resData.data.slug);
       }
@@ -95,10 +100,9 @@ async function fetchDashboardData() {
   try {
     const headers = {
       Authorization: `Bearer ${token}`,
-      "x-clinic-id": clinicId, // Passes tenant context to the backend controller
+      "x-clinic-id": clinicId,
     };
 
-    // Parallel processing network requests
     const [apptRes, staffRes] = await Promise.all([
       fetch("http://localhost:5000/api/v1/admin/appointments", { headers }),
       fetch("http://localhost:5000/api/v1/admin/staff", { headers }),
@@ -118,16 +122,13 @@ async function fetchDashboardData() {
   }
 }
 
-// Replace this function inside your adminDashboard.js file
-
+// Render Data Collections Matrix Into the UI Dashboard Viewport Layout
 function renderAppointmentsTable(appointments) {
   const tableBody = document.getElementById("appointment-table-body");
   if (!tableBody) return;
 
-  // Debugging log: Open your browser console (F12) to see exactly what fields your backend is sending!
   console.log("📥 Raw Appointments Array received from Server:", appointments);
 
-  // Update Core Metrics Cards
   const totalApptsEl = document.getElementById("kpi-total-appointments");
   const pendingApptsEl = document.getElementById("kpi-pending-appointments");
 
@@ -148,12 +149,10 @@ function renderAppointmentsTable(appointments) {
     .map((appt) => {
       const currentStatus = appt.status ? appt.status.toLowerCase() : "pending";
 
-      // 🎯 FIX 1: Dynamically resolve populated names from Mongoose relational objects
       let calculatedPatientName = "Walk-In Patient";
       if (appt.patientName) {
         calculatedPatientName = appt.patientName;
       } else if (appt.patientId && typeof appt.patientId === "object") {
-        // If the backend used .populate('patientId')
         const fname = appt.patientId.firstName || "";
         const lname = appt.patientId.lastName || "";
         calculatedPatientName =
@@ -163,11 +162,9 @@ function renderAppointmentsTable(appointments) {
           `${appt.userId.firstName || ""} ${appt.userId.lastName || ""}`.trim();
       }
 
-      // 🎯 FIX 2: Resolve 'service' vs 'reason' property naming differences
       const calculatedService =
         appt.service || appt.reason || "General Consultation";
 
-      // Standard status pills colors logic
       let statusClass =
         "bg-amber-500/10 text-amber-400 border border-amber-500/20";
       if (currentStatus === "confirmed" || currentStatus === "approved")
@@ -218,7 +215,7 @@ async function modifyAppointmentStatus(appointmentId, newStatus) {
 
     const result = await response.json();
     if (result.success) {
-      fetchDashboardData(); // Reload stats smoothly
+      fetchDashboardData();
     } else {
       alert(`Action error: ${result.message}`);
     }
@@ -227,45 +224,83 @@ async function modifyAppointmentStatus(appointmentId, newStatus) {
   }
 }
 
-// 🎯 FIX 3: Explicitly bind target functions to the browser window dictionary space
-// This guarantees that inline onclick template button calls work seamlessly under module loaders
+// Explicitly bind target functions to the browser window dictionary space for inline HTML buttons
 window.modifyAppointmentStatus = modifyAppointmentStatus;
 
-// Handle Form Submit (Staff Member Registration Onboarding)
+// =========================================================================
+// 🪪 PASSWORDLESS STAFF ONBOARDING FORM SUBSYSTEM (POST INTERACTION)
+// =========================================================================
 async function handleStaffOnboarding(e) {
   e.preventDefault();
 
+  const pinRevealBox = document.getElementById("pin-reveal-box");
+  const generatedPinDisplay = document.getElementById("generated-pin-display");
+
+  // Reset/Hide modal state block if executing a brand new registration chain
+  if (pinRevealBox) pinRevealBox.classList.add("hidden");
+
+  // 🔑 GENERATE A SECURE 6-DIGIT ACCESS PIN AUTOMATICALLY
+  const autoGeneratedPin = Math.floor(
+    100000 + Math.random() * 900000,
+  ).toString();
+
   const payload = {
-    fullName: document.getElementById("staff-name").value,
-    specialization: document.getElementById("staff-spec").value,
+    fullName: document.getElementById("staff-name").value.trim(), // 👈 Ensure this says 'fullName'
+    specialization: document.getElementById("staff-spec").value.trim(),
     role: document.getElementById("staff-role").value,
-    email: document.getElementById("staff-email").value,
-    phone: document.getElementById("staff-phone").value,
+    email: document.getElementById("staff-email").value.trim(),
+    phone: document.getElementById("staff-phone").value.trim(),
+    accessPin: autoGeneratedPin,
   };
 
   try {
-    const response = await fetch("http://localhost:5000/api/v1/admin/staff", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-        "x-clinic-id": clinicId,
+    // Hits the correct versioned admin route context processing layer
+    const response = await fetch(
+      "http://localhost:5000/api/v1/admin/staff/register",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          "x-clinic-id": clinicId,
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    });
+    );
+
+    // Handle structural layout network exceptions to avoid unexpected parser failures
+    if (!response.ok) {
+      const errorText = await response.text();
+      let parseMessage = "Failed to compile registration parameters.";
+      try {
+        const errJson = JSON.parse(errorText);
+        parseMessage = errJson.message || parseMessage;
+      } catch {
+        parseMessage = errorText || parseMessage;
+      }
+      throw new Error(parseMessage);
+    }
 
     const result = await response.json();
+
     if (result.success) {
-      alert(
-        "🎉 Medical Provider Registered Successfully inside Workspace Context!",
-      );
+      // 🌟 REVEAL SECURE PIN: Display credentials securely to the admin operator
+      if (pinRevealBox && generatedPinDisplay) {
+        generatedPinDisplay.textContent = autoGeneratedPin;
+        pinRevealBox.classList.remove("hidden");
+      }
+
+      // Reset fields smoothly
       document.getElementById("add-staff-form").reset();
-      fetchDashboardData(); // Refresh metrics list counters
+
+      // Update global metrics arrays and KPI dashboard elements instantly
+      fetchDashboardData();
     } else {
       alert(`Onboarding failure: ${result.message}`);
     }
   } catch (err) {
     console.error("Failed to commit provider entry:", err);
+    alert(`Registration Error: ${err.message}`);
   }
 }
 

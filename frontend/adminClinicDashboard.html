@@ -26,10 +26,10 @@
 
             <nav class="space-y-4 max-w-xs bg-slate-950 p-4 rounded-2xl border border-slate-800/40">
 
-                <div class="pb-3 border-b border-slate-800/60">
+                <div class="pb-3 border-b border-slate-800/60 flex flex-col gap-2">
                     <a id="viewLiveSiteBtn"
-                        class="group flex items-center justify-center space-x-2.5 w-full bg-gradient-to-r from-indigo-600/10 to-violet-600/10 hover:from-indigo-600 hover:to-violet-600 text-indigo-400 hover:text-white px-4 py-3 rounded-xl text-sm font-semibold border border-indigo-500/20 hover:border-transparent cursor-pointer shadow-lg shadow-indigo-950/20 transition-all duration-300">
-                        <svg class="w-4 h-4 text-indigo-400 group-hover:text-white transition-colors duration-300"
+                        class="group flex items-center justify-center space-x-2.5 w-full bg-gradient-to-r from-indigo-600/10 to-violet-600/10 hover:from-indigo-600 hover:to-violet-600 text-indigo-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold border border-indigo-500/20 hover:border-transparent cursor-pointer shadow-lg shadow-indigo-950/20 transition-all duration-300">
+                        <svg class="w-3.5 h-3.5 text-indigo-400 group-hover:text-white transition-colors duration-300"
                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -37,10 +37,14 @@
                         </svg>
                         <span>View Live Website</span>
                     </a>
+
+                    <a href="/staffLogin.html" id="nav-staff-login"
+                        class="group flex items-center justify-center space-x-2.5 w-full bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold border border-blue-500/20 hover:border-transparent cursor-pointer transition-all duration-300">
+                        <span>🪪 Go to Staff Login</span>
+                    </a>
                 </div>
 
                 <div class="space-y-1.5">
-
                     <a href="#" id="nav-appointments"
                         class="flex items-center space-x-3 bg-indigo-500/10 text-indigo-400 px-4 py-2.5 rounded-xl text-sm font-semibold border border-indigo-500/20 shadow-inner cursor-pointer transition-all">
                         <svg class="w-4 h-4 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -61,7 +65,6 @@
                         </svg>
                         <span>Staff Management</span>
                     </a>
-
                 </div>
             </nav>
         </div>
@@ -94,7 +97,7 @@
             <div id="connection-status"
                 class="flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs px-3 py-1.5 rounded-full font-medium">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Secure Secure Channel Online</span>
+                <span>Secure Channel Online</span>
             </div>
         </header>
 
@@ -114,7 +117,6 @@
         </section>
 
         <section class="grid grid-cols-1 xl:grid-cols-3 gap-8">
-
             <div class="xl:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
                 <div class="p-6 border-b border-slate-800 flex justify-between items-center">
                     <h3 class="font-bold text-sm uppercase tracking-wider text-slate-300">Live Appointment Queue</h3>
@@ -149,6 +151,20 @@
                     <h3 class="font-bold text-sm uppercase tracking-wider text-slate-300">Onboard Clinical Staff</h3>
                     <p class="text-[11px] text-slate-500">Register a new medical practitioner into your database
                         context.</p>
+                </div>
+
+                <div id="pin-reveal-box"
+                    class="hidden bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl space-y-2">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">🛡️ Generated Access
+                        Credentials</p>
+                    <div
+                        class="flex items-center justify-between bg-slate-950 px-3 py-2 rounded-lg border border-slate-800">
+                        <span class="text-xs text-slate-400 font-mono">Assigned PIN:</span>
+                        <span id="generated-pin-display"
+                            class="text-sm font-mono font-black text-white tracking-widest">------</span>
+                    </div>
+                    <p class="text-[9px] text-slate-400 leading-relaxed">Provide this static PIN to the onboarding staff
+                        member. They will need it alongside their work email to log in.</p>
                 </div>
 
                 <form id="add-staff-form" class="space-y-3">
@@ -196,7 +212,6 @@
                     </button>
                 </form>
             </div>
-
         </section>
     </main>
 
