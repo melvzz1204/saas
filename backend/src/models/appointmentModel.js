@@ -8,10 +8,17 @@ const appointmentSchema = new mongoose.Schema(
       ref: "Clinic",
       required: true,
     },
+    // ⚠️ Changed to optional: Walk-ins might not have an app account yet!
     patientId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // Points to your patient/user record
-      required: true,
+      ref: "User",
+    },
+    // 🚀 NEW: Store basic info for walk-ins who aren't registered users
+    patientName: {
+      type: String,
+    },
+    phone: {
+      type: String,
     },
     service: {
       type: String,
@@ -22,28 +29,50 @@ const appointmentSchema = new mongoose.Schema(
         "Root Canal Treatment",
         "Dental Braces Adjustment",
         "Teeth Whitening",
+        "Walk-In Consult", // 🚀 NEW: Added to allow fast-track walk-ins
       ],
     },
     date: {
-      type: String, // Storing as YYYY-MM-DD for simple UI formatting
-      required: true,
+      type: String,
+      // ⚠️ Changed to optional: Walk-ins don't book a specific future date
     },
     time: {
-      type: String, // Storing slot names like "09:00 AM"
-      required: true,
+      type: String,
+      // ⚠️ Changed to optional: Walk-ins don't have a scheduled slot
     },
+
+    // 🔄 UNIFIED STATUS: Combined your booking statuses with the live-flow statuses
     status: {
       type: String,
       required: true,
-      enum: ["Pending", "Approved", "Declined"],
+      enum: [
+        "Pending", // Web booking waiting for approval
+        "Approved", // Web booking confirmed
+        "Declined", // Web booking rejected
+        "checked-in", // Patient is in the lobby
+        "in-treatment", // Patient is in the chair
+        "completed", // Session finished
+        "cancelled", // Patient left or cancelled
+      ],
       default: "Pending",
     },
+
     notes: {
       type: String,
       default: "",
     },
+
+    // 🚀 NEW: Walk-in specific tracking
+    isWalkIn: {
+      type: Boolean,
+      default: false,
+    },
+    checkInTime: {
+      type: Date,
+      default: Date.now,
+    },
   },
-  { timestamps: true },
+  { timestamps: true }, // Keeps createdAt and updatedAt working
 );
 
 export default mongoose.model("Appointment", appointmentSchema);

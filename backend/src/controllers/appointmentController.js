@@ -2,8 +2,6 @@
 import mongoose from "mongoose";
 import Appointment from "../models/appointmentModel.js";
 
-// @desc     Book a new appointment
-// @route    POST /api/v1/appointments/book
 export const bookAppointment = async (req, res) => {
   try {
     const { patientId, service, date, time } = req.body;
@@ -93,12 +91,6 @@ export const getPatientAppointments = async (req, res) => {
   }
 };
 
-// =========================================================================
-// 🏢 ADMINISTRATIVE WORKSPACE CONTROLLERS (ADDED FOR ADMIN DASHBOARD SYNC)
-// =========================================================================
-
-// @desc     Get all appointments for a specific clinic location (Multi-Tenant Isolated)
-// @route    GET /api/v1/admin/appointments
 export const getAdminAppointments = async (req, res) => {
   try {
     // Read the isolating multi-tenant header directly out of the incoming request pipeline
@@ -131,8 +123,6 @@ export const getAdminAppointments = async (req, res) => {
   }
 };
 
-// @desc     Modify scheduling statuses (Confirm or Cancel appointments)
-// @route    PATCH /api/v1/admin/appointments/:appointmentId
 export const modifyAppointmentStatus = async (req, res) => {
   try {
     const { appointmentId } = req.params;
@@ -173,5 +163,82 @@ export const modifyAppointmentStatus = async (req, res) => {
       error.message,
     );
     return res.status(500).json({ success: false, message: error.message });
+  }
+};
+// 1. Fetch all appointments for the dashboard
+export const getTodayAppointments = async (req, res) => {
+  try {
+    // Get today's date formatted EXACTLY like your database string ("YYYY-MM-DD")
+    const today = new Date();
+    const dateString = today.toISOString().split("T")[0]; // Creates e.g. "2026-06-07"
+
+    // Fetch appointments that are today OR in the future, including "Approved"
+    // 🚀 FIX: Added .populate() to hydrate patientId with user account fields
+    const allAppointments = await Appointment.find({
+      date: { $gte: dateString }, // Lexicographical string comparison works great for YYYY-MM-DD
+      status: {
+        $in: ["Approved", "pending", "checked-in", "in-treatment", "completed"],
+      },
+    })
+      .populate({
+        path: "patientId",
+        select: "firstName lastName", // Pulls only these fields from the User collection
+      })
+      .sort({ date: 1, time: 1 });
+
+    return res
+      .status(200)
+      .json({ success: true, appointments: allAppointments });
+  } catch (error) {
+    console.error("Error fetching board data:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Server error fetching board data" });
+  }
+};
+
+// 2. Add a new walk-in patient
+export const createWalkInAppointment = async (req, res) => {
+  try {
+    const { patientName, treatmentName, clinicId } = req.body;
+
+    const newWalkIn = await Appointment.create({
+      patientName,
+      treatmentName: treatmentName || "Walk-In Consult",
+      clinicId,
+      isWalkIn: true,
+      status: "checked-in",
+      time: "WALK-IN",
+      service: "Walk-In Consult",
+    });
+
+    return res.status(201).json({ success: true, appointment: newWalkIn });
+  } catch (error) {
+    console.error("Walk-in creation error:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Server error handling walk-in." });
+  }
+};
+
+// 3. Update Status (Moving cards on the Kanban board)
+export const updateAppointmentStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const updated = await Appointment.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true },
+    );
+
+    if (!updated)
+      return res.status(404).json({ success: false, message: "Not found" });
+    return res.status(200).json({ success: true, appointment: updated });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: "Error updating status" });
   }
 };

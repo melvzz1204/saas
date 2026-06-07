@@ -1,14 +1,263 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>ClinicFlow SaaS | Streamline Your Patient Operations</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 
-<body>
-    <h1>this is the landing page</h1>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-blue-500 selection:text-white">
+
+    <nav class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-3">
+                    <div
+                        class="w-9 h-9 bg-blue-600 text-white rounded-xl flex items-center justify-center text-lg font-black shadow-md shadow-blue-200">
+                        🩺
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-black text-base tracking-tight text-slate-950">ClinicFlow</span>
+                        <span class="text-[9px] font-black text-blue-600 uppercase tracking-widest -mt-1">SaaS
+                            Workspace</span>
+                    </div>
+                </div>
+
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#features"
+                        class="text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors uppercase tracking-wider">Features</a>
+                    <a href="#workflow"
+                        class="text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors uppercase tracking-wider">System
+                        Flow</a>
+                    <a href="#pricing"
+                        class="text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors uppercase tracking-wider">Pricing</a>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <a href="/clinicLogin.html"
+                        class="px-4 py-2 hover:bg-slate-100 text-slate-700 text-xs font-black rounded-xl transition-all uppercase tracking-wider">
+                        Login
+                    </a>
+                    <a href="#pricing"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl transition-all shadow-md shadow-blue-200 uppercase tracking-wider text-center">
+                        Get Started
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <header class="relative overflow-hidden py-20 lg:py-32 bg-linear-to-b from-white to-slate-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center max-w-3xl mx-auto space-y-6">
+                <span
+                    class="inline-flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/60 uppercase tracking-wider animate-pulse">
+                    🚀 Next-Gen Clinic Operations Matrix
+                </span>
+                <h1 class="text-4xl sm:text-6xl font-black tracking-tight text-slate-950 leading-tight">
+                    Eliminate clinic chaos. <br>
+                    <span class="bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-indigo-600">Automate your
+                        patient flow.</span>
+                </h1>
+                <p class="text-base sm:text-lg text-slate-600 font-medium max-w-2xl mx-auto">
+                    A lightweight, real-time Kanban dashboard engineered for modern dental and medical practices. Manage
+                    appointments, process unexpected walk-ins, and orchestrate patient transitions instantly.
+                </p>
+                <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <a href="#pricing"
+                        class="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm rounded-xl transition-all shadow-lg shadow-blue-200 uppercase tracking-wider text-center">
+                        Get Started Today
+                    </a>
+                    <a href="#workflow"
+                        class="w-full sm:w-auto px-8 py-4 bg-white hover:bg-slate-50 text-slate-700 font-black text-sm rounded-xl transition-all border border-slate-200 uppercase tracking-wider text-center shadow-xs">
+                        See How It Works
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section id="features" class="py-20 bg-white border-y border-slate-200/60">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16 space-y-3">
+                <p class="text-[10px] font-black uppercase text-blue-600 tracking-widest">Built For Velocity</p>
+                <h2 class="text-2xl sm:text-4xl font-black text-slate-950 tracking-tight">Everything you need to keep
+                    chairs full</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div
+                    class="p-6 bg-slate-50 rounded-2xl border border-slate-200/60 group hover:border-blue-500 hover:bg-white transition-all duration-300 shadow-xs">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold mb-5 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                        📋</div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">Real-Time Kanban Matrix</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed font-medium">Visual queue system designed to update
+                        without manual screen refreshes. Move appointments fluidly through statuses.</p>
+                </div>
+
+                <div
+                    class="p-6 bg-slate-50 rounded-2xl border border-slate-200/60 group hover:border-blue-500 hover:bg-white transition-all duration-300 shadow-xs">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl font-bold mb-5 group-hover:bg-amber-600 group-hover:text-white transition-all">
+                        🚨</div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">Instant Walk-In Engine</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed font-medium">Unscheduled patients arrived? Inject
+                        them instantly into the live lobby tracking system without disrupting booked slots.</p>
+                </div>
+
+                <div
+                    class="p-6 bg-slate-50 rounded-2xl border border-slate-200/60 group hover:border-blue-500 hover:bg-white transition-all duration-300 shadow-xs">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl font-bold mb-5 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                        📅</div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">Advanced Future Sorting</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed font-medium">Organize future calendars on the fly.
+                        Dynamically group views by flat list timelines, per-day grids, or month-by-month overviews.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="workflow" class="py-20 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16 space-y-3">
+                <p class="text-[10px] font-black uppercase text-blue-600 tracking-widest">Seamless Transitions</p>
+                <h2 class="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">How the core patient flow
+                    system runs</h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
+                <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-xs relative">
+                    <div
+                        class="absolute -top-4 left-6 w-8 h-8 rounded-lg bg-slate-900 text-white font-black text-xs flex items-center justify-center">
+                        1</div>
+                    <div class="pt-2 space-y-3">
+                        <span
+                            class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-md uppercase tracking-wider inline-block">Lobby
+                            Queue</span>
+                        <h4 class="text-base font-bold text-slate-900">Check-In & Seat Patient</h4>
+                        <p class="text-xs text-slate-600 leading-relaxed font-medium">Scheduled bookings or manual
+                            walk-ins safely register into the initial operational queue layer. Counters monitor overall
+                            lobby congestion metrics.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-xs relative">
+                    <div
+                        class="absolute -top-4 left-6 w-8 h-8 rounded-lg bg-blue-600 text-white font-black text-xs flex items-center justify-center">
+                        2</div>
+                    <div class="pt-2 space-y-3">
+                        <span
+                            class="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md uppercase tracking-wider inline-block animate-pulse">In
+                            Treatment</span>
+                        <h4 class="text-base font-bold text-slate-900">Call to Chair Transition</h4>
+                        <p class="text-xs text-slate-600 leading-relaxed font-medium">With a single action trigger, the
+                            staff elevates the patient status to active treatment. The record migrates across columns
+                            immediately via state patching vectors.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-xs relative">
+                    <div
+                        class="absolute -top-4 left-6 w-8 h-8 rounded-lg bg-slate-900 text-white font-black text-xs flex items-center justify-center">
+                        3</div>
+                    <div class="pt-2 space-y-3">
+                        <span
+                            class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md uppercase tracking-wider inline-block">Checked
+                            Out</span>
+                        <h4 class="text-base font-bold text-slate-900">Finalize Procedure</h4>
+                        <p class="text-xs text-slate-600 leading-relaxed font-medium">Once operations finish, staff
+                            records checkout logs. The analytics layer hydrates real-time dashboard tracking stats for
+                            daily operational metrics.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="pricing" class="py-20 bg-white border-t border-slate-200/60">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16 space-y-3">
+                <p class="text-[10px] font-black uppercase text-blue-600 tracking-widest">Transparent Structure</p>
+                <h2 class="text-2xl sm:text-4xl font-black text-slate-950 tracking-tight">One simple pricing plan for
+                    everyone</h2>
+                <p class="text-sm font-medium text-slate-600">No surprises, no hidden setup surcharges, no multi-tiered
+                    feature gates.</p>
+            </div>
+
+            <div
+                class="max-w-md mx-auto bg-slate-900 text-white rounded-3xl p-8 shadow-xl border border-slate-800 relative overflow-hidden">
+                <div class="absolute -right-16 -top-16 w-36 h-36 bg-blue-600 rounded-full blur-2xl opacity-40"></div>
+
+                <div class="space-y-6 relative z-10">
+                    <div class="flex items-center justify-between">
+                        <span
+                            class="text-xs font-black bg-blue-600 text-white px-3 py-1 rounded-md uppercase tracking-wider">All-Access
+                            Pass</span>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Per Branch /
+                            Month</span>
+                    </div>
+
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-5xl font-black tracking-tight">₱1,500</span>
+                        <span class="text-xs font-medium text-slate-400">/ monthly flat fee</span>
+                    </div>
+
+                    <p class="text-xs text-slate-400 leading-relaxed font-medium">
+                        Complete integration infrastructure deployment designed to unlock absolute terminal feature
+                        functionality for your frontline dental or medical practice workspace staff.
+                    </p>
+
+                    <hr class="border-slate-800">
+
+                    <ul class="space-y-3.5 text-xs font-bold text-slate-200">
+                        <li class="flex items-center gap-3">
+                            <span class="text-blue-500 text-base">✓</span> Live Real-time Kanban Workspace Columns
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="text-blue-500 text-base">✓</span> Instant Automated User Record Hydration
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="text-blue-500 text-base">✓</span> Walk-in Injection Engine Module Forms
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="text-blue-500 text-base">✓</span> Dynamic Future Scheduling Segment Filters
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="text-blue-500 text-base">✓</span> Unlimited Patient Profiles & Chart
+                            Generations
+                        </li>
+                    </ul>
+
+                    <div class="pt-4">
+                        <button
+                            class="w-full bg-white hover:bg-slate-100 text-slate-950 font-black text-xs py-3.5 rounded-xl transition-all uppercase tracking-wider shadow-md cursor-pointer">
+                            Deploy Workspace Instance
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-slate-950 text-slate-500 text-xs py-12 border-t border-slate-900">
+        <div
+            class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div class="flex items-center space-x-3">
+                <div
+                    class="w-7 h-7 bg-slate-900 text-slate-400 border border-slate-800 rounded-lg flex items-center justify-center text-xs font-black">
+                    🩺
+                </div>
+                <span class="font-black text-slate-300 tracking-tight">ClinicFlow Platform Matrix</span>
+            </div>
+            <p class="font-medium text-[11px] text-slate-600">&copy; 2026 ClinicFlow Inc. All platform operations
+                telemetry active.</p>
+        </div>
+    </footer>
+
 </body>
 
 </html>

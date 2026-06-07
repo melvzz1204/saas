@@ -16,7 +16,8 @@
                 <div class="flex items-center space-x-3">
                     <div
                         class="w-9 h-9 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl flex items-center justify-center text-sm font-black shadow-xs">
-                        🩺</div>
+                        🩺
+                    </div>
                     <div class="flex flex-col">
                         <span id="clinic-branch-title" class="font-bold text-sm tracking-tight text-slate-900">Loading
                             Workspace...</span>
@@ -24,17 +25,23 @@
                             Operations Flow</span>
                     </div>
                 </div>
+
                 <div class="flex items-center space-x-4">
+                    <button id="btn-toggle-upcoming"
+                        class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm cursor-pointer">
+                        📅 View Upcoming Bookings
+                    </button>
+                    <button id="staff-logout-btn"
+                        class="px-3.5 py-1.5 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 text-xs font-bold rounded-xl transition-all cursor-pointer border border-slate-200/40">
+                        Exit Shift
+                    </button>
                     <div
                         class="flex items-center space-x-2 bg-slate-100 border border-slate-200/40 px-3 py-1.5 rounded-xl">
                         <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
                         <span id="staff-name-badge" class="text-xs font-bold text-slate-700">Loading Duty
                             Staff...</span>
                     </div>
-                    <button id="staff-logout-btn"
-                        class="px-3.5 py-1.5 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 text-xs font-bold rounded-xl transition-all cursor-pointer border border-slate-200/40">
-                        Exit Shift
-                    </button>
+
                 </div>
             </div>
         </div>
@@ -67,17 +74,21 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full items-start">
-
             <div class="bg-slate-100/50 border border-slate-200 rounded-2xl p-4 flex flex-col h-[650px]">
                 <div class="flex items-center justify-between mb-4 px-1">
                     <h3 class="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-amber-500"></span> Lobby / Waiting
                     </h3>
-                    <span id="count-waiting"
-                        class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
+                    <div class="flex items-center gap-2">
+                        <span id="count-waiting"
+                            class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
+                        <button id="btn-open-walkin"
+                            class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold px-2 py-1 rounded-md transition-colors cursor-pointer shadow-sm">
+                            + Walk-In
+                        </button>
+                    </div>
                 </div>
-                <div id="col-waiting" class="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-hide">
-                </div>
+                <div id="col-waiting" class="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-hide"></div>
             </div>
 
             <div class="bg-blue-50/30 border border-blue-100 rounded-2xl p-4 flex flex-col h-[650px]">
@@ -88,8 +99,7 @@
                     <span id="count-treatment"
                         class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
                 </div>
-                <div id="col-treatment" class="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-hide">
-                </div>
+                <div id="col-treatment" class="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-hide"></div>
             </div>
 
             <div class="bg-emerald-50/30 border border-emerald-100 rounded-2xl p-4 flex flex-col h-[650px]">
@@ -100,12 +110,73 @@
                     <span id="count-completed"
                         class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
                 </div>
-                <div id="col-completed" class="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-hide">
+                <div id="col-completed" class="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-hide"></div>
+            </div>
+        </div>
+    </main>
+
+    <div id="walkin-modal"
+        class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200">
+            <div class="bg-slate-50 border-b border-slate-100 p-4 flex justify-between items-center">
+                <h3 class="font-black text-slate-800 text-sm uppercase tracking-wide">Register Walk-In</h3>
+                <button id="btn-close-walkin"
+                    class="text-slate-400 hover:text-rose-500 font-bold cursor-pointer">✕</button>
+            </div>
+            <form id="form-walkin" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Patient
+                        Name</label>
+                    <input type="text" id="walkin-name" required
+                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Primary
+                        Issue / Reason</label>
+                    <input type="text" id="walkin-reason" placeholder="e.g., Toothache, Checkup" required
+                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <button type="submit"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 rounded-xl transition-all shadow-md cursor-pointer uppercase tracking-wider mt-2">
+                    Seat in Lobby
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="upcoming-modal"
+        class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div
+            class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+
+            <div
+                class="p-4 border-b border-slate-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50">
+                <div class="flex items-center gap-3">
+                    <h3 class="text-base font-black text-slate-900 flex items-center gap-2 uppercase tracking-wide">
+                        📅 Future Appointments Schedule
+                    </h3>
+                </div>
+                <div class="flex items-center gap-2.5 self-end sm:self-auto">
+                    <label for="filter-upcoming-range"
+                        class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Group By:</label>
+                    <select id="filter-upcoming-range"
+                        class="bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-3 py-1.5 shadow-xs focus:outline-none focus:border-blue-500 cursor-pointer">
+                        <option value="chronological">Chronological List</option>
+                        <option value="day">Per Day Grid</option>
+                        <option value="month">Per Month Timeline</option>
+                    </select>
+                    <button id="btn-close-upcoming"
+                        class="text-slate-400 hover:text-rose-500 ml-1 px-2 py-1 text-base font-black rounded-lg transition-colors leading-none cursor-pointer">
+                        ✕
+                    </button>
                 </div>
             </div>
 
+            <div class="p-6 overflow-y-auto flex-1 bg-slate-50/40">
+                <div id="upcoming-table-container"></div>
+            </div>
         </div>
-    </main>
+    </div>
 
     <script>
         (function () {
