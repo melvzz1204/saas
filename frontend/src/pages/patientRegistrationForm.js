@@ -1,116 +1,129 @@
-// /src/pages/patientRegistrationForm.js
+/**
+ * Patient Modal Registration Controller
+ * Location Path: /src/pages/patientRegistrationForm.js
+ */
 
-// 🎯 FIX: Declare both contextClinicId and urlParams globally at the top level
-let contextClinicId = null;
-const urlParams = new URLSearchParams(window.location.search);
+const URL_PARAMS_CONTEXT = new URLSearchParams(window.location.search);
+const CLINIC_SLUG_TOKEN = URL_PARAMS_CONTEXT.get("clinic");
+const API_GATEWAY_NODE = "http://localhost:5000";
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const titleElement = document.getElementById("clinic-title");
-  const formElement = document.getElementById("registration-form");
+  const registrationForm = document.getElementById("registration-form");
+  const modalTitle = document.getElementById("modal-clinic-title");
+  let resolvedTenantId = null;
 
-  const clinicSlug = urlParams.get("clinic");
-
-  if (!clinicSlug) {
-    showBanner(
-      "Invalid Portal Link: Missing workspace identifier code.",
+  if (!CLINIC_SLUG_TOKEN) {
+    showModalBanner(
+      "Configuration Failure: Missing operational clinical slug context parameters.",
       "error",
     );
-    titleElement.textContent = "Access Portal Error";
-    formElement.style.pointerEvents = "none";
-    formElement.style.opacity = "0.3";
+    disableRegistrationState(registrationForm);
     return;
   }
 
-  // 2. Fetch the true Clinic Data from your backend tenant router via Slug lookup
+  // 1. Resolve tenant identity details to bind the incoming account cleanly
   try {
     const response = await fetch(
-      `http://localhost:5000/api/v1/tenants/slug/${clinicSlug}`,
+      `${API_GATEWAY_NODE}/api/v1/tenants/slug/${CLINIC_SLUG_TOKEN}`,
     );
     const result = await response.json();
 
     if (result.success && result.data) {
-      contextClinicId = result.data._id; // 🔗 Safely store your bound Mongo clinicId
-      titleElement.textContent = `${result.data.name} Patient Portal`;
+      resolvedTenantId = result.data._id;
+      if (modalTitle) modalTitle.textContent = `Join ${result.data.name}`;
     } else {
-      throw new Error(
-        "Specified clinic workspace does not exist inside our SaaS directory.",
-      );
+      throw new Error("The requested clinic directory node is unregistered.");
     }
-  } catch (error) {
-    showBanner(error.message, "error");
-    titleElement.textContent = "Portal Offline";
-    formElement.style.pointerEvents = "none";
-    formElement.style.opacity = "0.3";
+  } catch (err) {
+    showModalBanner(err.message, "error");
+    disableRegistrationState(registrationForm);
     return;
   }
 
-  // 3. Attach Submit Request Listener to Form
-  formElement.addEventListener("submit", handlePatientSubmit);
+  // 2. Form Submission Pipeline Interceptor
+  if (registrationForm) {
+    registrationForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById("submit-btn");
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Compiling Secure Record...";
+      }
+
+      // Collect inputs using your exact layout IDs
+      const payload = {
+        firstName: document.getElementById("firstName").value.trim(),
+        lastName: document.getElementById("lastName").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        dateOfBirth: document.getElementById("dateOfBirth").value,
+        password: document.getElementById("password").value,
+        role: "PATIENT",
+      };
+
+      try {
+        const response = await fetch(
+          `${API_GATEWAY_NODE}/api/v1/patients/register`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-clinic-id": resolvedTenantId,
+            },
+            body: JSON.stringify(payload),
+          },
+        );
+
+        const result = await response.json();
+
+        if (response.ok && (result.success || result.data)) {
+          // 🎯 Targets your exact visual modal notice text container element!
+          showModalBanner(
+            "✓ Registration successfully. Routing to login page.",
+            "success",
+          );
+
+          // Clear text entries immediately
+          registrationForm.reset();
+
+          // ⏳ Let them see the validation indicator, then pull the modal view down smoothly
+          setTimeout(() => {
+            const registerModal = document.getElementById("register-modal");
+            if (registerModal) {
+              registerModal.classList.add("hidden");
+              document.body.classList.remove("overflow-hidden");
+            }
+
+            // Clean modal banner state quietly for their next portal access cycle
+            const modalBanner = document.getElementById(
+              "registration-status-banner",
+            );
+            if (modalBanner) modalBanner.classList.add("hidden");
+
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = "Register Account";
+            }
+          }, 2500);
+        } else {
+          showModalBanner(
+            `Processing Blocked: ${result.message || "Invalid account payload dimensions."}`,
+            "error",
+          );
+          resetSubmitButton(submitBtn);
+        }
+      } catch (error) {
+        showModalBanner(error.message, "error");
+        resetSubmitButton(submitBtn);
+      }
+    });
+  }
 });
 
-// 🚀 Form Submission Handler
-async function handlePatientSubmit(e) {
-  e.preventDefault();
-
-  const submitBtn = document.getElementById("submit-btn");
-  submitBtn.disabled = true;
-  submitBtn.textContent = "Processing Registration...";
-
-  // Construct payload, injecting the dynamically resolved contextClinicId
-  const payload = {
-    clinicId: contextClinicId,
-    firstName: document.getElementById("firstName").value,
-    lastName: document.getElementById("lastName").value,
-    email: document.getElementById("email").value,
-    phone: document.getElementById("phone").value,
-    dateOfBirth: document.getElementById("dateOfBirth").value,
-    password: document.getElementById("password").value,
-    role: "PATIENT",
-  };
-
-  try {
-    // Fire straight into your app's patient entry route file
-    const response = await fetch(
-      "http://localhost:5000/api/v1/patients/register",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Clinic-ID": contextClinicId,
-        },
-        body: JSON.stringify(payload),
-      },
-    );
-
-    const result = await response.json();
-
-    if (result.success) {
-      showBanner(
-        "🎉 Registration complete! Redirecting to login context...",
-        "success",
-      );
-      document.getElementById("registration-form").reset();
-
-      // Smooth handoff to your system login portal after 2.5 seconds
-      setTimeout(() => {
-        // 🎯 Safely reads urlParams globally now with no reference errors!
-        window.location.href = `/patientLogin.html?clinic=${urlParams.get("clinic") || ""}`;
-      }, 2500);
-    } else {
-      showBanner(`Registration Blocked: ${result.message}`, "error");
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Register Account Node";
-    }
-  } catch (error) {
-    showBanner(`Network Connection Failed: ${error.message}`, "error");
-    submitBtn.disabled = false;
-    submitBtn.textContent = "Register Account Node";
-  }
-}
-
-// UI helper to toggle styling on notification banners
-function showBanner(text, type) {
-  const banner = document.getElementById("status-banner");
+// Dynamic Banner Injection Engine mapped directly to your modal layer selector
+function showModalBanner(text, type) {
+  const banner = document.getElementById("registration-status-banner"); // ✅ FIX: Target correct modal block
   if (!banner) return;
 
   banner.textContent = text;
@@ -139,4 +152,16 @@ function showBanner(text, type) {
       "border-emerald-500/20",
     );
   }
+}
+
+function resetSubmitButton(btn) {
+  if (!btn) return;
+  btn.disabled = false;
+  btn.textContent = "Register Account";
+}
+
+function disableRegistrationState(form) {
+  if (!form) return;
+  form.style.pointerEvents = "none";
+  form.style.opacity = "0.3";
 }
