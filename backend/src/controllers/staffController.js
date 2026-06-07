@@ -1,5 +1,6 @@
 // src/controllers/staffController.js
 import Staff from "../models/staffModel.js";
+
 import jwt from "jsonwebtoken";
 
 export const registerClinicalStaff = async (req, res) => {

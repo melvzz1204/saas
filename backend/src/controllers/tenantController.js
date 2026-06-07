@@ -4,7 +4,6 @@ import User from "../models/userModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-// 1. Unified Registration Handler
 export const registerClinicController = async (req, res) => {
   try {
     const {

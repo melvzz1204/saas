@@ -1,4 +1,3 @@
-// src/controllers/appointmentController.js
 import mongoose from "mongoose";
 import Appointment from "../models/appointmentModel.js";
 
@@ -34,7 +33,6 @@ export const bookAppointment = async (req, res) => {
       });
     }
 
-    // 3. 🛡️ DEFENSIVE SECURITY GUARD
     if (
       !mongoose.Types.ObjectId.isValid(clinicId) ||
       !mongoose.Types.ObjectId.isValid(cleanPatientId)
@@ -62,8 +60,6 @@ export const bookAppointment = async (req, res) => {
   }
 };
 
-// @desc     Get all appointments for a specific patient (Tenant Isolated via Patient Context)
-// @route    GET /api/v1/appointments/patient/:patientId
 export const getPatientAppointments = async (req, res) => {
   try {
     const { patientId } = req.params;
@@ -172,8 +168,6 @@ export const getTodayAppointments = async (req, res) => {
     const today = new Date();
     const dateString = today.toISOString().split("T")[0]; // Creates e.g. "2026-06-07"
 
-    // Fetch appointments that are today OR in the future, including "Approved"
-    // 🚀 FIX: Added .populate() to hydrate patientId with user account fields
     const allAppointments = await Appointment.find({
       date: { $gte: dateString }, // Lexicographical string comparison works great for YYYY-MM-DD
       status: {
