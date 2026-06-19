@@ -6,7 +6,7 @@ import patientRoutes from "./routes/patientRoutes.js";
 import appointmentRoutes from "./routes/appointmentRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import staffRoutes from "./routes/staffRoutes.js";
-
+import dentalServicePrice from "./routes/dentalServicePriceRoutes.js";
 dotenv.config();
 
 const app = express();
@@ -20,6 +20,7 @@ app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/patients", patientRoutes);
 app.use("/api/v1/appointments", appointmentRoutes);
 app.use("/api/v1/staff", staffRoutes);
+app.use("/api/v1/dental-price", dentalServicePrice);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "Server is running smoothly" });

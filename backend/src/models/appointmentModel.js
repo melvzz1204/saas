@@ -8,12 +8,12 @@ const appointmentSchema = new mongoose.Schema(
       ref: "Clinic",
       required: true,
     },
-    // ⚠️ Changed to optional: Walk-ins might not have an app account yet!
+    // ⚠️ Optional: Walk-ins might not have an app account yet!
     patientId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    // 🚀 NEW: Store basic info for walk-ins who aren't registered users
+    // 🚀 Store basic info for walk-ins who aren't registered users
     patientName: {
       type: String,
     },
@@ -23,25 +23,18 @@ const appointmentSchema = new mongoose.Schema(
     service: {
       type: String,
       required: true,
-      enum: [
-        "General Checkup",
-        "Tooth Extraction",
-        "Root Canal Treatment",
-        "Dental Braces Adjustment",
-        "Teeth Whitening",
-        "Walk-In Consult", // 🚀 NEW: Added to allow fast-track walk-ins
-      ],
+      trim: true, // 💡 Dynamic fallback: strips accidental whitespaces automatically!
     },
     date: {
       type: String,
-      // ⚠️ Changed to optional: Walk-ins don't book a specific future date
+      // ⚠️ Optional: Walk-ins don't book a specific future date
     },
     time: {
       type: String,
-      // ⚠️ Changed to optional: Walk-ins don't have a scheduled slot
+      // ⚠️ Optional: Walk-ins don't have a scheduled slot
     },
 
-    // 🔄 UNIFIED STATUS: Combined your booking statuses with the live-flow statuses
+    // 🔄 UNIFIED STATUS: Kept the enum here since operational steps are fixed
     status: {
       type: String,
       required: true,
@@ -62,7 +55,7 @@ const appointmentSchema = new mongoose.Schema(
       default: "",
     },
 
-    // 🚀 NEW: Walk-in specific tracking
+    // 🚀 Walk-in specific tracking
     isWalkIn: {
       type: Boolean,
       default: false,
