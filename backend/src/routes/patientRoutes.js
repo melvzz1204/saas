@@ -2,12 +2,22 @@ import express from "express";
 import {
   registerPatientController,
   loginPatientController,
+  getPatientProfileController,
+  savePatientProfileController,
 } from "../controllers/patientController.js";
-import { identifyTenant } from "../midllewares/tenantMiddleware.js";
+import { identifyTenant } from "../middlewares/tenantMiddleware.js"; // Fixed spelling typo
+import { protectPatientRoute } from "../middlewares/authMiddleware.js"; // Fixed spelling typo
 
 const router = express.Router();
+
+router.use(identifyTenant);
 
 router.post("/register", identifyTenant, registerPatientController);
 router.post("/login", identifyTenant, loginPatientController);
 
+// 📑 Clinical & Intake Profile Operations Matrix
+router
+  .route("/profile")
+  .get(identifyTenant, protectPatientRoute, getPatientProfileController)
+  .post(identifyTenant, protectPatientRoute, savePatientProfileController);
 export default router;

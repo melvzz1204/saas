@@ -41,36 +41,35 @@ export const registerUser = async (clinicId, userData) => {
   };
 };
 
+// 🔗 Inside your /services/patientService.js
 export const loginUser = async (clinicId, email, password) => {
-  // 1. Validation: Ensure both fields are present
   if (!email || !password) {
     throw new Error("Email and password are required.");
   }
 
-  // 2. Find the user by email AND clinicId (SaaS boundary rule)
   const user = await User.findOne({ clinicId, email });
   if (!user) {
     throw new Error("Invalid email or password.");
   }
 
-  // 3. Verify Password (assuming your userModel hashes passwords using bcrypt)
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
     throw new Error("Invalid email or password.");
   }
 
-  // 4. Generate a JWT Token signed with a secret key
-  // (In production, replace 'YOUR_JWT_SECRET' with process.env.JWT_SECRET)
+  // ✨ FIXED: Use process.env.JWT_SECRET so it matches your middleware validation key!
+  const secretKey = process.env.JWT_SECRET || "YOUR_JWT_SECRET";
+
   const token = jwt.sign(
     { userId: user._id, clinicId: user.clinicId, role: user.role },
-    "YOUR_JWT_SECRET",
-    { expiresIn: "1d" }, // Token lasts for 1 day
+    secretKey,
+    { expiresIn: "1d" },
   );
 
-  // 5. Return the token and user data (no password!)
   return {
     token,
     user: {
+      _id: user._id, // Keep schema naming consistent
       id: user._id,
       firstName: user.firstName,
       lastName: user.lastName,

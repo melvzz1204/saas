@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 
 <head>
     <meta charset="UTF-8">
@@ -8,176 +8,212 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen antialiased flex flex-col">
+<body
+    class="bg-zinc-950 text-zinc-100 font-sans min-h-screen antialiased flex flex-col selection:bg-blue-500/30 selection:text-blue-200">
 
-    <nav class="bg-white border-b border-slate-200/80 sticky top-0 z-50 shadow-xs">
+    <!-- Top Navigation Bar -->
+    <nav
+        class="bg-zinc-900/80 border-b border-zinc-800/60 sticky top-0 z-50 backdrop-blur-md shadow-lg shadow-black/10">
         <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
+                <!-- Branding / Workspace Identity -->
                 <div class="flex items-center space-x-3">
                     <div
-                        class="w-9 h-9 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl flex items-center justify-center text-sm font-black shadow-xs">
-                        🩺
+                        class="w-10 h-10 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl flex items-center justify-center font-semibold shadow-inner">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        </svg>
                     </div>
                     <div class="flex flex-col">
-                        <span id="clinic-branch-title" class="font-bold text-sm tracking-tight text-slate-900">Loading
+                        <span id="clinic-branch-title"
+                            class="tracking-wide font-bold text-sm text-zinc-100 uppercase">Loading
                             Workspace...</span>
-                        <span class="text-[10px] font-bold text-blue-600 uppercase tracking-widest -mt-0.5">Live
+                        <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest mt-0.5">Live
                             Operations Flow</span>
                     </div>
                 </div>
 
-                <div class="flex items-center space-x-4">
+                <!-- Session Actions & Controls -->
+                <div class="flex items-center space-x-3">
                     <button id="btn-toggle-upcoming"
-                        class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm cursor-pointer">
-                        📅 View Upcoming Bookings
+                        class="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700/80 text-zinc-200 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer border border-zinc-700/50">
+                        <svg class="w-4 h-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                        </svg>
+                        Upcoming Bookings
                     </button>
+
                     <button id="staff-logout-btn"
-                        class="px-3.5 py-1.5 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 text-xs font-bold rounded-xl transition-all cursor-pointer border border-slate-200/40">
+                        class="px-3.5 py-2 bg-zinc-800/50 hover:bg-rose-950/40 hover:text-rose-400 text-zinc-400 text-xs font-bold rounded-xl transition-all cursor-pointer border border-zinc-800">
                         Exit Shift
                     </button>
+
                     <div
-                        class="flex items-center space-x-2 bg-slate-100 border border-slate-200/40 px-3 py-1.5 rounded-xl">
-                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                        <span id="staff-name-badge" class="text-xs font-bold text-slate-700">Loading Duty
+                        class="flex items-center space-x-2 bg-zinc-900 border border-zinc-800 px-3 py-2 rounded-xl shadow-inner">
+                        <span
+                            class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                        <span id="staff-name-badge" class="text-xs font-bold text-zinc-300 uppercase">Loading Duty
                             Staff...</span>
                     </div>
-
                 </div>
             </div>
         </div>
     </nav>
 
+    <!-- Main Content Area -->
     <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 flex-1 w-full">
 
+        <!-- Metrics Dashboard Panel -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="bg-white border border-slate-200 p-4 rounded-xl shadow-sm flex items-center justify-between">
-                <div>
-                    <p class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Lobby Queue</p>
-                    <h3 id="stat-remaining" class="text-xl font-black text-slate-900">0 Waiting</h3>
+            <div
+                class="bg-zinc-900/60 border border-zinc-800/80 p-5 rounded-2xl shadow-xl flex items-center justify-between">
+                <div class="space-y-1">
+                    <p class="text-[10px] font-black uppercase text-zinc-500 tracking-wider">Lobby Queue</p>
+                    <h3 id="stat-remaining" class="text-2xl font-black text-zinc-100 tracking-tight">0 Waiting</h3>
                 </div>
-                <div class="p-3 bg-amber-50 text-amber-600 rounded-xl text-xl font-bold">🛋️</div>
+                <div class="p-3 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-xl text-xl">🛋️</div>
             </div>
-            <div class="bg-white border border-slate-200 p-4 rounded-xl shadow-sm flex items-center justify-between">
-                <div>
-                    <p class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Active Operations</p>
-                    <h3 id="stat-active-chair" class="text-xl font-black text-slate-900">0 In Chair</h3>
+            <div
+                class="bg-zinc-900/60 border border-zinc-800/80 p-5 rounded-2xl shadow-xl flex items-center justify-between">
+                <div class="space-y-1">
+                    <p class="text-[10px] font-black uppercase text-zinc-500 tracking-wider">Active Operations</p>
+                    <h3 id="stat-active-chair" class="text-2xl font-black text-zinc-100 tracking-tight">0 In Chair</h3>
                 </div>
-                <div class="p-3 bg-blue-50 text-blue-600 rounded-xl text-xl font-bold">🪑</div>
+                <div class="p-3 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl text-xl">🪑</div>
             </div>
-            <div class="bg-white border border-slate-200 p-4 rounded-xl shadow-sm flex items-center justify-between">
-                <div>
-                    <p class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Completed Today</p>
-                    <h3 id="stat-completed" class="text-xl font-black text-slate-900">0 Sessions</h3>
+            <div
+                class="bg-zinc-900/60 border border-zinc-800/80 p-5 rounded-2xl shadow-xl flex items-center justify-between">
+                <div class="space-y-1">
+                    <p class="text-[10px] font-black uppercase text-zinc-500 tracking-wider">Completed Today</p>
+                    <h3 id="stat-completed" class="text-2xl font-black text-zinc-100 tracking-tight">0 Sessions</h3>
                 </div>
-                <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl text-xl font-bold">✅</div>
+                <div class="p-3 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl text-xl">✅
+                </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full items-start">
-            <div class="bg-slate-100/50 border border-slate-200 rounded-2xl p-4 flex flex-col h-[650px]">
-                <div class="flex items-center justify-between mb-4 px-1">
-                    <h3 class="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-amber-500"></span> Lobby / Waiting
+        <!-- Kanban Process Columns -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <!-- Column: Waiting -->
+            <div class="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-4 flex flex-col h-[680px] shadow-lg">
+                <div class="flex items-center justify-between mb-4 px-1 pb-2 border-b border-zinc-800/50">
+                    <h3 class="text-xs font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
+                        Lobby / Waiting
                     </h3>
                     <div class="flex items-center gap-2">
                         <span id="count-waiting"
-                            class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
+                            class="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-black px-2 py-0.5 rounded-md">0</span>
                         <button id="btn-open-walkin"
-                            class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold px-2 py-1 rounded-md transition-colors cursor-pointer shadow-sm">
+                            class="bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-md transition-colors cursor-pointer shadow-sm">
                             + Walk-In
                         </button>
                     </div>
                 </div>
-                <div id="col-waiting" class="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-hide"></div>
+                <div id="col-waiting"
+                    class="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-thin scrollbar-thumb-zinc-800"></div>
             </div>
 
-            <div class="bg-blue-50/30 border border-blue-100 rounded-2xl p-4 flex flex-col h-[650px]">
-                <div class="flex items-center justify-between mb-4 px-1">
-                    <h3 class="text-sm font-black text-blue-900 uppercase tracking-wider flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span> In Treatment
+            <!-- Column: In Treatment -->
+            <div class="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-4 flex flex-col h-[680px] shadow-lg">
+                <div class="flex items-center justify-between mb-4 px-1 pb-2 border-b border-zinc-800/50">
+                    <h3 class="text-xs font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                        <span
+                            class="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
+                        In Treatment
                     </h3>
                     <span id="count-treatment"
-                        class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
+                        class="bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-black px-2 py-0.5 rounded-md">0</span>
                 </div>
-                <div id="col-treatment" class="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-hide"></div>
+                <div id="col-treatment"
+                    class="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-thin scrollbar-thumb-zinc-800"></div>
             </div>
 
-            <div class="bg-emerald-50/30 border border-emerald-100 rounded-2xl p-4 flex flex-col h-[650px]">
-                <div class="flex items-center justify-between mb-4 px-1">
-                    <h3 class="text-sm font-black text-emerald-900 uppercase tracking-wider flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Checked Out
+            <!-- Column: Checked Out -->
+            <div class="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-4 flex flex-col h-[680px] shadow-lg">
+                <div class="flex items-center justify-between mb-4 px-1 pb-2 border-b border-zinc-800/50">
+                    <h3 class="text-xs font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                        Checked Out
                     </h3>
                     <span id="count-completed"
-                        class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
+                        class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-black px-2 py-0.5 rounded-md">0</span>
                 </div>
-                <div id="col-completed" class="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-hide"></div>
+                <div id="col-completed"
+                    class="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-thin scrollbar-thumb-zinc-800"></div>
             </div>
         </div>
     </main>
 
+    <!-- Modal: Register Walk-In -->
     <div id="walkin-modal"
-        class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200">
-            <div class="bg-slate-50 border-b border-slate-100 p-4 flex justify-between items-center">
-                <h3 class="font-black text-slate-800 text-sm uppercase tracking-wide">Register Walk-In</h3>
+        class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-4 transition-all">
+        <div
+            class="bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-zinc-800 animate-in fade-in zoom-in-95 duration-150">
+            <div class="bg-zinc-900/50 border-b border-zinc-800 p-4 flex justify-between items-center">
+                <h3 class="font-black text-zinc-200 text-xs uppercase tracking-widest">Register Walk-In</h3>
                 <button id="btn-close-walkin"
-                    class="text-slate-400 hover:text-rose-500 font-bold cursor-pointer">✕</button>
+                    class="text-zinc-500 hover:text-rose-400 font-bold cursor-pointer transition-colors">✕</button>
             </div>
             <form id="form-walkin" class="p-5 space-y-4">
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Patient
+                    <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-wider mb-1.5">Patient
                         Name</label>
                     <input type="text" id="walkin-name" required
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        class="w-full text-sm bg-zinc-950 border border-zinc-800 text-zinc-100 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:outline-none transition-all placeholder-zinc-700">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Primary
+                    <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-wider mb-1.5">Primary
                         Issue / Reason</label>
                     <input type="text" id="walkin-reason" placeholder="e.g., Toothache, Checkup" required
-                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        class="w-full text-sm bg-zinc-950 border border-zinc-800 text-zinc-100 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:outline-none transition-all placeholder-zinc-600">
                 </div>
                 <button type="submit"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 rounded-xl transition-all shadow-md cursor-pointer uppercase tracking-wider mt-2">
+                    class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs py-3 rounded-xl transition-all shadow-lg active:scale-[0.98] uppercase tracking-wider mt-2 cursor-pointer">
                     Seat in Lobby
                 </button>
             </form>
         </div>
     </div>
 
+    <!-- Modal: Future Appointments Schedule -->
     <div id="upcoming-modal"
-        class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-4 transition-all">
         <div
-            class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
-
+            class="bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden border border-zinc-800 animate-in fade-in zoom-in-95 duration-150">
             <div
-                class="p-4 border-b border-slate-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50">
+                class="p-4 border-b border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-zinc-900/50">
                 <div class="flex items-center gap-3">
-                    <h3 class="text-base font-black text-slate-900 flex items-center gap-2 uppercase tracking-wide">
-                        📅 Future Appointments Schedule
+                    <h3 class="text-xs font-black text-zinc-200 flex items-center gap-2 uppercase tracking-widest">
+                        Future Appointments Schedule
                     </h3>
                 </div>
                 <div class="flex items-center gap-2.5 self-end sm:self-auto">
                     <label for="filter-upcoming-range"
-                        class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Group By:</label>
+                        class="text-[10px] font-black text-zinc-500 uppercase tracking-wider">Group By:</label>
                     <select id="filter-upcoming-range"
-                        class="bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-3 py-1.5 shadow-xs focus:outline-none focus:border-blue-500 cursor-pointer">
+                        class="bg-zinc-950 border border-zinc-800 text-zinc-300 text-xs font-bold rounded-xl px-3 py-2 shadow-inner focus:outline-none focus:border-blue-500 cursor-pointer transition-all">
                         <option value="chronological">Sort</option>
                         <option value="day">Per Day Timeline</option>
                         <option value="month">Per Month Timeline</option>
                     </select>
                     <button id="btn-close-upcoming"
-                        class="text-slate-400 hover:text-rose-500 ml-1 px-2 py-1 text-base font-black rounded-lg transition-colors leading-none cursor-pointer">
+                        class="text-zinc-500 hover:text-rose-400 ml-1 p-2 text-base font-bold rounded-lg transition-colors leading-none cursor-pointer">
                         ✕
                     </button>
                 </div>
             </div>
 
-            <div class="p-6 overflow-y-auto flex-1 bg-slate-50/40">
+            <div class="p-6 overflow-y-auto flex-1 bg-zinc-950/40 scrollbar-thin scrollbar-thumb-zinc-800">
                 <div id="upcoming-table-container"></div>
             </div>
         </div>
     </div>
 
+    <!-- Auth Protection & Module Scripts -->
     <script>
         (function () {
             const role = localStorage.getItem("userRole");

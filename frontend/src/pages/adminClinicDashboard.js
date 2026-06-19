@@ -174,9 +174,9 @@ function renderAppointmentsTable(appointments) {
         statusClass = "bg-rose-500/10 text-rose-400 border border-rose-500/20";
 
       return `
-      <tr class="hover:bg-slate-900/40 transition-colors">
-        <td class="p-4 font-semibold text-white">${calculatedPatientName}</td>
-        <td class="p-4 font-mono text-[11px] text-slate-400">${new Date(appt.date).toLocaleDateString()} @ ${appt.time}</td>
+      <tr class="hover:bg-slate-900/10 transition-colors">
+        <td class="p-4 font-bold text-green">${calculatedPatientName}</td>
+        <td class="p-4 font-mono text-[11px] text-slate-400 uppercase">${new Date(appt.date).toLocaleDateString()} @ ${appt.time}</td>
         <td class="p-4 text-slate-400 truncate max-w-[150px]">${calculatedService}</td>
         <td class="p-4"><span class="px-2.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider ${statusClass}">${appt.status}</span></td>
         <td class="p-4 text-right space-x-1">

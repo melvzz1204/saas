@@ -5,18 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patient Dashboard | Clinic Portal</title>
-    <!-- Tailwind v4 CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 
 <body
     class="bg-slate-50 text-slate-800 font-sans min-h-screen antialiased selection:bg-teal-500/10 selection:text-teal-700">
 
-    <!-- Premium Navigation Header Matrix -->
     <nav class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-50 shadow-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
-                <!-- Branding Unit Container -->
                 <div class="flex items-center space-x-3 group">
                     <div
                         class="flex items-center justify-center w-10 h-10 bg-teal-50 border border-teal-100 rounded-xl text-xl shadow-xs transform group-hover:scale-105 transition-all">
@@ -24,13 +21,13 @@
                     </div>
                     <div class="flex flex-col">
                         <span id="clinic-name-heading"
-                            class="font-black text-base tracking-tight text-slate-900">Loading Clinic...</span>
+                            class="font-black text-base tracking-tight text-slate-900 uppercase">Loading
+                            Clinic...</span>
                         <span class="text-[10px] font-bold text-teal-600 uppercase tracking-widest -mt-0.5">Healthcare
                             Node</span>
                     </div>
                 </div>
 
-                <!-- Action & User Panel Access Node -->
                 <div class="flex items-center space-x-4">
                     <div class="hidden sm:flex flex-col text-right">
                         <span id="user-greeting" class="text-xs font-bold text-slate-900">Loading user...</span>
@@ -50,13 +47,35 @@
         </div>
     </nav>
 
-    <!-- Main Core Operational Stage Panel -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 -mb-4">
+        <a href="patientFullInfo.html"
+            class="block bg-amber-50/80 hover:bg-amber-100/60 border border-amber-200/60 rounded-2xl p-4 transition-all group shadow-xs">
+            <div class="flex justify-between items-center flex-wrap gap-3">
+                <div class="flex items-center space-x-3">
+                    <div
+                        class="flex items-center justify-center w-8 h-8 bg-amber-100 rounded-xl text-sm transform group-hover:scale-105 transition-all">
+                        📋
+                    </div>
+                    <span class="text-xs font-bold text-amber-900 tracking-wide uppercase">
+                        Please complete your full information
+                    </span>
+                </div>
+                <div
+                    class="flex items-center text-xs font-black text-amber-700 uppercase tracking-wider space-x-1 bg-white border border-amber-200 px-3 py-1.5 rounded-xl group-hover:border-amber-300 transition-colors shadow-2xs">
+                    <span>Click Here</span>
+                    <svg class="w-3.5 h-3.5 transform group-hover:translate-x-0.5 transition-transform" fill="none"
+                        stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                </div>
+            </div>
+        </a>
+    </div>
+
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
 
-        <!-- Welcoming Jumbotron Module Header -->
         <div
             class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 md:p-8 rounded-3xl bg-gradient-to-r from-slate-900 to-slate-950 text-white relative overflow-hidden shadow-xl">
-            <!-- Background Radial Glow Accents -->
             <div class="absolute right-0 top-0 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl pointer-events-none">
             </div>
             <div
@@ -76,9 +95,7 @@
             </div>
         </div>
 
-        <!-- Metric Scoreboard Row Section Grid -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Metric Node 1 -->
             <div
                 class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-slate-300 transition-colors">
                 <div class="space-y-2">
@@ -91,7 +108,6 @@
                     📅</div>
             </div>
 
-            <!-- Metric Node 2 -->
             <div
                 class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-slate-300 transition-colors">
                 <div class="space-y-1">
@@ -103,7 +119,6 @@
                     ⏳</div>
             </div>
 
-            <!-- Metric Node 3 -->
             <div
                 class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-slate-300 transition-colors">
                 <div class="space-y-2">
@@ -120,10 +135,8 @@
             </div>
         </div>
 
-        <!-- Operational Panel Hub Splits -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-            <!-- COLUMN LEFT: APPOINTMENT INTAKE STACK CONTAINER -->
             <div
                 class="lg:col-span-4 bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden sticky top-24">
                 <div class="p-5 border-b border-slate-100 bg-linear-to-b from-slate-50/50 to-white">
@@ -175,7 +188,6 @@
                 </form>
             </div>
 
-            <!-- COLUMN RIGHT: CHRONOLOGICAL ROSTER VISITS MATRIX -->
             <div class="lg:col-span-8 bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
                 <div
                     class="p-5 border-b border-slate-100 bg-linear-to-b from-slate-50/50 to-white flex justify-between items-center">
@@ -199,7 +211,6 @@
                         </thead>
                         <tbody id="bookings-table-body"
                             class="divide-y divide-slate-100 text-xs font-medium text-slate-700">
-                            <!-- Baseline Loading Roster Node Block -->
                             <tr class="hover:bg-slate-50/50 transition-colors">
                                 <td colspan="3" class="py-12 text-center text-slate-400 italic">
                                     <div class="flex flex-col items-center justify-center space-y-2">
@@ -219,7 +230,6 @@
         </div>
     </main>
 
-    <!-- 🔐 Route Verification Guard Loop -->
     <script>
         (function () {
             const token = localStorage.getItem("token");
@@ -231,7 +241,6 @@
         })();
     </script>
 
-    <!-- Core Controller Module Wireup -->
     <script type="module" src="/src/pages/patientDashboard.js"></script>
 </body>
 

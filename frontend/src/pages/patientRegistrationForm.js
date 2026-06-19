@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (result.success && result.data) {
       resolvedTenantId = result.data._id;
-      if (modalTitle) modalTitle.textContent = `Join ${result.data.name}`;
+      if (modalTitle) modalTitle.textContent = `${result.data.name}`;
     } else {
       throw new Error("The requested clinic directory node is unregistered.");
     }
