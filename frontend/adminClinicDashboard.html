@@ -29,11 +29,11 @@
                 </div>
             </div>
 
-            <nav class="space-y-1">
+            <nav id="sidebar-nav" class="space-y-1">
                 <p class="text-[10px] font-bold text-slate-400 tracking-widest uppercase px-2 mb-2">Management</p>
 
-                <a href="#" id="nav-appointments"
-                    class="group flex items-center justify-between bg-slate-100 text-slate-900 px-3 py-2 rounded-lg text-xs font-semibold border border-slate-200/50 cursor-pointer transition-all">
+                <a href="#" id="nav-appointments" data-target="panel-appointments"
+                    class="nav-item group flex items-center justify-between bg-slate-100 text-slate-900 px-3 py-2 rounded-lg text-xs font-semibold border border-slate-200/50 cursor-pointer transition-all">
                     <div class="flex items-center space-x-2.5">
                         <svg class="w-4 h-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none"
                             viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -42,11 +42,11 @@
                         </svg>
                         <span>Appointments Queue</span>
                     </div>
-                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+                    <span class="active-dot w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
                 </a>
 
-                <a href="#" id="nav-staff"
-                    class="group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
+                <a href="#" id="nav-staff" data-target="panel-staff"
+                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
                     <div class="flex items-center space-x-2.5">
                         <svg class="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors"
                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
@@ -56,10 +56,25 @@
                         </svg>
                         <span>Staff Management</span>
                     </div>
+                    <span class="active-dot w-1.5 h-1.5 rounded-full bg-indigo-600 hidden"></span>
                 </a>
 
-                <a href="#" id="nav-reports"
-                    class="group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
+                <a href="#" id="nav-pricing" data-target="panel-pricing"
+                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
+                    <div class="flex items-center space-x-2.5">
+                        <svg class="w-4 h-4 text-slate-400 group-hover:text-emerald-600 transition-colors"
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                        <span>Dental Pricing Menu</span>
+                    </div>
+                    <span class="active-dot w-1.5 h-1.5 rounded-full bg-emerald-500 hidden"></span>
+                </a>
+
+                <a href="#" id="nav-reports" data-target="panel-reports"
+                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
                     <div class="flex items-center space-x-2.5">
                         <svg class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors"
                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2"
@@ -69,12 +84,12 @@
                         </svg>
                         <span>Reports</span>
                     </div>
+                    <span class="active-dot w-1.5 h-1.5 rounded-full bg-indigo-600 hidden"></span>
                 </a>
             </nav>
 
             <nav class="space-y-1 pt-2 border-t border-slate-100">
                 <p class="text-[10px] font-bold text-slate-400 tracking-widest uppercase px-2 mb-2">Platform Hub</p>
-
                 <a id="viewLiveSiteBtn"
                     class="group flex items-center space-x-2.5 text-slate-600 hover:text-indigo-600 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all">
                     <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition-colors"
@@ -102,8 +117,7 @@
             <div class="flex items-center space-x-2.5 px-1">
                 <div
                     class="w-7 h-7 bg-slate-100 rounded-md flex items-center justify-center text-xs font-bold text-slate-700 border border-slate-200/60">
-                    AD
-                </div>
+                    AD</div>
                 <div class="truncate max-w-[150px]">
                     <p id="display-user-email" class="text-xs font-bold text-slate-800 truncate">admin@clinic.com</p>
                     <p class="text-[9px] text-slate-400 font-mono tracking-wider font-semibold">CLINIC_ADMIN</p>
@@ -120,9 +134,10 @@
 
         <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div>
-                <h1 class="text-xl font-black tracking-tight text-slate-900">Operations Overview</h1>
-                <p class="text-xs text-slate-500 font-medium">Real-time scheduling and medical provider routing
-                    execution paths</p>
+                <h1 id="dashboard-title" class="text-xl font-black tracking-tight text-slate-900">Operations Overview
+                </h1>
+                <p id="dashboard-subtitle" class="text-xs text-slate-500 font-medium">Real-time scheduling and medical
+                    provider routing execution paths</p>
             </div>
             <div id="connection-status"
                 class="flex items-center space-x-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold uppercase tracking-wide px-3 py-1.5 rounded-lg w-fit">
@@ -141,121 +156,303 @@
                 <p id="kpi-total-staff" class="text-2xl font-black text-indigo-600">0</p>
             </div>
             <div class="bg-white border border-slate-200/80 rounded-xl p-5 space-y-1 shadow-xs">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pending Action Log</p>
-                <p id="kpi-pending-appointments" class="text-2xl font-black text-amber-600">0</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pricing Matrix Tiers</p>
+                <p id="kpi-pricing-tiers" class="text-2xl font-black text-emerald-600">0</p>
             </div>
         </section>
 
-        <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div id="dashboard-panels">
 
-            <div
-                class="xl:col-span-2 bg-white border border-slate-200/80 rounded-xl shadow-xs overflow-hidden flex flex-col justify-between">
-                <div>
-                    <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                        <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Live Appointment Queue
-                        </h3>
-                        <button id="refresh-appointments"
-                            class="text-[11px] text-indigo-600 hover:text-indigo-700 font-bold uppercase tracking-wider transition-colors cursor-pointer">
-                            Sync Nodes
-                        </button>
+            <div id="panel-appointments" class="dashboard-panel grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <div
+                    class="xl:col-span-2 bg-white border border-slate-200/80 rounded-xl shadow-xs overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Live Appointment
+                                Queue</h3>
+                            <button id="refresh-appointments"
+                                class="text-[11px] text-indigo-600 hover:text-indigo-700 font-bold uppercase tracking-wider transition-colors cursor-pointer">Sync
+                                Nodes</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr
+                                        class="bg-slate-50 border-b border-slate-200/90 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                                        <th class="p-3.5 pl-5">Patient Name</th>
+                                        <th class="p-3.5">Date / Time</th>
+                                        <th class="p-3.5">Reason</th>
+                                        <th class="p-3.5">Status</th>
+                                        <th class="p-3.5 pr-5 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="appointment-table-body"
+                                    class="text-xs text-slate-700 divide-y divide-slate-100">
+                                    <tr>
+                                        <td colspan="5" class="p-8 text-center text-slate-400 italic font-medium">No
+                                            active patients synchronized to this node context.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr
-                                    class="bg-slate-50 border-b border-slate-200/90 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-                                    <th class="p-3.5 pl-5">Patient Name</th>
-                                    <th class="p-3.5">Date / Time</th>
-                                    <th class="p-3.5">Reason</th>
-                                    <th class="p-3.5">Status</th>
-                                    <th class="p-3.5 pr-5 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="appointment-table-body" class="text-xs text-slate-700 divide-y divide-slate-100">
-                                <tr>
-                                    <td colspan="5" class="p-8 text-center text-slate-400 italic font-medium">
-                                        No active patients synchronized to this node context.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                </div>
+
+                <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs space-y-4 h-fit">
+                    <div>
+                        <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Quick Tools</h3>
+                        <p class="text-[11px] text-slate-400 font-medium mt-0.5">Select items inside your sidebar
+                            navigation tabs to execute actions.</p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs space-y-4 h-fit">
-                <div>
-                    <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Onboard Clinical Staff</h3>
-                    <p class="text-[11px] text-slate-400 font-medium mt-0.5">Register a new practitioner node into the
-                        active directory.</p>
+            <div id="panel-staff" class="dashboard-panel hidden grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <div class="xl:col-span-2 bg-white border border-slate-200/80 rounded-xl shadow-xs p-5">
+                    <h3 class="font-black text-xs uppercase tracking-wider text-slate-800 mb-4">Active Staff Roster</h3>
+                    <p class="text-xs text-slate-400 italic">Select tab items to access your configuration parameters
+                        table views...</p>
                 </div>
 
-                <div id="pin-reveal-box"
-                    class="hidden bg-emerald-50 border border-emerald-200 p-3.5 rounded-lg space-y-2">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-800">Security Payload Output
-                    </p>
-                    <div
-                        class="flex items-center justify-between bg-white px-3 py-1.5 rounded-md border border-emerald-100 shadow-3xs">
-                        <span class="text-[11px] text-emerald-600 font-medium">Assigned Token PIN:</span>
-                        <span id="generated-pin-display"
-                            class="text-xs font-mono font-bold text-emerald-900 tracking-wider">------</span>
-                    </div>
-                </div>
-
-                <form id="add-staff-form" class="space-y-3">
+                <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs space-y-4 h-fit">
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Full
-                            Legal Name</label>
-                        <input type="text" id="staff-name" required placeholder="Dr. Sarah Jenkins"
-                            class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
+                        <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Onboard Clinical Staff
+                        </h3>
+                        <p class="text-[11px] text-slate-400 font-medium mt-0.5">Register a new practitioner node into
+                            the active directory.</p>
                     </div>
+                    <div id="pin-reveal-box"
+                        class="hidden mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
+                        <p class="text-[10px] font-bold text-amber-800 uppercase tracking-wider">⚠️ Security Credential
+                            Node Generated</p>
+                        <p class="text-xs text-amber-700 font-medium">Temporary Authentication Access PIN Code:</p>
+                        <div class="flex items-center space-x-2 pt-1">
+                            <span id="generated-pin-display"
+                                class="font-mono font-black text-lg text-slate-900 bg-white border border-amber-200/60 px-3 py-1 rounded shadow-3xs tracking-widest">000000</span>
+                        </div>
+                    </div>
+                    <form id="add-staff-form" class="space-y-3.5">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Full
+                                Name</label>
+                            <input type="text" id="staff-name" required placeholder="Dr. Jane Doe"
+                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
+                        </div>
 
-                    <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label
                                 class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Specialization</label>
-                            <input type="text" id="staff-spec" placeholder="Orthodontist"
+                            <input type="text" id="staff-spec" placeholder="Orthodontics"
                                 class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
                         </div>
+
                         <div>
                             <label
-                                class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Practice
-                                Role</label>
+                                class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Workspace
+                                Assignment Role</label>
                             <select id="staff-role" required
-                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all cursor-pointer">
+                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
                                 <option value="Dentist">Dentist</option>
+                                <option value="Receptionist">Receptionist</option>
                                 <option value="Dental Hygienist">Dental Hygienist</option>
-                                <option value="Receptionist">Staff</option>
                             </select>
                         </div>
-                    </div>
 
-                    <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Work
-                                Email</label>
-                            <input type="email" id="staff-email" required placeholder="sarah@clinic.com"
+                            <label
+                                class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Workspace
+                                Email Address</label>
+                            <input type="email" id="staff-email" required placeholder="provider@clinic.com"
                                 class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
                         </div>
+
                         <div>
                             <label
                                 class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Contact
-                                Phone</label>
-                            <input type="text" id="staff-phone" required placeholder="555-0192"
+                                Phone Number</label>
+                            <input type="text" id="staff-phone" required placeholder="+63 912 345 6789"
                                 class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
                         </div>
+
+                        <button type="submit"
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold tracking-wide uppercase text-[11px] py-2.5 rounded-lg transition-all shadow-md cursor-pointer mt-2">
+                            Onboard Staff Member
+                        </button>
+                    </form>
+
+
+                </div>
+            </div>
+
+            <div id="panel-pricing" class="dashboard-panel hidden grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <div
+                    class="xl:col-span-2 bg-white border border-slate-200/80 rounded-xl shadow-xs overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Live Dynamic
+                                Treatment Ledger</h3>
+                            <button id="refresh-prices"
+                                class="text-[11px] text-emerald-600 hover:text-emerald-700 font-bold uppercase tracking-wider transition-colors cursor-pointer">Re-fetch
+                                Fees</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr
+                                        class="bg-slate-50 border-b border-slate-200/90 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                                        <th class="p-3.5 pl-5">Treatment Service Item</th>
+                                        <th class="p-3.5">Slug Index Mapping</th>
+                                        <th class="p-3.5">Current Rate</th>
+                                        <th class="p-3.5 pr-5 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pricing-table-body" class="text-xs text-slate-700 divide-y divide-slate-100">
+                                    <tr>
+                                        <td colspan="4" class="p-8 text-center text-slate-400 italic font-medium">
+                                            Syncing live dynamic treatment database tracks...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs space-y-4">
+                        <div>
+                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Modify Operational
+                                Rates</h3>
+                            <p class="text-[11px] text-slate-400 font-medium mt-0.5">Quickly adjust base patient pricing
+                                for a service.</p>
+                        </div>
+                        <form id="edit-price-form" class="space-y-3">
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Target
+                                    Service Slug</label>
+                                <input type="text" id="edit-slug" required placeholder="routine-cleaning"
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">New
+                                    Base Fee (PHP)</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2 text-xs font-bold text-slate-400">₱</span>
+                                    <input type="number" step="0.01" id="edit-price" required placeholder="1850.00"
+                                        class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-7 pr-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all">
+                                </div>
+                            </div>
+                            <button type="submit"
+                                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold tracking-wide uppercase text-[11px] py-2.5 rounded-lg transition-all shadow-md cursor-pointer">Commit
+                                Fee Structure Modification</button>
+                        </form>
                     </div>
 
-                    <button type="submit"
-                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold tracking-wide uppercase text-[11px] py-2.5 rounded-lg shadow-md shadow-indigo-900/5 mt-2 transition-all cursor-pointer active:scale-[0.99]">
-                        Provision Provider Node
-                    </button>
-                </form>
+                    <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs space-y-4">
+                        <div>
+                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Onboard New Treatment
+                            </h3>
+                            <p class="text-[11px] text-slate-400 font-medium mt-0.5">Add a new operational treatment
+                                item and rate.</p>
+                        </div>
+                        <form id="add-price-form" class="space-y-3">
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Display
+                                    Service Name</label>
+                                <input type="text" id="add-name" required placeholder="Premium Titanium Dental Implant"
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Unique
+                                    Identifier Slug</label>
+                                <input type="text" id="add-slug" required placeholder="dental-implants"
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Treatment
+                                    Description</label>
+                                <textarea id="add-desc" required rows="2"
+                                    placeholder="Surgical placement of titanium root fixtures..."
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all resize-none"></textarea>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Initial
+                                    Base Cost (PHP)</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2 text-xs font-bold text-slate-400">₱</span>
+                                    <input type="number" step="0.01" id="add-price" required placeholder="75000.00"
+                                        class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-7 pr-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
+                                </div>
+                            </div>
+                            <button type="submit"
+                                class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold tracking-wide uppercase text-[11px] py-2.5 rounded-lg transition-all shadow-md cursor-pointer">Register
+                                Treatment Node</button>
+                        </form>
+                    </div>
+                </div>
             </div>
-        </section>
+
+            <div id="panel-reports" class="dashboard-panel hidden">
+                <div class="bg-white border border-slate-200/80 rounded-xl shadow-xs p-6">
+                    <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">System Metrics & Analytics
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-2">Analytical data streams are ready for review.</p>
+                </div>
+            </div>
+
+        </div>
     </main>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const navItems = document.querySelectorAll(".nav-item");
+            const panels = document.querySelectorAll(".dashboard-panel");
+            const title = document.getElementById("dashboard-title");
+            const subtitle = document.getElementById("dashboard-subtitle");
+
+            const metaMap = {
+                "panel-appointments": { title: "Operations Overview", sub: "Real-time scheduling and medical provider routing execution paths" },
+                "panel-staff": { title: "Staff Directory Matrix", sub: "Manage clinical personnel nodes, security permissions, and tracking access parameters" },
+                "panel-pricing": { title: "Clinical Financial Parameters", sub: "Configure active service treatment catalogs, adjust base currencies, and manage billing codes" },
+                "panel-reports": { title: "System Analytics Engine", sub: "Review clinical conversion pipelines, operations summaries, and resource performance logs" }
+            };
+
+            // Sidebar Panel Toggling Logic
+            navItems.forEach(item => {
+                item.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const targetPanelId = item.getAttribute("data-target");
+
+                    navItems.forEach(nav => {
+                        nav.className = "nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all";
+                        nav.querySelector(".active-dot").classList.add("hidden");
+                    });
+
+                    item.className = "nav-item group flex items-center justify-between bg-slate-100 text-slate-900 px-3 py-2 rounded-lg text-xs font-semibold border border-slate-200/50 cursor-pointer transition-all";
+                    item.querySelector(".active-dot").classList.remove("hidden");
+
+                    panels.forEach(panel => panel.classList.add("hidden"));
+                    document.getElementById(targetPanelId).classList.remove("hidden");
+
+                    title.textContent = metaMap[targetPanelId].title;
+                    subtitle.textContent = metaMap[targetPanelId].sub;
+                });
+            });
+
+            // 🔑 ATTACH ONBOARDING EVENT HANDLER
+            const addStaffForm = document.getElementById("add-staff-form");
+            if (addStaffForm && typeof handleStaffOnboarding === "function") {
+                addStaffForm.addEventListener("submit", handleStaffOnboarding);
+            }
+        });
+    </script>
     <script src="/src/pages/adminClinicDashboard.js"></script>
+    <script src="/src/pages/dentalPricing.js"></script>
 </body>
 
 </html>

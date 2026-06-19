@@ -34,7 +34,7 @@
                         <span class="text-[10px] text-slate-400 font-medium">Verified Identity Session</span>
                     </div>
                     <button id="logout-btn"
-                        class="inline-flex items-center justify-center px-4 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200/40 text-rose-600 text-xs font-bold rounded-xl tracking-wide transition-all uppercase cursor-pointer shadow-xs active:scale-[0.98]">
+                        class="inline-flex items-center justify-center px-4 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200/40 text-rose-600 text-xs font-bold rounded-xl tracking-wide transition-all uppercase tracking-wide cursor-pointer shadow-xs active:scale-[0.98]">
                         <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" stroke-width="2.5"
                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -137,94 +137,128 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-            <div
-                class="lg:col-span-4 bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden sticky top-24">
-                <div class="p-5 border-b border-slate-100 bg-linear-to-b from-slate-50/50 to-white">
-                    <h2 class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-                        <span class="text-teal-600">✨</span>
-                        <span>Request Session Entry</span>
-                    </h2>
+            <div class="lg:col-span-4 space-y-6 sticky top-24">
+
+                <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+                    <div class="p-5 border-b border-slate-100 bg-linear-to-b from-slate-50/50 to-white">
+                        <h2
+                            class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                            <span class="text-teal-600">✨</span>
+                            <span>Request Session Entry</span>
+                        </h2>
+                    </div>
+
+                    <form id="booking-form" class="p-6 space-y-4">
+                        <div>
+                            <label
+                                class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Select
+                                Service Track</label>
+                            <select id="booking-service" required onchange="updateFormPriceIndicator(this)"
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-1 focus:ring-teal-500/20 transition-all cursor-pointer">
+                                <option value="" disabled selected>Retrieving treatments...</option>
+                            </select>
+                        </div>
+
+                        <div
+                            class="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3 flex justify-between items-center text-xs">
+                            <span class="font-bold text-indigo-900/60 uppercase text-[10px] tracking-wide">Price:</span>
+                            <span id="form-price-indicator" class="font-black text-indigo-600 text-sm">₱0.00</span>
+                        </div>
+
+                        <div>
+                            <label
+                                class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Preferred
+                                Target Date</label>
+                            <input type="date" id="booking-date" required
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-700 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-1 focus:ring-teal-500/20 transition-all cursor-pointer">
+                        </div>
+
+                        <div>
+                            <label
+                                class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Preferred
+                                Structural Window</label>
+                            <select id="booking-time" required
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-1 focus:ring-teal-500/20 transition-all cursor-pointer">
+                                <option value="09:00 AM">09:00 AM (Morning Structural Node)</option>
+                                <option value="11:00 AM">11:00 AM (Midday Window)</option>
+                                <option value="02:00 PM">02:00 PM (Afternoon Shift)</option>
+                                <option value="04:00 PM">04:00 PM (Late Treatment Block)</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" id="book-btn"
+                            class="w-full bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold py-3.5 rounded-xl shadow-lg shadow-teal-900/10 transition-all uppercase tracking-wider mt-2 cursor-pointer active:scale-[0.99]">
+                            Submit Booking Request
+                        </button>
+                    </form>
                 </div>
-
-                <form id="booking-form" class="p-6 space-y-4">
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Select
-                            Service Track</label>
-                        <select id="booking-service" required
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-1 focus:ring-teal-500/20 transition-all cursor-pointer">
-                            <option value="General Checkup">Routine Consultation & Cleaning</option>
-                            <option value="Tooth Extraction">Tooth Extraction</option>
-                            <option value="Root Canal Treatment">Root Canal Treatment</option>
-                            <option value="Dental Braces Adjustment">Orthodontic Adjustment (Braces)</option>
-                            <option value="Teeth Whitening">Cosmetic Teeth Whitening</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label
-                            class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Preferred
-                            Target Date</label>
-                        <input type="date" id="booking-date" required
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-700 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-1 focus:ring-teal-500/20 transition-all cursor-pointer">
-                    </div>
-
-                    <div>
-                        <label
-                            class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Preferred
-                            Structural Window</label>
-                        <select id="booking-time" required
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-1 focus:ring-teal-500/20 transition-all cursor-pointer">
-                            <option value="09:00 AM">09:00 AM (Morning Structural Node)</option>
-                            <option value="11:00 AM">11:00 AM (Midday Window)</option>
-                            <option value="02:00 PM">02:00 PM (Afternoon Shift)</option>
-                            <option value="04:00 PM">04:00 PM (Late Treatment Block)</option>
-                        </select>
-                    </div>
-
-                    <button type="submit" id="book-btn"
-                        class="w-full bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold py-3.5 rounded-xl shadow-lg shadow-teal-900/10 transition-all uppercase tracking-wider mt-2 cursor-pointer active:scale-[0.99]">
-                        Submit Booking Request
-                    </button>
-                </form>
             </div>
 
-            <div class="lg:col-span-8 bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
-                <div
-                    class="p-5 border-b border-slate-100 bg-linear-to-b from-slate-50/50 to-white flex justify-between items-center">
-                    <h2 class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-                        <span class="text-indigo-500">📋</span>
-                        <span>Scheduled Sessions & Core Statuses</span>
-                    </h2>
-                    <span class="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md">Live
-                        Array</span>
+            <div class="lg:col-span-8 space-y-8">
+
+                <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr
+                                    class="border-b border-slate-100 bg-slate-50/70 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                                    <th class="py-3 px-5">Service Type</th>
+                                    <th class="py-3 px-5">Clinical Treatment Scope</th>
+                                    <th class="py-3 px-5 text-right">Fixed Price</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pricing-ledger-body"
+                                class="divide-y divide-slate-100 text-xs font-medium text-slate-700">
+                                <tr>
+                                    <td colspan="3" class="py-8 text-center text-slate-400 italic">
+                                        Syncing live treatment catalogue matrix...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr
-                                class="border-b border-slate-100 bg-slate-50/70 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                                <th class="py-3.5 px-6">Service Category</th>
-                                <th class="py-3.5 px-6">Allocated Schedule</th>
-                                <th class="py-3.5 px-6 text-right">Verification Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="bookings-table-body"
-                            class="divide-y divide-slate-100 text-xs font-medium text-slate-700">
-                            <tr class="hover:bg-slate-50/50 transition-colors">
-                                <td colspan="3" class="py-12 text-center text-slate-400 italic">
-                                    <div class="flex flex-col items-center justify-center space-y-2">
-                                        <div
-                                            class="w-5 h-5 border-2 border-teal-500/30 border-t-teal-600 rounded-full animate-spin">
+                <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+                    <div
+                        class="p-5 border-b border-slate-100 bg-linear-to-b from-slate-50/50 to-white flex justify-between items-center">
+                        <h2
+                            class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                            <span class="text-indigo-500">📋</span>
+                            <span>Scheduled Sessions & Core Statuses</span>
+                        </h2>
+                        <span class="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md">Live
+                            Array</span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr
+                                    class="border-b border-slate-100 bg-slate-50/70 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                                    <th class="py-3.5 px-6">Service Category</th>
+                                    <th class="py-3.5 px-6">Allocated Schedule</th>
+                                    <th class="py-3.5 px-6 text-right">Verification Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bookings-table-body"
+                                class="divide-y divide-slate-100 text-xs font-medium text-slate-700">
+                                <tr class="hover:bg-slate-50/50 transition-colors">
+                                    <td colspan="3" class="py-12 text-center text-slate-400 italic">
+                                        <div class="flex flex-col items-center justify-center space-y-2">
+                                            <div
+                                                class="w-5 h-5 border-2 border-teal-500/30 border-t-teal-600 rounded-full animate-spin">
+                                            </div>
+                                            <span class="text-xs font-medium text-slate-400 mt-2">Assembling clinic care
+                                                matrix tables...</span>
                                         </div>
-                                        <span class="text-xs font-medium text-slate-400 mt-2">Assembling clinic care
-                                            matrix tables...</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+
             </div>
 
         </div>
@@ -239,6 +273,13 @@
                 window.location.replace("/patientLogin.html?clinic=radiant-smiles");
             }
         })();
+
+        // Live script response helper for service dropdown interaction
+        function updateFormPriceIndicator(selectElement) {
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            const price = selectedOption.getAttribute('data-price');
+            document.getElementById('form-price-indicator').textContent = price;
+        }
     </script>
 
     <script type="module" src="/src/pages/patientDashboard.js"></script>

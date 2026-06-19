@@ -1,12 +1,9 @@
-// src/pages/patientDashboard.js
-
-// 1. Initial Validation Gates
+const API_PRICING_URL = "http://localhost:5000/api/v1/dental-price/services";
 const token = localStorage.getItem("token");
 const userJson = localStorage.getItem("user");
 
 if (!token || !userJson) {
   console.warn("⚠️ Credentials missing. Redirecting to login gate.");
-  // Fallback to cached slug context or default configuration parameter if empty
   const sessionSlug = localStorage.getItem("clinicSlug") || "default";
   window.location.href = `/patientLogin.html?clinic=${sessionSlug}`;
 }
@@ -15,22 +12,15 @@ if (!token || !userJson) {
 function parseJwt(tokenString) {
   try {
     if (!tokenString) return null;
-
-    // Split the token to target the payload section (index 1)
     const base64Url = tokenString.split(".")[1];
     if (!base64Url) return null;
-
-    // Convert base64url format to standard base64 strings safely
     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-
-    // Use an advanced clean binary decoding matrix to preserve character lengths
     const jsonPayload = decodeURIComponent(
       atob(base64)
         .split("")
         .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
         .join(""),
     );
-
     return JSON.parse(jsonPayload);
   } catch (e) {
     console.error("❌ JWT Payload Decode Exception Error:", e);
@@ -42,7 +32,6 @@ function parseJwt(tokenString) {
 const decodedToken = parseJwt(token);
 const currentUser = JSON.parse(userJson || "{}");
 
-// Fallback Chain: Pull from user object, if missing, harvest instantly from the token!
 const DYNAMIC_CLINIC_ID = currentUser.clinicId || decodedToken?.clinicId;
 const verifiedPatientId =
   currentUser._id || currentUser.id || decodedToken?.userId;
@@ -59,7 +48,7 @@ if (userGreeting && currentUser.firstName) {
   userGreeting.textContent = `👋 Welcome, ${currentUser.firstName} ${currentUser.lastName}`;
 }
 
-// 2. Fetch Clinic Meta Context Dynamically
+// 1. Fetch Clinic Meta Context Dynamically
 async function fetchClinicName() {
   if (!DYNAMIC_CLINIC_ID || DYNAMIC_CLINIC_ID === "undefined") {
     console.error("❌ Error: No clinic context found in user session.");
@@ -69,7 +58,6 @@ async function fetchClinicName() {
   }
 
   try {
-    // 🎯 FIX: Patched endpoint URL from /api/v1/clinic to /api/v1/tenants matching your backend router geometry
     const response = await fetch(
       `http://localhost:5000/api/v1/tenants/${DYNAMIC_CLINIC_ID}`,
       {
@@ -84,8 +72,6 @@ async function fetchClinicName() {
     if (response.ok && result.data) {
       if (clinicNameHeading) clinicNameHeading.textContent = result.data.name;
       document.title = `${result.data.name} | Patient Dashboard`;
-
-      // 🎯 Cache the live clinic slug dynamically to protect session redirects
       if (result.data.slug) {
         localStorage.setItem("clinicSlug", result.data.slug);
       }
@@ -97,6 +83,76 @@ async function fetchClinicName() {
     console.error("Failed to fetch clinic name:", error);
     if (clinicNameHeading)
       clinicNameHeading.textContent = "Dental Clinic Portal";
+  }
+}
+
+// 2. Fetch Live Dynamic Pricing & Populate UI Form/Ledger
+async function syncDynamicPricingElements() {
+  const serviceSelect = document.getElementById("booking-service");
+  const pricingLedgerBody = document.getElementById("pricing-ledger-body");
+  const formPriceIndicator = document.getElementById("form-price-indicator");
+
+  try {
+    const response = await fetch(API_PRICING_URL);
+    if (!response.ok) throw new Error("Could not sync price schemas.");
+
+    const resData = await response.json();
+    if (!resData.success)
+      throw new Error(resData.message || "Database structural error.");
+
+    const services = resData.data;
+
+    if (services.length === 0) {
+      if (serviceSelect)
+        serviceSelect.innerHTML =
+          '<option value="" disabled>No services available</option>';
+      if (pricingLedgerBody) {
+        pricingLedgerBody.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-slate-400 italic">No treatment paths defined.</td></tr>`;
+      }
+      return;
+    }
+
+    // Map values into booking dropdown options
+    if (serviceSelect) {
+      serviceSelect.innerHTML = services
+        .map((service, index) => {
+          const formattedPrice = `₱${Number(service.basePricePhp).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          return `<option value="${service.name}" data-price="${formattedPrice}" ${index === 0 ? "selected" : ""}>${service.name}</option>`;
+        })
+        .join("");
+
+      // Trigger fallback initialization text value on setup mount
+      if (services[0] && formPriceIndicator) {
+        const firstPriceFormatted = `₱${Number(services[0].basePricePhp).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        formPriceIndicator.textContent = firstPriceFormatted;
+      }
+    }
+
+    // Map values into reference catalog ledger table
+    if (pricingLedgerBody) {
+      pricingLedgerBody.innerHTML = services
+        .map((service) => {
+          const formattedPrice = `₱${Number(service.basePricePhp).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          return `
+            <tr class="hover:bg-slate-50/40 transition-colors">
+                <td class="py-4 px-5 font-bold text-slate-900">${service.name}</td>
+                <td class="py-4 px-5 text-slate-400">${service.description || "No descriptive scope provided."}</td>
+                <td class="py-4 px-5 text-right font-black text-slate-900 whitespace-nowrap">${formattedPrice}</td>
+            </tr>
+          `;
+        })
+        .join("");
+    }
+  } catch (err) {
+    console.error("❌ Patient Portal Sync Error:", err);
+    if (pricingLedgerBody) {
+      pricingLedgerBody.innerHTML = `
+        <tr>
+            <td colspan="3" class="py-6 text-center text-rose-500 font-semibold bg-rose-50/40">
+                Error linking backend catalogue: ${err.message}
+            </td>
+        </tr>`;
+    }
   }
 }
 
@@ -127,7 +183,6 @@ async function loadPatientBookings() {
     );
 
     const result = await response.json();
-
     if (response.ok && result.data) {
       renderBookingsList(result.data);
     } else {
@@ -154,12 +209,8 @@ function renderBookingsList(appointmentsList) {
     return;
   }
 
-  // Replace Section 4 inside /src/pages/patientDashboard.js
-
   appointmentsList.forEach((booking) => {
     let badgeClass = "";
-
-    // 🎯 FIX: Convert the incoming status string to lowercase to bypass capitalization or terminology mismatches
     const localizedStatus = booking.status
       ? booking.status.toLowerCase()
       : "pending";
@@ -169,29 +220,26 @@ function renderBookingsList(appointmentsList) {
       localizedStatus === "confirmed" ||
       localizedStatus === "accepted"
     ) {
-      // 🟢 Approved / Confirmed Styling
       badgeClass = "bg-emerald-50 text-emerald-700 border border-emerald-200";
       nextConfirmedVisit = `${booking.date} at ${booking.time}`;
     } else if (localizedStatus === "pending") {
-      // 🟡 Pending Styling
       badgeClass = "bg-amber-50 text-amber-700 border border-amber-200";
       pendingCount++;
     } else {
-      // 🔴 Declined / Cancelled Styling
       badgeClass = "bg-rose-50 text-rose-700 border border-rose-200";
     }
 
     const row = document.createElement("tr");
     row.className = "hover:bg-slate-50 transition-colors";
     row.innerHTML = `
-    <td class="py-4 px-4 font-semibold text-slate-900">${booking.service}</td>
-    <td class="py-4 px-4 text-slate-600">${booking.date} <span class="mx-1 text-slate-300">|</span> ${booking.time}</td>
-    <td class="py-4 px-4">
-      <span class="px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase ${badgeClass}">
-        ${booking.status}
-      </span>
-    </td>
-  `;
+      <td class="py-4 px-4 font-semibold text-slate-900">${booking.service}</td>
+      <td class="py-4 px-4 text-slate-600">${booking.date} <span class="mx-1 text-slate-300">|</span> ${booking.time}</td>
+      <td class="py-4 px-4">
+        <span class="px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase ${badgeClass}">
+          ${booking.status}
+        </span>
+      </td>
+    `;
     bookingsTableBody.appendChild(row);
   });
 
@@ -249,26 +297,23 @@ if (bookingForm) {
 // 6. Logout Handler
 if (logoutBtn) {
   logoutBtn.addEventListener("click", () => {
-    // 🎯 Read the slug context value BEFORE wiping data from localStorage
     const contextSlug = localStorage.getItem("clinicSlug") || "default";
-
     localStorage.clear();
     alert("Logged out safely.");
-
-    // 🚀 Forward dynamically back to their specific clinic context portal entry
     window.location.href = `/patientLogin.html?clinic=${contextSlug}`;
   });
 }
 
-// 🚀 Sequential App Initialization Lifecycle
+// 🚀 Unified Sequential App Initialization Lifecycle
 async function initializeDashboard() {
   console.log("⚓ LIVE MONITOR ENGINE ACTIVE:");
   console.log("-> Loaded Patient Hex:", verifiedPatientId);
   console.log("-> Loaded Tenant Hex:", DYNAMIC_CLINIC_ID);
 
   await fetchClinicName();
+  await syncDynamicPricingElements(); // Safely running inside initialization loop sequence
   await loadPatientBookings();
 }
 
-// Fire system initialization
+// Trigger bootstrap routine once script parsing evaluates
 initializeDashboard();
