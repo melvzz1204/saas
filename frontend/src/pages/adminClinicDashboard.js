@@ -184,7 +184,7 @@ function renderAppointmentsTable(appointments) {
             currentStatus === "pending"
               ? `
             <button onclick="modifyAppointmentStatus('${appt._id}', 'Approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded font-bold text-[10px] tracking-wide transition-colors">Approve</button>
-            <button onclick="modifyAppointmentStatus('${appt._id}', 'Declined')" class="bg-slate-800 hover:bg-rose-950/60 hover:text-rose-400 px-2.5 py-1 rounded font-bold text-[10px] tracking-wide transition-colors">Cancel</button>
+            <button onclick="modifyAppointmentStatus('${appt._id}', 'Declined')" class="bg-bg-rose-50 hover:bg-rose-10 text-slate-700 hover:text-rose-600 border border-slate-200 hover:border-rose-200 px-2.5 py-1 rounded-md font-bold text-[10px] tracking-wide uppercase transition-colors cursor-pointer shadow-sm shadow-slate-100">Declined</button>
           `
               : `<span class="text-[11px] text-slate-600 font-medium">Session Finalized</span>`
           }

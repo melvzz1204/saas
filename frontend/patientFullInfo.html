@@ -1,652 +1,697 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Patient Information Record form for minimalist medical intake.">
     <title>Patient Information Record | Minimalist Medical Intake</title>
-    <style>
-        /* 🎨 Clinic Minimalist Reset & Variable Matrix */
-        :root {
-            --bg-base: #f8fafc;
-            --bg-card: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --primary: #0284c7;
-            --primary-hover: #0369a1;
-            --radius: 6px;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-base);
-            color: var(--text-main);
-            line-height: 1.5;
-            padding: 40px 20px;
-        }
-
-        main {
-            max-width: 900px;
-            margin: 0 auto;
-            background: var(--bg-card);
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-        }
-
-        /* 📋 Header Branding */
-        header {
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 24px;
-            margin-bottom: 32px;
-        }
-
-        header span {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--primary);
-            font-weight: 700;
-        }
-
-        header h1 {
-            font-size: 2rem;
-            font-weight: 800;
-            margin-top: 4px;
-            color: var(--text-main);
-        }
-
-        header p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            margin-top: 6px;
-        }
-
-        /* 📑 Layout Structure */
-        section {
-            margin-bottom: 40px;
-            padding-bottom: 24px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        section:last-of-type {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-
-        section h2 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 20px;
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* 🎛️ Dynamic Modular Form System */
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(12, 12fr);
-            gap: 16px;
-        }
-
-        .col-12 {
-            grid-column: span 12;
-        }
-
-        .col-6 {
-            grid-column: span 6;
-        }
-
-        .col-4 {
-            grid-column: span 4;
-        }
-
-        .col-3 {
-            grid-column: span 3;
-        }
-
-        .field-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        label {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-main);
-        }
-
-        /* 🖋️ Core Standard Controls */
-        input[type="text"],
-        input[type="tel"],
-        input[type="email"],
-        input[type="number"],
-        input[type="date"],
-        select {
-            width: 100%;
-            padding: 10px 14px;
-            font-size: 0.9rem;
-            color: var(--text-main);
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            outline: none;
-            transition: all 0.2s ease;
-        }
-
-        input:focus,
-        select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
-        }
-
-        input[readonly] {
-            background-color: var(--bg-base);
-            color: var(--text-muted);
-            cursor: not-allowed;
-        }
-
-        /* 🔘 Custom Radios & Checkboxes */
-        .radio-group,
-        .checkbox-stack {
-            display: flex;
-            gap: 16px;
-            padding-top: 4px;
-        }
-
-        .checkbox-matrix-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            padding-top: 8px;
-        }
-
-        label.check-label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 500;
-            font-size: 0.9rem;
-            cursor: pointer;
-            color: var(--text-main);
-        }
-
-        label.check-label input[type="checkbox"],
-        label.check-label input[type="radio"] {
-            width: 16px;
-            height: 16px;
-            accent-color: var(--primary);
-            cursor: pointer;
-        }
-
-        /* 🔒 Inner Scope Elements & Section Sub-groups */
-        .inner-sub-panel {
-            background-color: var(--bg-base);
-            padding: 16px;
-            border-radius: var(--radius);
-            border: 1px solid var(--border-color);
-            margin-top: 4px;
-        }
-
-        .sub-group-title {
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: var(--text-muted);
-            letter-spacing: 0.05em;
-            display: block;
-            margin-bottom: 12px;
-        }
-
-        .question-row {
-            padding: 12px 0;
-            border-bottom: 1px dashed var(--border-color);
-        }
-
-        .question-row:last-child {
-            border-bottom: none;
-        }
-
-        /* 🚀 Action Layers & Signatures */
-        .legal-notice {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 16px;
-            line-height: 1.6;
-        }
-
-        button[type="submit"] {
-            width: 100%;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 14px 20px;
-            font-size: 1rem;
-            font-weight: 700;
-            border-radius: var(--radius);
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-
-        button[type="submit"]:hover {
-            background-color: var(--primary-hover);
-        }
-
-        /* 📱 Responsive Adjustments */
-        @media (max-width: 768px) {
-            body {
-                padding: 16px 8px;
-            }
-
-            main {
-                padding: 20px;
-            }
-
-            .col-6,
-            .col-4,
-            .col-3 {
-                grid-column: span 12;
-            }
-
-            .checkbox-matrix-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <!-- Tailwind Engine Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 
-<body>
+<body
+    class="bg-slate-50 text-slate-900 font-sans min-h-screen antialiased flex flex-col selection:bg-indigo-500/20 selection:text-indigo-900">
 
-    <main>
-        <header>
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1 space-y-8">
+
+        <!-- Header Section -->
+        <header class="border-b border-slate-200 pb-6 flex items-center justify-between">
             <div>
-                <span>Clinical Intake Ledger</span>
-                <h1 id="formStatusTitle">Patient Information Record</h1>
-                <p id="formStatusSubtitle">Please provide precise diagnostics for your legal medical-dental profile.</p>
+                <span class="text-[10px] font-black text-indigo-600 uppercase tracking-widest block mb-1">Clinical
+                    Intake Ledger</span>
+                <h1 id="formStatusTitle" class="text-2xl font-black text-slate-900 tracking-tight">Patient Information
+                    Record</h1>
+                <p id="formStatusSubtitle" class="text-xs text-slate-500 mt-1">Please provide precise diagnostics for
+                    your legal medical-dental profile.</p>
+            </div>
+            <div
+                class="w-10 h-10 bg-indigo-50 text-indigo-600 border border-indigo-200/60 rounded-xl flex items-center justify-center font-semibold shadow-inner hidden sm:flex">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
             </div>
         </header>
 
-        <div id="statusToast"
-            style="display: none; padding: 12px; margin: 0 0 24px 0; font-weight: bold; border-radius: 4px; text-align: center;">
+        <!-- Status Toast Placeholder -->
+        <div id="statusToast" style="display: none;"
+            class="w-full p-4 font-bold text-xs uppercase tracking-wider text-center rounded-xl border transition-all animate-in fade-in zoom-in-95 duration-150">
         </div>
 
-        <form id="patientIntakeForm">
+        <!-- Master Intake Form -->
+        <form id="patientIntakeForm" class="space-y-8">
 
-            <section>
-                <h2>Personal Information</h2>
-                <div class="form-grid">
-                    <div class="field-group col-4">
-                        <label for="pi_lastName">Last Name</label>
-                        <input type="text" id="pi_lastName" required>
+            <!-- Section 1: Personal Information -->
+            <section class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+                <h2
+                    class="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-3 flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Personal Information
+                </h2>
+
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-5">
+                    <div class="sm:col-span-4 flex flex-col">
+                        <label for="pi_lastName"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Last Name
+                            <span class="text-rose-500">*</span></label>
+                        <input type="text" id="pi_lastName" required
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                     </div>
-                    <div class="field-group col-4">
-                        <label for="pi_firstName">First Name</label>
-                        <input type="text" id="pi_firstName" required>
+                    <div class="sm:col-span-4 flex flex-col">
+                        <label for="pi_firstName"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">First Name
+                            <span class="text-rose-500">*</span></label>
+                        <input type="text" id="pi_firstName" required
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                     </div>
-                    <div class="field-group col-4">
-                        <label for="pi_middleName">Middle Name</label>
-                        <input type="text" id="pi_middleName">
+                    <div class="sm:col-span-4 flex flex-col">
+                        <label for="pi_middleName"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Middle
+                            Name</label>
+                        <input type="text" id="pi_middleName"
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                     </div>
 
-                    <div class="field-group col-4">
-                        <label for="pi_birthdate">Birthdate</label>
-                        <input type="date" id="pi_birthdate" required>
+                    <div class="sm:col-span-4 flex flex-col">
+                        <label for="pi_birthdate"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Birthdate
+                            <span class="text-rose-500">*</span></label>
+                        <input type="date" id="pi_birthdate" required
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                     </div>
-                    <div class="field-group col-4">
-                        <label for="pi_age">Age</label>
-                        <input type="number" id="pi_age" readonly placeholder="Calculated from DOB">
+                    <div class="sm:col-span-4 flex flex-col">
+                        <label for="pi_age"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Age</label>
+                        <input type="number" id="pi_age" readonly placeholder="Calculated from DOB"
+                            class="w-full text-sm bg-slate-50 border border-slate-200 text-slate-500 rounded-xl px-3 py-2.5 cursor-not-allowed placeholder-slate-400 focus:outline-none">
                     </div>
-                    <div class="field-group col-4">
-                        <label for="pi_sex">Sex</label>
-                        <select id="pi_sex" required>
+                    <div class="sm:col-span-4 flex flex-col">
+                        <label for="pi_sex"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Sex <span
+                                class="text-rose-500">*</span></label>
+                        <select id="pi_sex" required
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer">
                             <option value="" disabled selected hidden>Select</option>
                             <option value="M">Male</option>
                             <option value="F">Female</option>
                         </select>
                     </div>
 
-                    <div class="field-group col-4">
-                        <label for="pi_religion">Religion</label>
-                        <input type="text" id="pi_religion">
+                    <div class="sm:col-span-4 flex flex-col">
+                        <label for="pi_religion"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Religion</label>
+                        <input type="text" id="pi_religion"
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                     </div>
-                    <div class="field-group col-4">
-                        <label for="pi_nationality">Nationality</label>
-                        <input type="text" id="pi_nationality">
+                    <div class="sm:col-span-4 flex flex-col">
+                        <label for="pi_nationality"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Nationality</label>
+                        <input type="text" id="pi_nationality"
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                     </div>
-                    <div class="field-group col-4">
-                        <label for="pi_nickname">Nickname</label>
-                        <input type="text" id="pi_nickname">
-                    </div>
-
-                    <div class="field-group col-8">
-                        <label for="pi_homeAddress">Home Address</label>
-                        <input type="text" id="pi_homeAddress" required>
-                    </div>
-                    <div class="field-group col-4">
-                        <label for="pi_homeNo">Home No.</label>
-                        <input type="tel" id="pi_homeNo">
+                    <div class="sm:col-span-4 flex flex-col">
+                        <label for="pi_nickname"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Nickname</label>
+                        <input type="text" id="pi_nickname"
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                     </div>
 
-                    <div class="field-group col-4">
-                        <label for="pi_occupation">Occupation</label>
-                        <input type="text" id="pi_occupation">
+                    <div class="sm:col-span-8 flex flex-col">
+                        <label for="pi_homeAddress"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Home Address
+                            <span class="text-rose-500">*</span></label>
+                        <input type="text" id="pi_homeAddress" required
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                     </div>
-                    <div class="field-group col-4">
-                        <label for="pi_officeNo">Office No.</label>
-                        <input type="tel" id="pi_officeNo">
-                    </div>
-                    <div class="field-group col-4">
-                        <label for="pi_faxNo">Fax No.</label>
-                        <input type="tel" id="pi_faxNo">
-                    </div>
-
-                    <div class="field-group col-4">
-                        <label for="pi_dentalInsurance">Dental Insurance</label>
-                        <input type="text" id="pi_dentalInsurance">
-                    </div>
-                    <div class="field-group col-4">
-                        <label for="pi_effectiveDate">Effective Date</label>
-                        <input type="date" id="pi_effectiveDate">
-                    </div>
-                    <div class="field-group col-4">
-                        <label for="pi_cellMobileNo">Cell/Mobile No.</label>
-                        <input type="tel" id="pi_cellMobileNo" required>
+                    <div class="sm:col-span-4 flex flex-col">
+                        <label for="pi_homeNo"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Home
+                            No.</label>
+                        <input type="tel" id="pi_homeNo"
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                     </div>
 
-                    <div class="field-group col-12">
-                        <label for="pi_emailAddress">Email Address</label>
-                        <input type="email" id="pi_emailAddress" readonly>
+                    <div class="sm:col-span-4 flex flex-col">
+                        <label for="pi_occupation"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Occupation</label>
+                        <input type="text" id="pi_occupation"
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
+                    </div>
+                    <div class="sm:col-span-4 flex flex-col">
+                        <label for="pi_officeNo"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Office
+                            No.</label>
+                        <input type="tel" id="pi_officeNo"
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
+                    </div>
+                    <div class="sm:col-span-4 flex flex-col">
+                        <label for="pi_faxNo"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Fax
+                            No.</label>
+                        <input type="tel" id="pi_faxNo"
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                     </div>
 
-                    <div class="field-group col-12 inner-sub-panel">
-                        <span class="sub-group-title">For Minors Only</span>
-                        <div class="form-grid">
-                            <div class="field-group col-6">
-                                <label for="pi_minor_parentName">Parent/Guardian's Name</label>
-                                <input type="text" id="pi_minor_parentName">
+                    <div class="sm:col-span-4 flex flex-col">
+                        <label for="pi_dentalInsurance"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Dental
+                            Insurance</label>
+                        <input type="text" id="pi_dentalInsurance"
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
+                    </div>
+                    <div class="sm:col-span-4 flex flex-col">
+                        <label for="pi_effectiveDate"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Effective
+                            Date</label>
+                        <input type="date" id="pi_effectiveDate"
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
+                    </div>
+                    <div class="sm:col-span-4 flex flex-col">
+                        <label for="pi_cellMobileNo"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Cell/Mobile
+                            No. <span class="text-rose-500">*</span></label>
+                        <input type="tel" id="pi_cellMobileNo" required
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
+                    </div>
+
+                    <div class="sm:col-span-12 flex flex-col">
+                        <label for="pi_emailAddress"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Email
+                            Address</label>
+                        <input type="email" id="pi_emailAddress" readonly
+                            class="w-full text-sm bg-slate-50 border border-slate-200 text-slate-500 rounded-xl px-3 py-2.5 cursor-not-allowed focus:outline-none">
+                    </div>
+
+                    <!-- Inner Sub Panel: Minors -->
+                    <div class="sm:col-span-12 bg-slate-50 border border-slate-200 rounded-xl p-4 mt-2 space-y-4">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">For Minors
+                            Only</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="flex flex-col">
+                                <label for="pi_minor_parentName"
+                                    class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Parent/Guardian's
+                                    Name</label>
+                                <input type="text" id="pi_minor_parentName"
+                                    class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                             </div>
-                            <div class="field-group col-6">
-                                <label for="pi_minor_parentOccupation">Occupation</label>
-                                <input type="text" id="pi_minor_parentOccupation">
+                            <div class="flex flex-col">
+                                <label for="pi_minor_parentOccupation"
+                                    class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Occupation</label>
+                                <input type="text" id="pi_minor_parentOccupation"
+                                    class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                             </div>
                         </div>
                     </div>
 
-                    <div class="field-group col-6">
-                        <label for="pi_referredBy">Whom may we thank for referring you?</label>
-                        <input type="text" id="pi_referredBy">
+                    <div class="sm:col-span-6 flex flex-col">
+                        <label for="pi_referredBy"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Whom may we
+                            thank for referring you?</label>
+                        <input type="text" id="pi_referredBy"
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                     </div>
-                    <div class="field-group col-6">
-                        <label for="pi_reasonForConsultation">What is your reason for dental consultation?</label>
-                        <input type="text" id="pi_reasonForConsultation" required>
+                    <div class="sm:col-span-6 flex flex-col">
+                        <label for="pi_reasonForConsultation"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">What is your
+                            reason for dental consultation? <span class="text-rose-500">*</span></label>
+                        <input type="text" id="pi_reasonForConsultation" required
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                     </div>
                 </div>
             </section>
 
-            <section>
-                <h2>Dental History</h2>
-                <div class="form-grid">
-                    <div class="field-group col-6">
-                        <label for="dh_previousDentist">Previous Dentist</label>
-                        <input type="text" id="dh_previousDentist">
+            <!-- Section 2: Dental History -->
+            <section class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+                <h2
+                    class="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-3 flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Dental History
+                </h2>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div class="flex flex-col">
+                        <label for="dh_previousDentist"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Previous
+                            Dentist</label>
+                        <input type="text" id="dh_previousDentist"
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                     </div>
-                    <div class="field-group col-6">
-                        <label for="dh_lastDentalVisit">Last Dental Visit</label>
-                        <input type="text" id="dh_lastDentalVisit" placeholder="e.g., MM/DD/YY or Months ago">
+                    <div class="flex flex-col">
+                        <label for="dh_lastDentalVisit"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Last Dental
+                            Visit</label>
+                        <input type="text" id="dh_lastDentalVisit" placeholder="e.g., MM/DD/YY or Months ago"
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all placeholder-slate-400">
                     </div>
                 </div>
             </section>
 
-            <section>
-                <h2>Medical History</h2>
-                <div class="form-grid">
-                    <div class="field-group col-12 inner-sub-panel">
-                        <span class="sub-group-title">Physician Information</span>
-                        <div class="form-grid">
-                            <div class="field-group col-6">
-                                <label for="mh_physician_name">Name of Physician</label>
-                                <input type="text" id="mh_physician_name">
+            <!-- Section 3: Medical History -->
+            <section class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+                <h2
+                    class="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-3 flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Medical History
+                </h2>
+
+                <div class="space-y-6">
+                    <!-- Subsection: Physician Info -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Physician
+                            Information</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                            <div class="sm:col-span-6 flex flex-col">
+                                <label for="mh_physician_name"
+                                    class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Name
+                                    of Physician</label>
+                                <input type="text" id="mh_physician_name"
+                                    class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                             </div>
-                            <div class="field-group col-6">
-                                <label for="mh_physician_specialty">Specialty</label>
-                                <input type="text" id="mh_physician_specialty">
+                            <div class="sm:col-span-6 flex flex-col">
+                                <label for="mh_physician_specialty"
+                                    class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Specialty</label>
+                                <input type="text" id="mh_physician_specialty"
+                                    class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                             </div>
-                            <div class="field-group col-8">
-                                <label for="mh_physician_officeAddress">Office Address</label>
-                                <input type="text" id="mh_physician_officeAddress">
+                            <div class="sm:col-span-8 flex flex-col">
+                                <label for="mh_physician_officeAddress"
+                                    class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Office
+                                    Address</label>
+                                <input type="text" id="mh_physician_officeAddress"
+                                    class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                             </div>
-                            <div class="field-group col-4">
-                                <label for="mh_physician_officeNumber">Office Number</label>
-                                <input type="tel" id="mh_physician_officeNumber">
+                            <div class="sm:col-span-4 flex flex-col">
+                                <label for="mh_physician_officeNumber"
+                                    class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Office
+                                    Number</label>
+                                <input type="tel" id="mh_physician_officeNumber"
+                                    class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                             </div>
                         </div>
                     </div>
 
-                    <div class="field-group col-12 inner-sub-panel">
-                        <span class="sub-group-title">Health Diagnostics Questionnaire</span>
+                    <!-- Subsection: Diagnostic Questionnaire -->
+                    <div
+                        class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4 divide-y divide-slate-200/60">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Health
+                            Diagnostics Questionnaire</span>
 
-                        <div class="question-row form-grid">
-                            <div class="field-group col-8"><span>Are you in good health?</span></div>
-                            <div class="radio-group col-4">
-                                <label class="check-label"><input type="radio" name="mh_q_goodHealth" value="true">
-                                    Yes</label>
-                                <label class="check-label"><input type="radio" name="mh_q_goodHealth" value="false">
-                                    No</label>
+                        <!-- Question Row 1 -->
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 pt-3 items-center">
+                            <div class="sm:col-span-8 text-sm font-medium text-slate-700">Are you in good health?</div>
+                            <div class="sm:col-span-4 flex gap-4">
+                                <label
+                                    class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wider cursor-pointer"><input
+                                        type="radio" name="mh_q_goodHealth" value="true"
+                                        class="w-4 h-4 accent-indigo-600"> Yes</label>
+                                <label
+                                    class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wider cursor-pointer"><input
+                                        type="radio" name="mh_q_goodHealth" value="false"
+                                        class="w-4 h-4 accent-indigo-600"> No</label>
                             </div>
                         </div>
 
-                        <div class="question-row form-grid">
-                            <div class="field-group col-8">
-                                <span>Are you under medical treatment now?</span>
+                        <!-- Question Row 2 -->
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 pt-3 items-start">
+                            <div class="sm:col-span-8 space-y-2">
+                                <div class="text-sm font-medium text-slate-700">Are you under medical treatment now?
+                                </div>
                                 <input type="text" id="mh_q_treatmentDesc"
-                                    placeholder="If so, what condition is being treated?">
+                                    placeholder="If so, what condition is being treated?"
+                                    class="w-full text-xs bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all placeholder-slate-400">
                             </div>
-                            <div class="radio-group col-4">
-                                <label class="check-label"><input type="radio" name="mh_q_treatmentStatus" value="true">
-                                    Yes</label>
-                                <label class="check-label"><input type="radio" name="mh_q_treatmentStatus"
-                                        value="false"> No</label>
+                            <div class="sm:col-span-4 flex gap-4 pt-1">
+                                <label
+                                    class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wider cursor-pointer"><input
+                                        type="radio" name="mh_q_treatmentStatus" value="true"
+                                        class="w-4 h-4 accent-indigo-600"> Yes</label>
+                                <label
+                                    class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wider cursor-pointer"><input
+                                        type="radio" name="mh_q_treatmentStatus" value="false"
+                                        class="w-4 h-4 accent-indigo-600"> No</label>
                             </div>
                         </div>
 
-                        <div class="question-row form-grid">
-                            <div class="field-group col-8">
-                                <span>Have you ever had serious illness or surgical operation?</span>
-                                <input type="text" id="mh_q_illnessDesc"
-                                    placeholder="If so, what illness or operation?">
+                        <!-- Question Row 3 -->
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 pt-3 items-start">
+                            <div class="sm:col-span-8 space-y-2">
+                                <div class="text-sm font-medium text-slate-700">Have you ever had serious illness or
+                                    surgical operation?</div>
+                                <input type="text" id="mh_q_illnessDesc" placeholder="If so, what illness or operation?"
+                                    class="w-full text-xs bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all placeholder-slate-400">
                             </div>
-                            <div class="radio-group col-4">
-                                <label class="check-label"><input type="radio" name="mh_q_illnessStatus" value="true">
+                            <div class="sm:col-span-4 flex gap-4 pt-1">
+                                <label
+                                    class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wider cursor-pointer"><input
+                                        type="radio" name="mh_q_illnessStatus" value="true"
+                                        class="w-4 h-4 accent-indigo-600"> Yes</label>
+                                <label
+                                    class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wider cursor-pointer"><input
+                                        type="radio" name="mh_q_illnessStatus" value="false"
+                                        class="w-4 h-4 accent-indigo-600"> No</label>
+                            </div>
+                        </div>
+
+                        <!-- Question Row 4 -->
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 pt-3 items-start">
+                            <div class="sm:col-span-8 space-y-2">
+                                <div class="text-sm font-medium text-slate-700">Have you ever been hospitalized?</div>
+                                <input type="text" id="mh_q_hospitalDesc" placeholder="If so, when and why?"
+                                    class="w-full text-xs bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all placeholder-slate-400">
+                            </div>
+                            <div class="sm:col-span-4 flex gap-4 pt-1">
+                                <label
+                                    class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wider cursor-pointer"><input
+                                        type="radio" name="mh_q_hospitalStatus" value="true"
+                                        class="w-4 h-4 accent-indigo-600"> Yes</label>
+                                <label
+                                    class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wider cursor-pointer"><input
+                                        type="radio" name="mh_q_hospitalStatus" value="false"
+                                        class="w-4 h-4 accent-indigo-600"> No</label>
+                            </div>
+                        </div>
+
+                        <!-- Question Row 5 -->
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 pt-3 items-start">
+                            <div class="sm:col-span-8 space-y-2">
+                                <div class="text-sm font-medium text-slate-700">Are you taking any
+                                    prescription/non-prescription medication?</div>
+                                <input type="text" id="mh_q_medicationDesc" placeholder="If so, please specify."
+                                    class="w-full text-xs bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all placeholder-slate-400">
+                            </div>
+                            <div class="sm:col-span-4 flex gap-4 pt-1">
+                                <label
+                                    class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wider cursor-pointer"><input
+                                        type="radio" name="mh_q_medicationStatus" value="true"
+                                        class="w-4 h-4 accent-indigo-600"> Yes</label>
+                                <label
+                                    class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wider cursor-pointer"><input
+                                        type="radio" name="mh_q_medicationStatus" value="false"
+                                        class="w-4 h-4 accent-indigo-600"> No</label>
+                            </div>
+                        </div>
+
+                        <!-- Question Row 6 -->
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 pt-3 items-center">
+                            <div class="sm:col-span-8 text-sm font-medium text-slate-700">Do you use tobacco products?
+                            </div>
+                            <div class="sm:col-span-4 flex gap-4">
+                                <label
+                                    class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wider cursor-pointer"><input
+                                        type="radio" name="mh_q_tobacco" value="true" class="w-4 h-4 accent-indigo-600">
                                     Yes</label>
-                                <label class="check-label"><input type="radio" name="mh_q_illnessStatus" value="false">
+                                <label
+                                    class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wider cursor-pointer"><input
+                                        type="radio" name="mh_q_tobacco" value="false"
+                                        class="w-4 h-4 accent-indigo-600"> No</label>
+                            </div>
+                        </div>
+
+                        <!-- Question Row 7 -->
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 pt-3 items-center">
+                            <div class="sm:col-span-8 text-sm font-medium text-slate-700">Do you use alcohol, cocaine,
+                                or other dangerous drugs?</div>
+                            <div class="sm:col-span-4 flex gap-4">
+                                <label
+                                    class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wider cursor-pointer"><input
+                                        type="radio" name="mh_q_drugs" value="true" class="w-4 h-4 accent-indigo-600">
+                                    Yes</label>
+                                <label
+                                    class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wider cursor-pointer"><input
+                                        type="radio" name="mh_q_drugs" value="false" class="w-4 h-4 accent-indigo-600">
                                     No</label>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="question-row form-grid">
-                            <div class="field-group col-8">
-                                <span>Have you ever been hospitalized?</span>
-                                <input type="text" id="mh_q_hospitalDesc" placeholder="If so, when and why?">
-                            </div>
-                            <div class="radio-group col-4">
-                                <label class="check-label"><input type="radio" name="mh_q_hospitalStatus" value="true">
-                                    Yes</label>
-                                <label class="check-label"><input type="radio" name="mh_q_hospitalStatus" value="false">
-                                    No</label>
-                            </div>
+                    <!-- Subsection: Allergenic Profile -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Allergenic
+                            Profile</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                            <label
+                                class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                                    type="checkbox" id="mh_al_localAnesthetic"
+                                    class="w-4 h-4 accent-indigo-600 rounded"> Local Anesthetic</label>
+                            <label
+                                class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                                    type="checkbox" id="mh_al_penicillinAntibiotics"
+                                    class="w-4 h-4 accent-indigo-600 rounded"> Penicillin/Antibiotics</label>
+                            <label
+                                class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                                    type="checkbox" id="mh_al_sulfaDrugs" class="w-4 h-4 accent-indigo-600 rounded">
+                                Sulfa Drugs</label>
+                            <label
+                                class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                                    type="checkbox" id="mh_al_aspirin" class="w-4 h-4 accent-indigo-600 rounded">
+                                Aspirin</label>
+                            <label
+                                class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                                    type="checkbox" id="mh_al_latex" class="w-4 h-4 accent-indigo-600 rounded">
+                                Latex</label>
                         </div>
-
-                        <div class="question-row form-grid">
-                            <div class="field-group col-8">
-                                <span>Are you taking any prescription/non-prescription medication?</span>
-                                <input type="text" id="mh_q_medicationDesc" placeholder="If so, please specify.">
-                            </div>
-                            <div class="radio-group col-4">
-                                <label class="check-label"><input type="radio" name="mh_q_medicationStatus"
-                                        value="true"> Yes</label>
-                                <label class="check-label"><input type="radio" name="mh_q_medicationStatus"
-                                        value="false"> No</label>
-                            </div>
-                        </div>
-
-                        <div class="question-row form-grid">
-                            <div class="field-group col-8"><span>Do you use tobacco products?</span></div>
-                            <div class="radio-group col-4">
-                                <label class="check-label"><input type="radio" name="mh_q_tobacco" value="true">
-                                    Yes</label>
-                                <label class="check-label"><input type="radio" name="mh_q_tobacco" value="false">
-                                    No</label>
-                            </div>
-                        </div>
-
-                        <div class="question-row form-grid">
-                            <div class="field-group col-8"><span>Do you use alcohol, cocaine, or other dangerous
-                                    drugs?</span></div>
-                            <div class="radio-group col-4">
-                                <label class="check-label"><input type="radio" name="mh_q_drugs" value="true">
-                                    Yes</label>
-                                <label class="check-label"><input type="radio" name="mh_q_drugs" value="false">
-                                    No</label>
-                            </div>
+                        <div class="pt-1">
+                            <input type="text" id="mh_al_other" placeholder="Other specific allergies"
+                                class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all placeholder-slate-400">
                         </div>
                     </div>
 
-                    <div class="field-group col-12 inner-sub-panel">
-                        <span class="sub-group-title">Allergenic Profile</span>
-                        <div class="checkbox-stack">
-                            <label class="check-label"><input type="checkbox" id="mh_al_localAnesthetic"> Local
-                                Anesthetic</label>
-                            <label class="check-label"><input type="checkbox" id="mh_al_penicillinAntibiotics">
-                                Penicillin/Antibiotics</label>
-                            <label class="check-label"><input type="checkbox" id="mh_al_sulfaDrugs"> Sulfa Drugs</label>
-                            <label class="check-label"><input type="checkbox" id="mh_al_aspirin"> Aspirin</label>
-                            <label class="check-label"><input type="checkbox" id="mh_al_latex"> Latex</label>
-                        </div>
-                        <div style="margin-top: 12px;">
-                            <input type="text" id="mh_al_other" placeholder="Other specific allergies">
-                        </div>
-                    </div>
-
-                    <div class="field-group col-12 inner-sub-panel">
-                        <span class="sub-group-title">For Women Only</span>
-                        <div class="checkbox-stack">
-                            <label class="check-label"><input type="checkbox" id="mh_w_isPregnant"> Are you
-                                pregnant?</label>
-                            <label class="check-label"><input type="checkbox" id="mh_w_isNursing"> Are you
-                                nursing?</label>
-                            <label class="check-label"><input type="checkbox" id="mh_w_isTakingBirthControlPills">
-                                Taking birth control pills?</label>
+                    <!-- Subsection: For Women Only -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">For Women
+                            Only</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <label
+                                class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                                    type="checkbox" id="mh_w_isPregnant" class="w-4 h-4 accent-indigo-600 rounded"> Are
+                                you pregnant?</label>
+                            <label
+                                class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                                    type="checkbox" id="mh_w_isNursing" class="w-4 h-4 accent-indigo-600 rounded"> Are
+                                you nursing?</label>
+                            <label
+                                class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                                    type="checkbox" id="mh_w_isTakingBirthControlPills"
+                                    class="w-4 h-4 accent-indigo-600 rounded"> Taking birth control pills?</label>
                         </div>
                     </div>
 
-                    <div class="field-group col-4">
-                        <label for="mh_v_bleedingTime">Bleeding Time</label>
-                        <input type="text" id="mh_v_bleedingTime" placeholder="e.g., 2 min 15 sec">
-                    </div>
-                    <div class="field-group col-4">
-                        <label for="mh_v_bloodType">Blood Type</label>
-                        <input type="text" id="mh_v_bloodType" placeholder="e.g., O+, A-">
-                    </div>
-                    <div class="field-group col-4">
-                        <label for="mh_v_bloodPressure">Blood Pressure</label>
-                        <input type="text" id="mh_v_bloodPressure" placeholder="e.g., 120/80">
+                    <!-- Subsection: Vitals Metrics -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="flex flex-col">
+                            <label for="mh_v_bleedingTime"
+                                class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Bleeding
+                                Time</label>
+                            <input type="text" id="mh_v_bleedingTime" placeholder="e.g., 2 min 15 sec"
+                                class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all placeholder-slate-400">
+                        </div>
+                        <div class="flex flex-col">
+                            <label for="mh_v_bloodType"
+                                class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Blood
+                                Type</label>
+                            <input type="text" id="mh_v_bloodType" placeholder="e.g., O+, A-"
+                                class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all placeholder-slate-400">
+                        </div>
+                        <div class="flex flex-col">
+                            <label for="mh_v_bloodPressure"
+                                class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Blood
+                                Pressure</label>
+                            <input type="text" id="mh_v_bloodPressure" placeholder="e.g., 120/80"
+                                class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all placeholder-slate-400">
+                        </div>
                     </div>
                 </div>
             </section>
-            <section>
-                <h2>Medical Conditions Matrix</h2>
-                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;">Please check all conditions
-                    that apply to your medical profile:</p>
-                <div class="inner-sub-panel checkbox-matrix-grid">
-                    <label class="check-label"><input type="checkbox" id="mx_highBloodPressure"> High Blood
-                        Pressure</label>
-                    <label class="check-label"><input type="checkbox" id="mx_lowBloodPressure"> Low Blood
-                        Pressure</label>
-                    <label class="check-label"><input type="checkbox" id="mx_epilepsyConvulsions">
+
+            <!-- Section 4: Conditions Matrix -->
+            <section class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+                <h2
+                    class="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-3 flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Medical Conditions Matrix
+                </h2>
+                <p class="text-xs text-slate-500 tracking-normal">Please check all conditions that apply to your medical
+                    profile:</p>
+
+                <div
+                    class="bg-slate-50 border border-slate-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_highBloodPressure" class="w-4 h-4 accent-indigo-600 rounded"> High
+                        Blood Pressure</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_lowBloodPressure" class="w-4 h-4 accent-indigo-600 rounded"> Low
+                        Blood Pressure</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_epilepsyConvulsions" class="w-4 h-4 accent-indigo-600 rounded">
                         Epilepsy/Convulsions</label>
-                    <label class="check-label"><input type="checkbox" id="mx_aidsOrHivInfection"> AIDS or HIV
-                        Infection</label>
-                    <label class="check-label"><input type="checkbox" id="mx_sexuallyTransmittedDisease"> Sexually
-                        Transmitted Disease</label>
-                    <label class="check-label"><input type="checkbox" id="mx_stomachTroubleUlcers"> Stomach
-                        Trouble/Ulcers</label>
-                    <label class="check-label"><input type="checkbox" id="mx_faintingSeizure"> Fainting Seizure</label>
-                    <label class="check-label"><input type="checkbox" id="mx_rapidWeightLoss"> Rapid Weight Loss</label>
-                    <label class="check-label"><input type="checkbox" id="mx_radiationTherapy"> Radiation
-                        Therapy</label>
-                    <label class="check-label"><input type="checkbox" id="mx_jointReplacementImplant"> Joint
-                        Replacement/Implant</label>
-                    <label class="check-label"><input type="checkbox" id="mx_heartSurgery"> Heart Surgery</label>
-                    <label class="check-label"><input type="checkbox" id="mx_heartAttack"> Heart Attack</label>
-                    <label class="check-label"><input type="checkbox" id="mx_thyroidProblem"> Thyroid Problem</label>
-                    <label class="check-label"><input type="checkbox" id="mx_heartDisease"> Heart Disease</label>
-                    <label class="check-label"><input type="checkbox" id="mx_heartMurmur"> Heart Murmur</label>
-                    <label class="check-label"><input type="checkbox" id="mx_hepatitisLiverDisease"> Hepatitis/Liver
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_aidsOrHivInfection" class="w-4 h-4 accent-indigo-600 rounded"> AIDS
+                        or HIV Infection</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_sexuallyTransmittedDisease"
+                            class="w-4 h-4 accent-indigo-600 rounded"> Sexually Transmitted Disease</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_stomachTroubleUlcers" class="w-4 h-4 accent-indigo-600 rounded">
+                        Stomach Trouble/Ulcers</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_faintingSeizure" class="w-4 h-4 accent-indigo-600 rounded"> Fainting
+                        Seizure</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_rapidWeightLoss" class="w-4 h-4 accent-indigo-600 rounded"> Rapid
+                        Weight Loss</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_radiationTherapy" class="w-4 h-4 accent-indigo-600 rounded">
+                        Radiation Therapy</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_jointReplacementImplant" class="w-4 h-4 accent-indigo-600 rounded">
+                        Joint Replacement/Implant</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_heartSurgery" class="w-4 h-4 accent-indigo-600 rounded"> Heart
+                        Surgery</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_heartAttack" class="w-4 h-4 accent-indigo-600 rounded"> Heart
+                        Attack</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_thyroidProblem" class="w-4 h-4 accent-indigo-600 rounded"> Thyroid
+                        Problem</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_heartDisease" class="w-4 h-4 accent-indigo-600 rounded"> Heart
                         Disease</label>
-                    <label class="check-label"><input type="checkbox" id="mx_rheumaticFever"> Rheumatic Fever</label>
-                    <label class="check-label"><input type="checkbox" id="mx_hayFeverAllergies"> Hay
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_heartMurmur" class="w-4 h-4 accent-indigo-600 rounded"> Heart
+                        Murmur</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_hepatitisLiverDisease" class="w-4 h-4 accent-indigo-600 rounded">
+                        Hepatitis/Liver Disease</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_rheumaticFever" class="w-4 h-4 accent-indigo-600 rounded"> Rheumatic
+                        Fever</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_hayFeverAllergies" class="w-4 h-4 accent-indigo-600 rounded"> Hay
                         Fever/Allergies</label>
-                    <label class="check-label"><input type="checkbox" id="mx_respiratoryProblems"> Respiratory
-                        Problems</label>
-                    <label class="check-label"><input type="checkbox" id="mx_hepatitisJaundice">
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_respiratoryProblems" class="w-4 h-4 accent-indigo-600 rounded">
+                        Respiratory Problems</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_hepatitisJaundice" class="w-4 h-4 accent-indigo-600 rounded">
                         Hepatitis/Jaundice</label>
-                    <label class="check-label"><input type="checkbox" id="mx_tuberculosis"> Tuberculosis</label>
-                    <label class="check-label"><input type="checkbox" id="mx_swollenAnkles"> Swollen Ankles</label>
-                    <label class="check-label"><input type="checkbox" id="mx_kidneyDisease"> Kidney Disease</label>
-                    <label class="check-label"><input type="checkbox" id="mx_diabetes"> Diabetes</label>
-                    <label class="check-label"><input type="checkbox" id="mx_chestPain"> Chest Pain</label>
-                    <label class="check-label"><input type="checkbox" id="mx_stroke"> Stroke</label>
-                    <label class="check-label"><input type="checkbox" id="mx_cancerTumors"> Cancer/Tumors</label>
-                    <label class="check-label"><input type="checkbox" id="mx_anemia"> Anemia</label>
-                    <label class="check-label"><input type="checkbox" id="mx_angina"> Angina</label>
-                    <label class="check-label"><input type="checkbox" id="mx_asthma"> Asthma</label>
-                    <label class="check-label"><input type="checkbox" id="mx_emphysema"> Emphysema</label>
-                    <label class="check-label"><input type="checkbox" id="mx_bleedingProblems"> Bleeding
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_tuberculosis" class="w-4 h-4 accent-indigo-600 rounded">
+                        Tuberculosis</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_swollenAnkles" class="w-4 h-4 accent-indigo-600 rounded"> Swollen
+                        Ankles</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_kidneyDisease" class="w-4 h-4 accent-indigo-600 rounded"> Kidney
+                        Disease</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_diabetes" class="w-4 h-4 accent-indigo-600 rounded"> Diabetes</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_chestPain" class="w-4 h-4 accent-indigo-600 rounded"> Chest
+                        Pain</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_stroke" class="w-4 h-4 accent-indigo-600 rounded"> Stroke</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_cancerTumors" class="w-4 h-4 accent-indigo-600 rounded">
+                        Cancer/Tumors</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_anemia" class="w-4 h-4 accent-indigo-600 rounded"> Anemia</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_angina" class="w-4 h-4 accent-indigo-600 rounded"> Angina</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_asthma" class="w-4 h-4 accent-indigo-600 rounded"> Asthma</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_emphysema" class="w-4 h-4 accent-indigo-600 rounded">
+                        Emphysema</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_bleedingProblems" class="w-4 h-4 accent-indigo-600 rounded"> Bleeding
                         Problems</label>
-                    <label class="check-label"><input type="checkbox" id="mx_bloodDiseases"> Blood Diseases</label>
-                    <label class="check-label"><input type="checkbox" id="mx_headInjuries"> Head Injuries</label>
-                    <label class="check-label"><input type="checkbox" id="mx_arthritisRheumatism">
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_bloodDiseases" class="w-4 h-4 accent-indigo-600 rounded"> Blood
+                        Diseases</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_headInjuries" class="w-4 h-4 accent-indigo-600 rounded"> Head
+                        Injuries</label>
+                    <label
+                        class="flex items-center gap-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl p-3 cursor-pointer select-none hover:bg-slate-100/50 transition-colors"><input
+                            type="checkbox" id="mx_arthritisRheumatism" class="w-4 h-4 accent-indigo-600 rounded">
                         Arthritis/Rheumatism</label>
                 </div>
-                <div class="field-group col-12" style="margin-top: 16px;">
-                    <label for="mx_otherConditionsDetails">Other Conditions</label>
-                    <input type="text" id="mx_otherConditionsDetails" placeholder="Specify details">
+
+                <div class="flex flex-col pt-2">
+                    <label for="mx_otherConditionsDetails"
+                        class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Other
+                        Conditions</label>
+                    <input type="text" id="mx_otherConditionsDetails" placeholder="Specify details"
+                        class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all placeholder-slate-400">
                 </div>
             </section>
 
-            <section>
-                <div class="legal-notice">
-                    <p>
-                        I certify that I have read and understand the above information to the best of my knowledge.
-                        The above questions have been accurately answered. I understand that providing incorrect
-                        information can be dangerous to my health.
+            <!-- Section 5: Legal Verification & Electronic Signature -->
+            <section class="space-y-6">
+                <div class="bg-amber-50/60 border border-amber-200/60 rounded-2xl p-4">
+                    <p class="text-xs text-amber-800 leading-relaxed font-medium">
+                        I certify that I have read and understand the above information to the best of my knowledge. The
+                        above questions have been accurately answered. I understand that providing incorrect information
+                        can be dangerous to my health.
                     </p>
                 </div>
 
-                <div class="form-grid" style="align-items: end; margin-bottom: 24px;">
-                    <div class="field-group col-8">
-                        <label for="sm_signature">Electronic Signature</label>
-                        <input type="text" id="sm_signature" placeholder="Type your full legal name to sign">
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-5 items-end">
+                    <div class="sm:col-span-8 flex flex-col">
+                        <label for="sm_signature"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Electronic
+                            Signature</label>
+                        <input type="text" id="sm_signature" placeholder="Type your full legal name to sign"
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all placeholder-slate-400">
                     </div>
-                    <div class="field-group col-4">
-                        <label for="sm_dateSigned">Date Signed</label>
-                        <input type="date" id="sm_dateSigned" required>
+                    <div class="sm:col-span-4 flex flex-col">
+                        <label for="sm_dateSigned"
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Date Signed
+                            <span class="text-rose-500">*</span></label>
+                        <input type="date" id="sm_dateSigned" required
+                            class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                     </div>
                 </div>
 
-                <button type="submit" id="submitBtn">Submit Intake Profile</button>
+                <!-- Submit Button Area using Indigo Theme Core -->
+                <div class="pt-4">
+                    <button type="submit" id="submitBtn"
+                        class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-3.5 rounded-xl transition-all shadow-md uppercase tracking-wider cursor-pointer shadow-indigo-600/10">
+                        Submit Intake Profile
+                    </button>
+                </div>
             </section>
 
         </form>
