@@ -239,3 +239,25 @@ export const updateAppointmentStatus = async (req, res) => {
       .json({ success: false, message: "Error updating status" });
   }
 };
+export const createAppointment = async (req, res) => {
+  try {
+    const { date, time, service } = req.body; // e.g., date: "2026-06-20", time: "09:00 AM"
+
+    // 🛡️ Combine date and time strings into a single standard Date object
+    const appointmentDateTime = new Date(`${date} ${time}`);
+    const systemNow = new Date(); // Exact current time node
+
+    // Verify if the requested slot has already passed
+    if (appointmentDateTime < systemNow) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Booking failure: The selected date or time slot has already passed.",
+      });
+    }
+
+    // ... continue processing valid appointment saving logic ...
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

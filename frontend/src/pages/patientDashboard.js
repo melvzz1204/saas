@@ -315,5 +315,44 @@ async function initializeDashboard() {
   await loadPatientBookings();
 }
 
+// Run this when your patient booking modal or view mounts
+function initializeBookingCalendar() {
+  const dateInput = document.getElementById("booking-date");
+  if (!dateInput) return;
+
+  // 📆 Get real-time current date in local "YYYY-MM-DD" format
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  const minDateString = `${year}-${month}-${day}`;
+
+  // Enforce the baseline timeline boundary on the input element
+  dateInput.setAttribute("min", minDateString);
+}
+// Locate your form submit listener function inside patientDashboard.js
+document
+  .getElementById("booking-form")
+  .addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const selectedDateStr = document.getElementById("booking-date").value; // YYYY-MM-DD
+    const selectedTimeStr = document.getElementById("booking-time").value; // e.g., "09:00 AM"
+
+    const selectedDateTime = new Date(`${selectedDateStr} ${selectedTimeStr}`);
+    const currentSystemTime = new Date(); // Real time evaluation node
+
+    // 🛡️ Double-layer verification check block
+    if (selectedDateTime < currentSystemTime) {
+      alert(
+        "⚠️ Booking Window Error: The selected structural time window has already passed for today. Please pick a later slot.",
+      );
+      return; // Halt form transmission
+    }
+
+    // ... your existing fetch/axios submission logic can continue safely here ...
+  });
+
 // Trigger bootstrap routine once script parsing evaluates
 initializeDashboard();
