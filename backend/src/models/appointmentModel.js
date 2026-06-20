@@ -31,7 +31,6 @@ const appointmentSchema = new mongoose.Schema(
     },
     time: {
       type: String,
-      // ⚠️ Optional: Walk-ins don't have a scheduled slot
     },
 
     // 🔄 UNIFIED STATUS: Kept the enum here since operational steps are fixed
@@ -45,7 +44,8 @@ const appointmentSchema = new mongoose.Schema(
         "checked-in", // Patient is in the lobby
         "in-treatment", // Patient is in the chair
         "completed", // Session finished
-        "cancelled", // Patient left or cancelled
+        "cancelled", //Patient left or cancelled
+        "Missed", // Missed
       ],
       default: "Pending",
     },

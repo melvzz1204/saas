@@ -199,14 +199,9 @@ function renderAppointmentsTable(appointments) {
     ` | Month (${dynamicMonth}):`,
     monthlyCount,
   );
-
-  // 4. Safely push values into the HTML DOM cards if they exist
   if (todayBookingsEl) todayBookingsEl.textContent = todayCount;
   if (monthlyBookingsEl) monthlyBookingsEl.textContent = monthlyCount;
-  // =========================================================================
-  // 🗂️ TABLE ROW RENDERING
-  // =========================================================================
-  // 🆕 Updated colspan from 5 to 6 to encompass your new layout columns structure
+
   if (appointments.length === 0) {
     tableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 italic">No appointments allocated for this specific clinic location.</td></tr>`;
     return;
@@ -234,12 +229,21 @@ function renderAppointmentsTable(appointments) {
 
       let statusClass =
         "bg-amber-500/10 text-amber-400 border border-amber-500/20";
-      if (currentStatus === "confirmed" || currentStatus === "approved")
+
+      if (currentStatus === "confirmed" || currentStatus === "approved") {
         statusClass =
           "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
-      if (currentStatus === "cancelled" || currentStatus === "rejected")
+      } else if (
+        currentStatus === "cancelled" ||
+        currentStatus === "rejected" ||
+        currentStatus === "declined"
+      ) {
         statusClass = "bg-rose-500/10 text-rose-400 border border-rose-500/20";
-
+      } else if (currentStatus === "missed" || currentStatus === "no-show") {
+        // 🎨 Sleek slate/gray badge look for unattended appointments
+        statusClass =
+          "bg-slate-500/10 text-slate-400 border border-slate-500/20";
+      }
       // 🆕 FIXED RELATIONAL FUZZY LOOKUP PIPELINE
       const matchedTreatment = (
         typeof globalTreatmentsData !== "undefined" ? globalTreatmentsData : []
@@ -279,14 +283,18 @@ function renderAppointmentsTable(appointments) {
         </span>
     </td>
     <td class="p-4 text-right space-x-1">
-      ${
-        currentStatus === "pending"
-          ? `
+     ${
+       currentStatus === "pending"
+         ? `
         <button onclick="modifyAppointmentStatus('${appt._id}', 'Approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded font-bold text-[10px] tracking-wide transition-colors">Approve</button>
         <button onclick="modifyAppointmentStatus('${appt._id}', 'Declined')" class="bg-rose-50 hover:bg-rose-100 text-slate-700 hover:text-rose-600 border border-slate-200 hover:border-rose-200 px-2.5 py-1 rounded-md font-bold text-[10px] tracking-wide uppercase transition-colors cursor-pointer shadow-sm shadow-slate-100">Declined</button>
       `
-          : `<span class="text-[11px] text-slate-600 font-medium">Session Finalized</span>`
-      }
+         : currentStatus === "approved" || currentStatus === "confirmed"
+           ? `
+        <button onclick="modifyAppointmentStatus('${appt._id}', 'Missed')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 px-2.5 py-1 rounded font-bold text-[10px] tracking-wide transition-colors">Mark Missed</button>
+      `
+           : `<span class="text-[11px] text-slate-500 font-medium capitalize">${currentStatus}</span>`
+     }
     </td>
 </tr>
     `;

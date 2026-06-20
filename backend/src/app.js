@@ -7,9 +7,13 @@ import appointmentRoutes from "./routes/appointmentRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import staffRoutes from "./routes/staffRoutes.js";
 import dentalServicePrice from "./routes/dentalServicePriceRoutes.js";
+import initAppointmentCleanupJob from "./utils/appointmentCleanup.js";
+
 dotenv.config();
 
 const app = express();
+
+initAppointmentCleanupJob();
 
 app.use(cors());
 app.use(express.json());
