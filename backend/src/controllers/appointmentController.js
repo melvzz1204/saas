@@ -164,19 +164,22 @@ export const modifyAppointmentStatus = async (req, res) => {
 // 1. Fetch all appointments for the dashboard
 export const getTodayAppointments = async (req, res) => {
   try {
-    // Get today's date formatted EXACTLY like your database string ("YYYY-MM-DD")
+    // FIX: Use localized year/month/date strings to prevent UTC midnight shifting!
     const today = new Date();
-    const dateString = today.toISOString().split("T")[0]; // Creates e.g. "2026-06-07"
+    const pad = (num) => String(num).padStart(2, "0");
+
+    // Explicitly builds the string relative to local server timezone execution context
+    const dateString = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 
     const allAppointments = await Appointment.find({
-      date: { $gte: dateString }, // Lexicographical string comparison works great for YYYY-MM-DD
+      date: { $gte: dateString },
       status: {
         $in: ["Approved", "pending", "checked-in", "in-treatment", "completed"],
       },
     })
       .populate({
         path: "patientId",
-        select: "firstName lastName", // Pulls only these fields from the User collection
+        select: "firstName lastName",
       })
       .sort({ date: 1, time: 1 });
 

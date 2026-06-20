@@ -149,23 +149,25 @@
         <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div class="bg-white border border-slate-200/80 rounded-xl p-5 space-y-1 shadow-xs">
                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Scheduled Today</p>
-                <p id="kpi-total-appointments" class="text-2xl font-black text-slate-900">0</p>
+                <p id="kpi-today-bookings" class="text-2xl font-black text-slate-900">0</p>
+            </div>
+            <div class="bg-white border border-slate-200/80 rounded-xl p-5 space-y-1 shadow-xs">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">This Month's Bookings</p>
+                <p id="kpi-monthly-bookings" class="text-2xl font-black text-indigo-600">0</p>
             </div>
             <div class="bg-white border border-slate-200/80 rounded-xl p-5 space-y-1 shadow-xs">
                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Clinical Staff</p>
                 <p id="kpi-total-staff" class="text-2xl font-black text-indigo-600">0</p>
             </div>
             <div class="bg-white border border-slate-200/80 rounded-xl p-5 space-y-1 shadow-xs">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pricing Matrix Tiers</p>
-                <p id="kpi-pricing-tiers" class="text-2xl font-black text-emerald-600">0</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pending Bookings</p>
+                <p id="kpi-pending-bookings" class="text-2xl font-black text-amber-500">0</p>
             </div>
         </section>
-
         <div id="dashboard-panels">
-
             <div id="panel-appointments" class="dashboard-panel grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <div
-                    class="xl:col-span-2 bg-white border border-slate-200/80 rounded-xl shadow-xs overflow-hidden flex flex-col justify-between">
+                    class="xl:col-span-3 bg-white border border-slate-200/80 rounded-xl shadow-xs overflow-hidden flex flex-col justify-between">
                     <div>
                         <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                             <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Live Appointment
@@ -182,6 +184,7 @@
                                         <th class="p-3.5 pl-5">Patient Name</th>
                                         <th class="p-3.5">Date / Time</th>
                                         <th class="p-3.5">Reason</th>
+                                        <th class="p-3.5">Price (PHP)</th>
                                         <th class="p-3.5">Status</th>
                                         <th class="p-3.5 pr-5 text-right">Actions</th>
                                     </tr>
@@ -189,20 +192,13 @@
                                 <tbody id="appointment-table-body"
                                     class="text-xs text-slate-700 divide-y divide-slate-100">
                                     <tr>
-                                        <td colspan="5" class="p-8 text-center text-slate-400 italic font-medium">No
-                                            active patients synchronized to this node context.</td>
+                                        <td colspan="6" class="p-8 text-center text-slate-400 italic font-medium">No
+                                            active
+                                            patients synchronized to this node context.</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                    </div>
-                </div>
-
-                <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs space-y-4 h-fit">
-                    <div>
-                        <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Quick Tools</h3>
-                        <p class="text-[11px] text-slate-400 font-medium mt-0.5">Select items inside your sidebar
-                            navigation tabs to execute actions.</p>
                     </div>
                 </div>
             </div>
@@ -211,7 +207,8 @@
                 <div class="xl:col-span-2 bg-white border border-slate-200/80 rounded-xl shadow-xs p-5">
                     <h3 class="font-black text-xs uppercase tracking-wider text-slate-800 mb-4">Active Staff Roster</h3>
                     <p class="text-xs text-slate-400 italic">Select tab items to access your configuration parameters
-                        table views...</p>
+                        table
+                        views...</p>
                 </div>
 
                 <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs space-y-4 h-fit">
@@ -219,12 +216,14 @@
                         <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Onboard Clinical Staff
                         </h3>
                         <p class="text-[11px] text-slate-400 font-medium mt-0.5">Register a new practitioner node into
-                            the active directory.</p>
+                            the
+                            active directory.</p>
                     </div>
                     <div id="pin-reveal-box"
                         class="hidden mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
                         <p class="text-[10px] font-bold text-amber-800 uppercase tracking-wider">⚠️ Security Credential
-                            Node Generated</p>
+                            Node
+                            Generated</p>
                         <p class="text-xs text-amber-700 font-medium">Temporary Authentication Access PIN Code:</p>
                         <div class="flex items-center space-x-2 pt-1">
                             <span id="generated-pin-display"
@@ -238,14 +237,12 @@
                             <input type="text" id="staff-name" required placeholder="Dr. Jane Doe"
                                 class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
                         </div>
-
                         <div>
                             <label
                                 class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Specialization</label>
                             <input type="text" id="staff-spec" placeholder="Orthodontics"
                                 class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
                         </div>
-
                         <div>
                             <label
                                 class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Workspace
@@ -257,7 +254,6 @@
                                 <option value="Dental Hygienist">Dental Hygienist</option>
                             </select>
                         </div>
-
                         <div>
                             <label
                                 class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Workspace
@@ -265,7 +261,6 @@
                             <input type="email" id="staff-email" required placeholder="provider@clinic.com"
                                 class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
                         </div>
-
                         <div>
                             <label
                                 class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Contact
@@ -273,14 +268,10 @@
                             <input type="text" id="staff-phone" required placeholder="+63 912 345 6789"
                                 class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
                         </div>
-
                         <button type="submit"
-                            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold tracking-wide uppercase text-[11px] py-2.5 rounded-lg transition-all shadow-md cursor-pointer mt-2">
-                            Onboard Staff Member
-                        </button>
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold tracking-wide uppercase text-[11px] py-2.5 rounded-lg transition-all shadow-md cursor-pointer mt-2">Onboard
+                            Staff Member</button>
                     </form>
-
-
                 </div>
             </div>
 
@@ -290,7 +281,8 @@
                     <div>
                         <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                             <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Live Dynamic
-                                Treatment Ledger</h3>
+                                Treatment Ledger
+                            </h3>
                             <button id="refresh-prices"
                                 class="text-[11px] text-emerald-600 hover:text-emerald-700 font-bold uppercase tracking-wider transition-colors cursor-pointer">Re-fetch
                                 Fees</button>
@@ -309,7 +301,8 @@
                                 <tbody id="pricing-table-body" class="text-xs text-slate-700 divide-y divide-slate-100">
                                     <tr>
                                         <td colspan="4" class="p-8 text-center text-slate-400 italic font-medium">
-                                            Syncing live dynamic treatment database tracks...</td>
+                                            Syncing live
+                                            dynamic treatment database tracks...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -323,7 +316,8 @@
                             <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Modify Operational
                                 Rates</h3>
                             <p class="text-[11px] text-slate-400 font-medium mt-0.5">Quickly adjust base patient pricing
-                                for a service.</p>
+                                for a
+                                service.</p>
                         </div>
                         <form id="edit-price-form" class="space-y-3">
                             <div>
@@ -336,7 +330,8 @@
                             <div>
                                 <label
                                     class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">New
-                                    Base Fee (PHP)</label>
+                                    Base
+                                    Fee (PHP)</label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-2 text-xs font-bold text-slate-400">₱</span>
                                     <input type="number" step="0.01" id="edit-price" required placeholder="1850.00"
@@ -354,7 +349,8 @@
                             <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Onboard New Treatment
                             </h3>
                             <p class="text-[11px] text-slate-400 font-medium mt-0.5">Add a new operational treatment
-                                item and rate.</p>
+                                item and
+                                rate.</p>
                         </div>
                         <form id="add-price-form" class="space-y-3">
                             <div>
@@ -404,55 +400,12 @@
                     <p class="text-xs text-slate-400 mt-2">Analytical data streams are ready for review.</p>
                 </div>
             </div>
-
         </div>
     </main>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const navItems = document.querySelectorAll(".nav-item");
-            const panels = document.querySelectorAll(".dashboard-panel");
-            const title = document.getElementById("dashboard-title");
-            const subtitle = document.getElementById("dashboard-subtitle");
-
-            const metaMap = {
-                "panel-appointments": { title: "Operations Overview", sub: "Real-time scheduling and medical provider routing execution paths" },
-                "panel-staff": { title: "Staff Directory Matrix", sub: "Manage clinical personnel nodes, security permissions, and tracking access parameters" },
-                "panel-pricing": { title: "Clinical Financial Parameters", sub: "Configure active service treatment catalogs, adjust base currencies, and manage billing codes" },
-                "panel-reports": { title: "System Analytics Engine", sub: "Review clinical conversion pipelines, operations summaries, and resource performance logs" }
-            };
-
-            // Sidebar Panel Toggling Logic
-            navItems.forEach(item => {
-                item.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    const targetPanelId = item.getAttribute("data-target");
-
-                    navItems.forEach(nav => {
-                        nav.className = "nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all";
-                        nav.querySelector(".active-dot").classList.add("hidden");
-                    });
-
-                    item.className = "nav-item group flex items-center justify-between bg-slate-100 text-slate-900 px-3 py-2 rounded-lg text-xs font-semibold border border-slate-200/50 cursor-pointer transition-all";
-                    item.querySelector(".active-dot").classList.remove("hidden");
-
-                    panels.forEach(panel => panel.classList.add("hidden"));
-                    document.getElementById(targetPanelId).classList.remove("hidden");
-
-                    title.textContent = metaMap[targetPanelId].title;
-                    subtitle.textContent = metaMap[targetPanelId].sub;
-                });
-            });
-
-            // 🔑 ATTACH ONBOARDING EVENT HANDLER
-            const addStaffForm = document.getElementById("add-staff-form");
-            if (addStaffForm && typeof handleStaffOnboarding === "function") {
-                addStaffForm.addEventListener("submit", handleStaffOnboarding);
-            }
-        });
-    </script>
+    <script src="/src/util/nav.js"></script>
     <script src="/src/pages/adminClinicDashboard.js"></script>
     <script src="/src/pages/dentalPricing.js"></script>
+
 </body>
 
 </html>
