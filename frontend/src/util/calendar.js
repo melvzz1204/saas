@@ -13,10 +13,18 @@ document.addEventListener("DOMContentLoaded", () => {
     "November",
     "December",
   ];
-
-  // 📆 🆕 Dynamically calculate today's real date objects (No more hardcoding!)
   let currentNavDate = new Date();
   const immutableToday = new Date();
+
+  // Assign interactive navigational track direction controllers
+  document.getElementById("prev-month-btn").addEventListener("click", () => {
+    currentNavDate.setMonth(currentNavDate.getMonth() - 1);
+    renderCalendarGrid();
+  });
+  document.getElementById("next-month-btn").addEventListener("click", () => {
+    currentNavDate.setMonth(currentNavDate.getMonth() + 1);
+    renderCalendarGrid();
+  });
 
   // Strip hours/minutes from today's reference for pure date cell comparison
   immutableToday.setHours(0, 0, 0, 0);
@@ -98,16 +106,6 @@ document.addEventListener("DOMContentLoaded", () => {
       daysGrid.appendChild(dateCell);
     }
   }
-
-  // Assign interactive navigational track direction controllers
-  document.getElementById("prev-month-btn").addEventListener("click", () => {
-    currentNavDate.setMonth(currentNavDate.getMonth() - 1);
-    renderCalendarGrid();
-  });
-  document.getElementById("next-month-btn").addEventListener("click", () => {
-    currentNavDate.setMonth(currentNavDate.getMonth() + 1);
-    renderCalendarGrid();
-  });
 
   // Fire up initialization build process loops
   renderCalendarGrid();

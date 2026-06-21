@@ -5,8 +5,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // DOM Elements - Table
   const pricingTableBody = document.getElementById("pricing-table-body");
   const refreshPricesBtn = document.getElementById("refresh-prices");
-  const kpiPricingTiers = document.getElementById("kpi-pricing-tiers");
-
   // DOM Elements - Forms
   const addPriceForm = document.getElementById("add-price-form");
   const editPriceForm = document.getElementById("edit-price-form");
@@ -79,9 +77,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ==========================================
-  // 2. REGISTER A NEW TREATMENT RATE (POST)
-  // ==========================================
   if (addPriceForm) {
     addPriceForm.addEventListener("submit", async (e) => {
       e.preventDefault();

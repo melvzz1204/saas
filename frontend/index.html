@@ -4,151 +4,346 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClinicFlow SaaS | Streamline Your Patient Operations</title>
+    <title>Novaclinic | Streamline Your Patient Operations</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="./src/style/animation.css">
 </head>
 
-<body class="bg-zinc-950 text-zinc-400 font-sans antialiased selection:bg-blue-500/30 selection:text-blue-200">
-
-    <!-- Sticky Navigation Interface -->
-    <nav class="bg-zinc-950/80 backdrop-blur-md border-b border-zinc-900 sticky top-0 z-50 shadow-lg shadow-black/20">
+<body class="bg-zinc-950 text-zinc-400 font-sans antialiased selection:bg-teal-500/20 selection:text-teal-200">
+    <nav
+        class="bg-zinc-950/40 backdrop-blur-xl border-b border-zinc-900/80 sticky top-0 z-50 transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
-                <!-- Brand Identity -->
-                <div class="flex items-center space-x-3">
+                <!-- Brand Identity Node -->
+                <div class="flex items-center space-x-3 group cursor-pointer">
                     <div
-                        class="w-9 h-9 bg-blue-600/10 text-blue-400 rounded-xl flex items-center justify-center text-sm font-black border border-blue-500/20 shadow-inner">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        class="w-8 h-8 bg-gradient-to-br from-teal-500 to-emerald-500 text-zinc-950 rounded-lg flex items-center justify-center shadow-lg shadow-teal-500/10 transition-transform group-hover:scale-105 duration-300">
+                        <svg class="w-4 h-4 text-zinc-950" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            stroke-width="3">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                         </svg>
                     </div>
                     <div class="flex flex-col">
-                        <span class="font-bold text-sm tracking-tight text-zinc-100">ClinicFlow</span>
-                        <span class="text-[9px] font-black text-blue-400 uppercase tracking-widest -mt-0.5">SaaS
+                        <span
+                            class="font-bold text-sm tracking-tight text-zinc-100 group-hover:text-teal-400 transition-colors">Novaclinic</span>
+                        <span class="text-[8px] font-bold text-zinc-500 uppercase tracking-widest -mt-0.5">SaaS
                             Workspace</span>
                     </div>
                 </div>
 
-                <!-- Center Section Anchor Routes -->
-                <div class="hidden md:flex items-center space-x-8">
+                <!-- Center Minimal Links -->
+                <div class="hidden md:flex items-center space-x-10">
                     <a href="#features"
-                        class="text-xs font-bold text-zinc-400 hover:text-zinc-100 transition-colors uppercase tracking-wider">Features</a>
+                        class="text-xs font-semibold text-zinc-400 hover:text-zinc-100 transition-colors uppercase tracking-widest">Features</a>
                     <a href="#workflow"
-                        class="text-xs font-bold text-zinc-400 hover:text-zinc-100 transition-colors uppercase tracking-wider">System
+                        class="text-xs font-semibold text-zinc-400 hover:text-zinc-100 transition-colors uppercase tracking-widest">System
                         Flow</a>
                     <a href="#pricing"
-                        class="text-xs font-bold text-zinc-400 hover:text-zinc-100 transition-colors uppercase tracking-wider">Pricing</a>
+                        class="text-xs font-semibold text-zinc-400 hover:text-zinc-100 transition-colors uppercase tracking-widest">Pricing</a>
                 </div>
-
-                <!-- Global Action Targets -->
-                <div class="flex items-center space-x-3">
+                <!-- Global CTA Elements -->
+                <div class="flex items-center space-x-4">
                     <a href="/clinicLogin.html"
-                        class="px-4 py-2 text-zinc-400 hover:text-zinc-100 text-xs font-bold rounded-xl transition-all uppercase tracking-wider">
+                        class="text-zinc-400 hover:text-zinc-100 text-xs font-bold transition-colors uppercase tracking-widest">
                         Login
                     </a>
                     <a href="#pricing"
-                        class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-blue-900/20 uppercase tracking-wider text-center">
+                        class="px-4 py-2.5 bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-bold rounded-lg transition-all shadow-md uppercase tracking-widest active:scale-[0.98]">
                         Get Started
                     </a>
                 </div>
             </div>
         </div>
     </nav>
+    <!-- 🌟 Full Screen Slider Canvas Frame -->
+    <section class="bg-zinc-950 relative w-full h-screen overflow-hidden">
+        <div class="relative w-full h-full group">
+            <div id="carouselTrack" class="relative w-full h-full">
 
-    <!-- Executive Hero Launchpad -->
-    <header class="relative overflow-hidden py-24 lg:py-36 bg-zinc-950 border-b border-zinc-900">
-        <!-- Ambient Background Node Blur -->
+                <!-- Slide 1 (Hero Landing Slide) -->
+                <div class="carousel-slide absolute inset-0 w-full h-full transition-opacity duration-700 ease-in-out z-10 opacity-100"
+                    data-index="0">
+                    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1920&q=80"
+                        alt="Real-Time Matrix Data" class="w-full h-full object-cover opacity-30">
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent flex flex-col justify-center items-center px-4">
+
+                        <!-- Integrated Content Node -->
+                        <div class="text-center max-w-3xl mx-auto space-y-8">
+                            <!-- Micro Banner Node -->
+                            <div
+                                class="inline-flex items-center space-x-2 bg-zinc-900/80 border border-zinc-800 px-3 py-1 rounded-full text-[10px] font-semibold text-teal-400 tracking-wider uppercase shadow-inner">
+                                <span>✨</span> <span>Engineered for Dental & Medical Teams</span>
+                            </div>
+
+                            <h1
+                                class="text-4xl sm:text-7xl font-bold tracking-tight text-zinc-100 leading-[1.1] font-sans uppercase">
+                                Eliminate clinic chaos. <br>
+                                <span
+                                    class="bg-clip-text text-transparent bg-gradient-to-r from-teal-400 via-emerald-400 to-cyan-500">
+                                    Automate patient flow.
+                                </span>
+                            </h1>
+
+                            <p
+                                class="text-xs sm:text-sm text-zinc-400 font-normal max-w-xl mx-auto leading-relaxed tracking-wide">
+                                A ultra-minimalist, real-time Kanban dashboard framework. Manage operational
+                                appointments,
+                                route
+                                unexpected walk-ins, and synchronize your patient chairs seamlessly.
+                            </p>
+
+                            <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+                                <a href="#pricing"
+                                    class="w-full sm:w-auto px-7 py-3.5 bg-gradient-to-r from-teal-500 to-emerald-500 text-zinc-950 font-bold text-xs rounded-lg transition-all shadow-lg shadow-teal-500/5 hover:opacity-95 active:scale-[0.99] uppercase tracking-widest text-center">
+                                    Deploy Workspace Instance
+                                </a>
+                                <a href="#workflow"
+                                    class="w-full sm:w-auto px-7 py-3.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-xs rounded-lg transition-all border border-zinc-800/80 uppercase tracking-widest text-center shadow-xs">
+                                    See System Metrics
+                                </a>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Slide 2 -->
+                <div class="carousel-slide absolute inset-0 w-full h-full transition-opacity duration-700 ease-in-out z-0 opacity-0"
+                    data-index="1">
+                    <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1920&q=80"
+                        alt="Clinic Automation Operations" class="w-full h-full object-cover opacity-40">
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent flex flex-col justify-center items-center px-4">
+                        <div class="text-center max-w-3xl mx-auto space-y-8">
+                            <div
+                                class="inline-flex items-center space-x-2 bg-zinc-900/80 border border-zinc-800 px-3 py-1 rounded-full text-[10px] font-semibold text-emerald-400 tracking-wider uppercase shadow-inner">
+                                <span>⚡</span> <span>Automated Patient Pipelines</span>
+                            </div>
+
+                            <h2
+                                class="text-4xl sm:text-7xl font-bold tracking-tight text-zinc-100 leading-[1.1] font-sans uppercase">
+                                Route unexpected walk-ins. <br>
+                                <span
+                                    class="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400">
+                                    Instant Patient Routing.
+                                </span>
+                            </h2>
+
+                            <p
+                                class="text-xs sm:text-sm text-zinc-400 font-normal max-w-xl mx-auto leading-relaxed tracking-wide">
+                                Route unexpected walk-ins dynamically without interrupting preset schedule cells or
+                                active
+                                clinic data pools.
+                                Maximize chair velocity efficiency across all medical departments interactively.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slide 3 -->
+                <div class="carousel-slide absolute inset-0 w-full h-full transition-opacity duration-700 ease-in-out z-0 opacity-0"
+                    data-index="2">
+                    <img src="https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?auto=format&fit=crop&w=1920&q=80"
+                        alt="Predictive Architecture Data" class="w-full h-full object-cover opacity-40">
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent flex flex-col justify-center items-center px-4">
+                        <div class="text-center max-w-3xl mx-auto space-y-8">
+                            <div
+                                class="inline-flex items-center space-x-2 bg-zinc-900/80 border border-zinc-800 px-3 py-1 rounded-full text-[10px] font-semibold text-cyan-400 tracking-wider uppercase shadow-inner">
+                                <span>📈</span> <span>Advanced Metric Analytics</span>
+                            </div>
+
+                            <h2
+                                class="text-4xl sm:text-7xl font-bold tracking-tight text-zinc-100 leading-[1.1] font-sans uppercase">
+                                Map chair probabilities. <br>
+                                <span
+                                    class="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-500">
+                                    Predictive Telemetry.
+                                </span>
+                            </h2>
+
+                            <p
+                                class="text-xs sm:text-sm text-zinc-400 font-normal max-w-xl mx-auto leading-relaxed tracking-wide">
+                                Deep analytics engine mapping tool designed to capture chair occupancy probabilities and
+                                oversee peak
+                                operation timelines generated by clinical staff data arrays automatically.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Navigation UI Elements -->
+            <button id="prevBtn"
+                class="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-zinc-950/70 border border-zinc-800/80 text-zinc-300 flex items-center justify-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-zinc-900 hover:text-white active:scale-95 cursor-pointer z-20">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                </svg>
+            </button>
+            <button id="nextBtn"
+                class="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-zinc-950/70 border border-zinc-800/80 text-zinc-300 flex items-center justify-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-zinc-900 hover:text-white active:scale-95 cursor-pointer z-20">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+            </button>
+
+            <!-- Bottom Navigation Dots Layer -->
+            <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex space-x-2.5 z-20">
+                <button class="indicator w-2.5 h-2.5 rounded-full bg-white transition-all duration-300"
+                    data-slide="0"></button>
+                <button class="indicator w-2.5 h-2.5 rounded-full bg-zinc-600 transition-all duration-300"
+                    data-slide="1"></button>
+                <button class="indicator w-2.5 h-2.5 rounded-full bg-zinc-600 transition-all duration-300"
+                    data-slide="2"></button>
+            </div>
+        </div>
+    </section>
+    <!-- Impact Hero Base Layer -->
+    <header class="relative overflow-hidden pt-28 pb-20 lg:pt-40 lg:pb-24 bg-zinc-950 animate-grid-fade">
+        <!-- Ambient Grid & Color Core Blurs -->
+        <div class="absolute inset-0 bg-grid-pattern opacity-60 pointer-events-none"></div>
         <div
-            class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[400px] bg-gradient-to-b from-blue-600/10 to-transparent blur-3xl pointer-events-none rounded-full">
+            class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-gradient-to-b from-teal-500/10 to-transparent blur-3xl pointer-events-none rounded-full animate-subtle-glow">
         </div>
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="text-center max-w-3xl mx-auto space-y-6">
-                <h1 class="text-4xl sm:text-6xl font-black tracking-tight text-zinc-100 leading-tight">
-                    Eliminate clinic chaos. <br>
-                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">Automate
-                        your patient flow.</span>
-                </h1>
-                <p class="text-sm sm:text-base text-zinc-400 font-normal max-w-2xl mx-auto leading-relaxed">
-                    A lightweight, real-time Kanban dashboard engineered for modern dental and medical practices. Manage
-                    appointments, process unexpected walk-ins, and orchestrate patient transitions instantly.
-                </p>
-                <div class="pt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <a href="#pricing"
-                        class="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-lg active:scale-[0.99] uppercase tracking-widest text-center">
-                        Get Started Today
-                    </a>
-                    <a href="#workflow"
-                        class="w-full sm:w-auto px-8 py-4 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-xs rounded-xl transition-all border border-zinc-800 uppercase tracking-widest text-center shadow-sm">
-                        See How It Works
-                    </a>
+
+
+            <!-- 💻 Interactive Minimalist Interface Preview Mockup Box -->
+            <div
+                class="mt-20 max-w-5xl mx-auto bg-zinc-900/40 border border-zinc-800/60 rounded-xl p-3 shadow-2xl shadow-black/80 backdrop-blur-md transition-transform hover:scale-[1.005] duration-500">
+                <div class="bg-zinc-950 rounded-lg border border-zinc-900 overflow-hidden text-left">
+                    <!-- Top Window Frame Row Bar -->
+                    <div class="bg-zinc-900/30 px-4 py-3 border-b border-zinc-900 flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2.5 h-2.5 bg-zinc-800 rounded-full"></span>
+                            <span class="w-2.5 h-2.5 bg-zinc-800 rounded-full"></span>
+                            <span class="w-2.5 h-2.5 bg-zinc-800 rounded-full"></span>
+                            <span class="text-[10px] text-zinc-600 font-mono pl-2">novaclinic-matrix-feed</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span class="text-[9px] uppercase tracking-wider font-bold text-emerald-400 font-mono">Live
+                                Sync</span>
+                        </div>
+                    </div>
+                    <!-- Minimalist Dummy Live Grid Representation Layer -->
+                    <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-[11px] font-medium bg-zinc-950/60">
+                        <div class="bg-zinc-900/20 border border-zinc-900 rounded-lg p-3 space-y-2">
+                            <div
+                                class="flex justify-between items-center text-amber-400 font-bold tracking-wider text-[9px] uppercase mb-1">
+                                <span>Lobby Queue</span> <span class="bg-amber-500/10 px-1.5 py-0.5 rounded">2</span>
+                            </div>
+                            <div
+                                class="bg-zinc-900 border border-zinc-800/60 p-2.5 rounded-md text-zinc-200 flex justify-between items-center transition-transform hover:translate-x-1 duration-200 cursor-pointer">
+                                <span>Sarah Jenkins (Consultation)</span> <span
+                                    class="text-zinc-600 font-mono">09:15</span>
+                            </div>
+                            <div
+                                class="bg-zinc-900 border border-zinc-800/60 p-2.5 rounded-md text-zinc-200 flex justify-between items-center transition-transform hover:translate-x-1 duration-200 cursor-pointer">
+                                <span>Mike Ross (Walk-in Extraction)</span> <span
+                                    class="text-zinc-500 font-mono text-[9px] bg-zinc-800 px-1 rounded">Urgent</span>
+                            </div>
+                        </div>
+                        <div class="bg-zinc-900/20 border border-zinc-900 rounded-lg p-3 space-y-2">
+                            <div
+                                class="flex justify-between items-center text-teal-400 font-bold tracking-wider text-[9px] uppercase mb-1">
+                                <span>In Treatment Chair</span> <span
+                                    class="bg-teal-500/10 px-1.5 py-0.5 rounded">1</span>
+                            </div>
+                            <div
+                                class="bg-zinc-900 border border-teal-500/20 shadow-xs shadow-teal-500/2 p-2.5 rounded-md text-zinc-100 flex justify-between items-center border-l-2 border-l-teal-500">
+                                <span class="flex items-center gap-1.5"><span
+                                        class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-ping"></span>Dr. Alan (Root
+                                    Canal)</span>
+                                <span class="text-teal-450 font-mono font-bold">Active</span>
+                            </div>
+                        </div>
+                        <div class="bg-zinc-900/20 border border-zinc-900 rounded-lg p-3 space-y-2">
+                            <div
+                                class="flex justify-between items-center text-zinc-500 font-bold tracking-wider text-[9px] uppercase mb-1">
+                                <span>Completed Logs</span> <span class="bg-zinc-800 px-1.5 py-0.5 rounded">12</span>
+                            </div>
+                            <div
+                                class="bg-zinc-900/40 opacity-50 border border-zinc-900 p-2.5 rounded-md text-zinc-400 flex justify-between items-center line-through decoration-zinc-700">
+                                <span>David Miller (Hygiene)</span> <span class="text-emerald-500 font-bold">Done</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </header>
-
-    <!-- Platform Capability Matrix -->
-    <section id="features" class="py-24 bg-zinc-950/40 relative">
+    <!-- Capability Matrix Grid Segment -->
+    <section id="features" class="py-24 bg-zinc-950 relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-2xl mx-auto mb-20 space-y-3">
-                <p class="text-[10px] font-black uppercase text-blue-400 tracking-widest">Built For Velocity</p>
-                <h2 class="text-2xl sm:text-4xl font-bold text-zinc-100 tracking-tight">Everything you need to keep
-                    chairs full</h2>
+            <div class="max-w-2xl mb-20 space-y-2">
+                <p class="text-[9px] font-bold uppercase text-teal-400 tracking-widest">Built For Operational Velocity
+                </p>
+                <h2 class="text-2xl sm:text-4xl font-semibold text-zinc-100 tracking-tight">Everything required to keep
+                    dental chairs full.</h2>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Feature Card 1 -->
+                <!-- Card Item 1 -->
                 <div
-                    class="p-6 bg-zinc-900/40 rounded-2xl border border-zinc-800/80 group hover:border-zinc-700/60 transition-all duration-300 shadow-xl flex flex-col justify-between">
-                    <div>
+                    class="p-8 bg-zinc-900/20 rounded-xl border border-zinc-900/80 group hover:border-zinc-800 hover:bg-zinc-900/40 transition-all duration-300 flex flex-col justify-between">
+                    <div class="space-y-6">
                         <div
-                            class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/10 flex items-center justify-center font-bold mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner">
+                            class="w-9 h-9 rounded-lg bg-teal-500/5 text-teal-400 border border-teal-500/10 flex items-center justify-center font-bold group-hover:bg-gradient-to-br group-hover:from-teal-500 group-hover:to-emerald-500 group-hover:text-zinc-950 transition-all duration-300">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                             </svg>
                         </div>
-                        <h3 class="text-base font-bold text-zinc-100 mb-2">Real-Time Kanban Matrix</h3>
-                        <p class="text-xs text-zinc-400 leading-relaxed font-normal">Visual queue system designed to
-                            update without manual screen refreshes. Move appointments fluidly through operational
-                            statuses.</p>
+                        <div class="space-y-2">
+                            <h3 class="text-sm font-bold text-zinc-100 tracking-wide">Real-Time Kanban Matrix</h3>
+                            <p class="text-xs text-zinc-400 leading-relaxed font-normal">Visual state tracker optimized
+                                to process events without manual browser refreshes. Elevate operational appointments
+                                fluidly.</p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Feature Card 2 -->
+                <!-- Card Item 2 -->
                 <div
-                    class="p-6 bg-zinc-900/40 rounded-2xl border border-zinc-800/80 group hover:border-zinc-700/60 transition-all duration-300 shadow-xl flex flex-col justify-between">
-                    <div>
+                    class="p-8 bg-zinc-900/20 rounded-xl border border-zinc-900/80 group hover:border-zinc-800 hover:bg-zinc-900/40 transition-all duration-300 flex flex-col justify-between">
+                    <div class="space-y-6">
                         <div
-                            class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/10 flex items-center justify-center font-bold mb-6 group-hover:bg-amber-600 group-hover:text-white transition-all shadow-inner">
+                            class="w-9 h-9 rounded-lg bg-teal-500/5 text-teal-400 border border-teal-500/10 flex items-center justify-center font-bold group-hover:bg-gradient-to-br group-hover:from-teal-500 group-hover:to-emerald-500 group-hover:text-zinc-950 transition-all duration-300">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
                         </div>
-                        <h3 class="text-base font-bold text-zinc-100 mb-2">Instant Walk-In Engine</h3>
-                        <p class="text-xs text-zinc-400 leading-relaxed font-normal">Unscheduled patients arrived?
-                            Inject them instantly into the live lobby tracking system network without disrupting
-                            previously booked slots.</p>
+                        <div class="space-y-2">
+                            <h3 class="text-sm font-bold text-zinc-100 tracking-wide">Instant Walk-In Injector</h3>
+                            <p class="text-xs text-zinc-400 leading-relaxed font-normal">Unscheduled emergency patience
+                                landed? Route them cleanly into the real-time queue grid network without fracturing
+                                metrics.</p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Feature Card 3 -->
+                <!-- Card Item 3 -->
                 <div
-                    class="p-6 bg-zinc-900/40 rounded-2xl border border-zinc-800/80 group hover:border-zinc-700/60 transition-all duration-300 shadow-xl flex flex-col justify-between">
-                    <div>
+                    class="p-8 bg-zinc-900/20 rounded-xl border border-zinc-900/80 group hover:border-zinc-800 hover:bg-zinc-900/40 transition-all duration-300 flex flex-col justify-between">
+                    <div class="space-y-6">
                         <div
-                            class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 flex items-center justify-center font-bold mb-6 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-inner">
+                            class="w-9 h-9 rounded-lg bg-teal-500/5 text-teal-400 border border-teal-500/10 flex items-center justify-center font-bold group-hover:bg-gradient-to-br group-hover:from-teal-500 group-hover:to-emerald-500 group-hover:text-zinc-950 transition-all duration-300">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                         </div>
-                        <h3 class="text-base font-bold text-zinc-100 mb-2">Advanced Future Sorting</h3>
-                        <p class="text-xs text-zinc-400 leading-relaxed font-normal">Organize future calendars on the
-                            fly. Dynamically group structural views by flat list timelines, per-day grids, or
-                            month-by-month overviews.</p>
+                        <div class="space-y-2">
+                            <h3 class="text-sm font-bold text-zinc-100 tracking-wide">Advanced Window Filters</h3>
+                            <p class="text-xs text-zinc-400 leading-relaxed font-normal">Isolate calendar dates
+                                instantaneously. Filter your primary operational nodes by chronological arrays, per-day
+                                cells, or month blocks.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -156,134 +351,109 @@
     </section>
 
     <!-- Operational Workflow Sequence -->
-    <section id="workflow" class="py-24 bg-zinc-900/30 border-y border-zinc-900">
+    <section id="workflow" class="py-24 bg-zinc-900/10 border-y border-zinc-900/60 relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-2xl mx-auto mb-20 space-y-3">
-                <p class="text-[10px] font-black uppercase text-blue-400 tracking-widest">Seamless Transitions</p>
-                <h2 class="text-2xl sm:text-4xl font-bold text-zinc-100 tracking-tight">How the core patient flow system
-                    runs</h2>
+            <div class="max-w-2xl mb-20 space-y-2">
+                <p class="text-[9px] font-bold uppercase text-teal-400 tracking-widest">Seamless Transitions</p>
+                <h2 class="text-2xl sm:text-4xl font-semibold text-zinc-100 tracking-tight">How the core patient system
+                    executes.</h2>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
-                <!-- Step Unit 1 -->
-                <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-xl relative">
-                    <div
-                        class="absolute -top-3 left-6 w-7 h-7 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700/50 font-bold text-xs flex items-center justify-center">
-                        1
-                    </div>
-                    <div class="pt-2 space-y-4">
-                        <span
-                            class="text-[9px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-md uppercase tracking-wider inline-block">
-                            Lobby Queue
-                        </span>
-                        <h4 class="text-sm font-bold text-zinc-100">Check-In & Seat Patient</h4>
-                        <p class="text-xs text-zinc-400 leading-relaxed font-normal">Scheduled bookings or manual
-                            walk-ins safely register into the initial operational queue layer. Telemetry counters
-                            monitor overall lobby congestion metrics.</p>
-                    </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Step Block 1 -->
+                <div class="space-y-4 relative">
+                    <div class="text-[10px] font-mono font-bold text-zinc-600 uppercase tracking-widest">Stage 01 //
+                        Initial Entry</div>
+                    <div class="h-px bg-gradient-to-r from-teal-500/40 to-transparent mb-4"></div>
+                    <h4 class="text-sm font-bold text-zinc-100 tracking-wide">Check-In & Lobby Routing</h4>
+                    <p class="text-xs text-zinc-400 leading-relaxed">Booked appointments or sudden walk-ins serialize
+                        into the initial lobby tracking node layer. Live telemetry trackers calculate system parameters.
+                    </p>
                 </div>
 
-                <!-- Step Unit 2 -->
-                <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-xl relative">
-                    <div
-                        class="absolute -top-3 left-6 w-7 h-7 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center">
-                        2
-                    </div>
-                    <div class="pt-2 space-y-4">
-                        <span
-                            class="text-[9px] font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-md uppercase tracking-wider inline-block animate-pulse">
-                            In Treatment
-                        </span>
-                        <h4 class="text-sm font-bold text-zinc-100">Call to Chair Transition</h4>
-                        <p class="text-xs text-zinc-400 leading-relaxed font-normal">With a single action trigger, the
-                            staff elevates the patient status to active treatment. The record migrates across columns
-                            immediately via automated state patching.</p>
-                    </div>
+                <!-- Step Block 2 -->
+                <div class="space-y-4 relative">
+                    <div class="text-[10px] font-mono font-bold text-teal-400 uppercase tracking-widest">Stage 02 //
+                        Interactive Treatment</div>
+                    <div class="h-px bg-gradient-to-r from-teal-400/40 to-transparent mb-4"></div>
+                    <h4 class="text-sm font-bold text-zinc-100 tracking-wide">Active Chair Migration</h4>
+                    <p class="text-xs text-zinc-400 leading-relaxed">A single cursor drag event elevates patient
+                        coordinates to live operational statuses. State updates map directly across columns via patch
+                        pipelines.</p>
                 </div>
 
-                <!-- Step Unit 3 -->
-                <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-xl relative">
-                    <div
-                        class="absolute -top-3 left-6 w-7 h-7 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700/50 font-bold text-xs flex items-center justify-center">
-                        3
-                    </div>
-                    <div class="pt-2 space-y-4">
-                        <span
-                            class="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md uppercase tracking-wider inline-block">
-                            Checked Out
-                        </span>
-                        <h4 class="text-sm font-bold text-zinc-100">Finalize Procedure</h4>
-                        <p class="text-xs text-zinc-400 leading-relaxed font-normal">Once operations finish, staff
-                            records checkout logs. The analytics system hydrates real-time dashboard tracking stats for
-                            daily enterprise operational review.</p>
-                    </div>
+                <!-- Step Block 3 -->
+                <div class="space-y-4 relative">
+                    <div class="text-[10px] font-mono font-bold text-zinc-600 uppercase tracking-widest">Stage 03 //
+                        Archive</div>
+                    <div class="h-px bg-gradient-to-r from-zinc-800 to-transparent mb-4"></div>
+                    <h4 class="text-sm font-bold text-zinc-100 tracking-wide">Telemetry Finalization</h4>
+                    <p class="text-xs text-zinc-400 leading-relaxed">As dental treatment concludes, system logs lock
+                        instantly. Real-time background calculations hydrate baseline clinic data tables automatically.
+                    </p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Flat-Rate Tier Pricing Panel -->
+    <!-- Transparent Flat-Tier Card Panel -->
     <section id="pricing" class="py-24 bg-zinc-950">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center max-w-2xl mx-auto mb-16 space-y-3">
-                <p class="text-[10px] font-black uppercase text-blue-400 tracking-widest">Transparent Structure</p>
-                <h2 class="text-2xl sm:text-4xl font-bold text-zinc-100 tracking-tight">One simple pricing plan for
-                    everyone</h2>
-                <p class="text-xs font-normal text-zinc-400">No surprises, no hidden setup surcharges, no multi-tiered
-                    feature gates.</p>
+                <p class="text-[9px] font-bold uppercase text-teal-400 tracking-widest">Predictable Infrastructure</p>
+                <h2 class="text-2xl sm:text-4xl font-semibold text-zinc-100 tracking-tight">One simple pricing
+                    architecture.</h2>
+                <p class="text-xs font-normal text-zinc-500">Zero unannounced surcharges. Zero feature lockups. Absolute
+                    data sovereignty.</p>
             </div>
 
-            <!-- Main Product Tier Blueprint -->
+            <!-- Single Premium Pricing Module Card Container -->
             <div
-                class="max-w-md mx-auto bg-zinc-900 rounded-3xl p-8 shadow-2xl border border-zinc-800/80 relative overflow-hidden">
-                <div
-                    class="absolute -right-16 -top-16 w-36 h-36 bg-blue-500/10 rounded-full blur-2xl pointer-events-none">
-                </div>
-
-                <div class="space-y-6 relative z-10">
+                class="max-w-md mx-auto bg-zinc-900/30 rounded-2xl p-8 border border-zinc-900 shadow-2xl relative group hover:border-zinc-800/80 transition-all duration-300">
+                <div class="space-y-8">
                     <div class="flex items-center justify-between">
                         <span
-                            class="text-[10px] font-black bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-md uppercase tracking-wider">
-                            All-Access Pass
+                            class="text-[9px] font-bold bg-teal-500/10 text-teal-400 border border-teal-500/10 px-2.5 py-1 rounded uppercase tracking-wider">
+                            Full-Access Fleet Pass
                         </span>
-                        <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Per Branch /
-                            Month</span>
+                        <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Per Branch //
+                            Monthly</span>
                     </div>
 
-                    <div class="flex items-baseline gap-1.5">
-                        <span class="text-5xl font-black tracking-tight text-zinc-100">₱1,500</span>
-
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-5xl font-bold tracking-tight text-zinc-100 font-sans">₱1,500</span>
                     </div>
 
                     <p class="text-xs text-zinc-400 leading-relaxed font-normal">
-                        Complete integration infrastructure deployment designed to unlock absolute terminal feature
-                        functionality for your frontline dental or medical practice workspace staff.
+                        Complete workspace system deployment. Unlock pristine frontend calendar nodes, persistent
+                        databases, and live state syncing routines for your staff.
                     </p>
 
-                    <hr class="border-zinc-800/80">
+                    <div class="w-full h-px bg-zinc-900"></div>
 
                     <ul class="space-y-4 text-xs font-medium text-zinc-300">
                         <li class="flex items-center gap-3">
-                            <span class="text-blue-400 text-sm">✓</span> Live Real-time Kanban Workspace Columns
+                            <span class="text-teal-400 text-[10px]">✔</span> Live Real-time Kanban Workspace Columns
                         </li>
                         <li class="flex items-center gap-3">
-                            <span class="text-blue-400 text-sm">✓</span> Instant Automated User Record Hydration
+                            <span class="text-teal-400 text-[10px]">✔</span> Instant Automated User Record Hydration
                         </li>
                         <li class="flex items-center gap-3">
-                            <span class="text-blue-400 text-sm">✓</span> Walk-in Injection Engine Module Forms
+                            <span class="text-teal-400 text-[10px]">✔</span> Walk-in Injection Engine Module Forms
                         </li>
                         <li class="flex items-center gap-3">
-                            <span class="text-blue-400 text-sm">✓</span> Dynamic Future Scheduling Segment Filters
+                            <span class="text-teal-400 text-[10px]">✔</span> Dynamic Future Scheduling Segment Filters
                         </li>
                         <li class="flex items-center gap-3">
-                            <span class="text-blue-400 text-sm">✓</span> Unlimited Patient Profiles & Chart Generations
+                            <span class="text-teal-400 text-[10px]">✔</span> Unlimited Patient Profiles & Chart
+                            Generations
                         </li>
                     </ul>
 
-                    <div class="pt-4">
+                    <div class="pt-2">
                         <button
-                            class="w-full bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs py-3.5 rounded-xl transition-all uppercase tracking-widest shadow-md cursor-pointer active:scale-[0.98]">
-                            Deploy Workspace Instance
+                            class="w-full bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs py-3.5 rounded-lg transition-all uppercase tracking-widest shadow-lg cursor-pointer active:scale-[0.98]">
+                            Deploy Fleet Instance
                         </button>
                     </div>
                 </div>
@@ -291,25 +461,22 @@
         </div>
     </section>
 
-    <!-- Standard Core Site Footer -->
-    <footer class="bg-zinc-950 text-zinc-500 text-xs py-12 border-t border-zinc-900/60">
+    <!-- Clean, Tight Footer Asset Row -->
+    <footer class="bg-zinc-950 text-zinc-600 text-xs py-12 border-t border-zinc-900/60">
         <div
             class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div class="flex items-center space-x-3">
                 <div
-                    class="w-7 h-7 bg-zinc-900 text-zinc-400 border border-zinc-800 rounded-lg flex items-center justify-center text-xs font-black">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                    </svg>
+                    class="w-6 h-6 bg-zinc-900 border border-zinc-800/80 rounded flex items-center justify-center text-xs font-black">
+                    <span class="text-teal-400 font-bold text-[14px]">+</span>
                 </div>
-                <span class="font-bold text-zinc-300 tracking-tight">ClinicFlow Platform Matrix</span>
+                <span class="font-bold text-zinc-400 tracking-tight text-[11px]">Novaclinic Core Engine</span>
             </div>
-            <p class="font-normal text-[11px] text-zinc-600">&copy; 2026 ClinicFlow Inc. All platform operations
-                telemetry active.</p>
+            <p class="font-mono text-[10px] text-zinc-600">&copy; 2026 Novaclinic Inc. Systems Operational.</p>
         </div>
     </footer>
 
 </body>
+<script type="module" src="./src/util/carousell.js"></script>
 
 </html>

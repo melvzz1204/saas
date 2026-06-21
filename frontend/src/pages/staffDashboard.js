@@ -1,8 +1,3 @@
-/**
- * Staff Patient Flow Dashboard Logic (Kanban Edition + Walk-Ins)
- * Location Path: /src/pages/staffDashboard.js
- */
-
 // ⚠️ CHANGE THIS TO YOUR ACTUAL BACKEND PORT
 const API_BASE_URL = "http://localhost:5000";
 
