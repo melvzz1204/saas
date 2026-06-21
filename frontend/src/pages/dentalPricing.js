@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // DOM Elements - Table
   const pricingTableBody = document.getElementById("pricing-table-body");
   const refreshPricesBtn = document.getElementById("refresh-prices");
+  const kpiPricingTiers = document.getElementById("kpiPricingTiers");
   // DOM Elements - Forms
   const addPriceForm = document.getElementById("add-price-form");
   const editPriceForm = document.getElementById("edit-price-form");
