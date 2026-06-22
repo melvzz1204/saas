@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      // 🚀 FIX 1: Linked directly to your active Port 5000 login node layout
+      // 🚀 LINKED: Points directly to your active Port 5000 login node layout
       const response = await fetch("http://localhost:5000/api/v1/staff/login", {
         method: "POST",
         headers: {
@@ -44,21 +44,38 @@ document.addEventListener("DOMContentLoaded", () => {
         );
       }
 
+      // Extract details from your matching backend response pattern
+      const staffProfile = data.staff;
+      const assignedRole = staffProfile.role; // 🧠 Extracts: "Dentist" or "Receptionist"
+
       // Persistence Matrix Write operations
       localStorage.setItem("token", data.token);
-      localStorage.setItem("userRole", "staff");
-
-      // 🚀 FIX 2: Resolves single fullName property layout safely
-      localStorage.setItem("staffName", data.staff.fullName);
+      localStorage.setItem("userRole", assignedRole.toLowerCase()); // Dynamic role tracking ("dentist"/"receptionist")
+      localStorage.setItem("staffName", staffProfile.fullName);
+      localStorage.setItem("staffId", staffProfile.id);
+      localStorage.setItem("clinicId", staffProfile.clinicId); // Cache tenant context for staff operational requests
       localStorage.setItem(
         "clinicName",
         data.clinicName || "Apex Dental Practice",
       );
-      localStorage.setItem("staffId", data.staff.id);
-      localStorage.setItem("clinicId", data.staff.clinicId); // Cache tenant context for staff operational requests
 
-      // Access granted - bypass gateway to operations deck
-      window.location.href = "/staffDashboard.html";
+      // =============================================================
+      // 🚀 ROLE-BASED PIPELINE REDIRECTION SWITCH MATRIX
+      // =============================================================
+      if (assignedRole === "Dentist") {
+        // Clinical operators get pushed to the dental chair cockpit view
+        window.location.href = "/dentistDashboard.html";
+      } else if (assignedRole === "Receptionist") {
+        // Front desk staff route directly to lobby scheduling boards
+        window.location.href = "/staffDashboard.html";
+      } else if (assignedRole === "Staff") {
+        window.location.href = "/staffDashboard.html";
+      } else {
+        // Fallback catchall for alternate operational deck roles (e.g., Dental Hygienist)
+        window.location.href = "/staffDashboard.html";
+      }
+
+      // =============================================================
     } catch (err) {
       console.error("Staff login intercept error:", err);
       showError(

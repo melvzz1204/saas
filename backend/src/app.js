@@ -8,6 +8,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import staffRoutes from "./routes/staffRoutes.js";
 import dentalServicePrice from "./routes/dentalServicePriceRoutes.js";
 import initAppointmentCleanupJob from "./utils/appointmentCleanup.js";
+import treatmentRoutes from "./routes/treatmentRoutes.js";
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/patients", patientRoutes);
 app.use("/api/v1/appointments", appointmentRoutes);
 app.use("/api/v1/staff", staffRoutes);
+app.use("/api/v1/treatments", treatmentRoutes);
 app.use("/api/v1/dental-price", dentalServicePrice);
 
 app.get("/health", (req, res) => {

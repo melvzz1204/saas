@@ -57,7 +57,6 @@
             </div>
         </div>
     </nav>
-
     <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 flex-1 w-full">
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -85,7 +84,8 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col h-[680px] shadow-sm">
+
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col h-[720px] shadow-sm">
                 <div class="flex items-center justify-between mb-4 px-1 pb-2 border-b border-slate-100">
                     <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]"></span>
@@ -101,10 +101,11 @@
                     </div>
                 </div>
                 <div id="col-waiting"
-                    class="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-thin scrollbar-thumb-slate-200"></div>
+                    class="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-thin scrollbar-thumb-slate-200">
+                </div>
             </div>
 
-            <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col h-[680px] shadow-sm">
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col h-[720px] shadow-sm">
                 <div class="flex items-center justify-between mb-4 px-1 pb-2 border-b border-slate-100">
                     <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <span
@@ -115,10 +116,11 @@
                         class="bg-sky-50 text-sky-700 border border-sky-200 text-[10px] font-black px-2 py-0.5 rounded-md">0</span>
                 </div>
                 <div id="col-treatment"
-                    class="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-thin scrollbar-thumb-slate-200"></div>
+                    class="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-thin scrollbar-thumb-slate-200">
+                </div>
             </div>
 
-            <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col h-[680px] shadow-sm">
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col h-[720px] shadow-sm">
                 <div class="flex items-center justify-between mb-4 px-1 pb-2 border-b border-slate-100">
                     <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></span>
@@ -128,11 +130,42 @@
                         class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black px-2 py-0.5 rounded-md">0</span>
                 </div>
                 <div id="col-completed"
-                    class="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-thin scrollbar-thumb-slate-200"></div>
+                    class="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-thin scrollbar-thumb-slate-200">
+                </div>
             </div>
+
         </div>
     </main>
 
+    <div id="walkin-modal"
+        class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-black text-sm text-slate-800 uppercase tracking-wide">Patient Intake Registry</h3>
+                <button id="btn-close-walkin"
+                    class="text-slate-400 hover:text-slate-600 font-bold text-lg cursor-pointer">&times;</button>
+            </div>
+            <form id="form-walkin" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1">Patient
+                        Name</label>
+                    <input id="walkin-name" type="text" required placeholder="e.g. John Doe"
+                        class="w-full text-xs p-3 border border-slate-200 rounded-xl focus:outline-hidden focus:border-sky-500 bg-slate-50 font-medium text-slate-800">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1">Primary
+                        Reason /
+                        Treatment</label>
+                    <input id="walkin-reason" type="text" required placeholder="e.g. Routine Checkup"
+                        class="w-full text-xs p-3 border border-slate-200 rounded-xl focus:outline-hidden focus:border-sky-500 bg-slate-50 font-medium text-slate-800">
+                </div>
+                <button type="submit"
+                    class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold text-[11px] py-3 rounded-xl uppercase tracking-wider transition-colors cursor-pointer shadow-md shadow-sky-600/10">
+                    Seat in Lobby 🛋️
+                </button>
+            </form>
+        </div>
+    </div>
     <div id="walkin-modal"
         class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-all">
         <div

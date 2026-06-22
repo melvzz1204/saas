@@ -1,18 +1,20 @@
+// staffDashboard.js
+
 // ⚠️ CHANGE THIS TO YOUR ACTUAL BACKEND PORT
 const API_BASE_URL = "http://localhost:5000";
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Navigation & Identifiers
+  // Navigation & Identity Headers
   const clinicTitle = document.getElementById("clinic-branch-title");
   const staffBadge = document.getElementById("staff-name-badge");
   const logoutBtn = document.getElementById("staff-logout-btn");
 
-  // Kanban Columns
+  // Kanban Board Column Targets
   const colWaiting = document.getElementById("col-waiting");
   const colTreatment = document.getElementById("col-treatment");
   const colCompleted = document.getElementById("col-completed");
 
-  // Telemetry Counters
+  // Telemetry Metric Counters
   const statRemaining = document.getElementById("stat-remaining");
   const statActiveChair = document.getElementById("stat-active-chair");
   const statCompleted = document.getElementById("stat-completed");
@@ -20,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const countTreatment = document.getElementById("count-treatment");
   const countCompleted = document.getElementById("count-completed");
 
-  // Walk-In Modal Selectors
+  // Walk-In Modal Registry Selectors
   const modalWalkIn = document.getElementById("walkin-modal");
   const btnOpenWalkIn = document.getElementById("btn-open-walkin");
   const btnCloseWalkIn = document.getElementById("btn-close-walkin");
@@ -36,36 +38,32 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnCloseUpcoming = document.getElementById("btn-close-upcoming");
     const filterRange = document.getElementById("filter-upcoming-range");
 
-    // Listen for Sort Dropdown Changes
+    // Live Event Bindings for Upcoming Matrix Filters
     if (filterRange) {
       filterRange.addEventListener("change", (e) => {
         renderUpcomingTable(cachedUpcomingAppointments, e.target.value);
       });
     }
 
-    // Open Modal Interface Window
     if (btnToggleUpcoming && upcomingModal) {
-      btnToggleUpcoming.addEventListener("click", () => {
-        upcomingModal.classList.remove("hidden");
-      });
+      btnToggleUpcoming.addEventListener("click", () =>
+        upcomingModal.classList.remove("hidden"),
+      );
     }
 
-    // Close Modal Interface Window
     if (btnCloseUpcoming && upcomingModal) {
-      btnCloseUpcoming.addEventListener("click", () => {
-        upcomingModal.classList.add("hidden");
-      });
+      btnCloseUpcoming.addEventListener("click", () =>
+        upcomingModal.classList.add("hidden"),
+      );
     }
 
-    // Global Backdrop Overlay Click Escape Strategy
     if (upcomingModal) {
       upcomingModal.addEventListener("click", (e) => {
-        if (e.target === upcomingModal) {
-          upcomingModal.classList.add("hidden");
-        }
+        if (e.target === upcomingModal) upcomingModal.classList.add("hidden");
       });
     }
 
+    // Set Session Scope Badges
     if (clinicTitle)
       clinicTitle.textContent =
         localStorage.getItem("clinicName") || "Apex Dental Clinic";
@@ -73,11 +71,12 @@ document.addEventListener("DOMContentLoaded", () => {
       staffBadge.textContent =
         localStorage.getItem("staffName") || "Active Staff Duty";
 
+    // Immediate Data Sync Fetch
     fetchDailyQueue();
 
     if (logoutBtn) logoutBtn.addEventListener("click", handleShiftExit);
 
-    // Setup Walk-In Modal Listeners
+    // Setup Modal Open/Close Controls
     if (btnOpenWalkIn)
       btnOpenWalkIn.addEventListener("click", () =>
         modalWalkIn.classList.remove("hidden"),
@@ -87,11 +86,11 @@ document.addEventListener("DOMContentLoaded", () => {
         modalWalkIn.classList.add("hidden"),
       );
 
-    // Auto-refresh the board every 60 seconds
+    // Micro-refresh loop running transparently every 60 seconds
     setInterval(fetchDailyQueue, 60000);
   }
 
-  // 2. Fetch Data
+  // 2. Fetch Data from Live API
   async function fetchDailyQueue() {
     try {
       const response = await fetch(
@@ -114,58 +113,53 @@ document.addEventListener("DOMContentLoaded", () => {
       renderKanbanBoard();
     } catch (err) {
       console.error("Board sync failed:", err);
-      if (colWaiting)
+      if (colWaiting) {
         colWaiting.innerHTML = `<p class="text-xs text-rose-500 font-bold p-4">⚠️ Sync connection lost.</p>`;
+      }
     }
   }
 
-  // 3. Render Kanban Board Structures
+  // 3. Render and Distribute Database Entries across the Kanban Architecture
   function renderKanbanBoard() {
     if (!colWaiting || !colTreatment || !colCompleted) return;
 
-    // Clear existing columns
+    // Flush current static content blocks safely
     colWaiting.innerHTML = "";
     colTreatment.innerHTML = "";
     colCompleted.innerHTML = "";
 
-    // Get today's date formatted as YYYY-MM-DD
+    // Generate accurate local date filter parameters (YYYY-MM-DD)
     const localDate = new Date();
-    const year = localDate.getFullYear();
-    const month = String(localDate.getMonth() + 1).padStart(2, "0");
-    const day = String(localDate.getDate()).padStart(2, "0");
-    const todayString = `${year}-${month}-${day}`;
+    const todayString = localDate.toISOString().split("T")[0];
 
-    // Split the main array into "Today" and "Upcoming"
+    // Filter backend objects into timeline arrays
     const todayAppointments = globalAppointmentsArray.filter(
       (a) => a.date === todayString,
     );
-    const upcomingAppointments = globalAppointmentsArray.filter(
+    cachedUpcomingAppointments = globalAppointmentsArray.filter(
       (a) => a.date > todayString,
     );
 
-    // Save to cache for the filtering routing system
-    cachedUpcomingAppointments = upcomingAppointments;
-
-    // Filter Kanban arrays to ONLY use today's appointments
+    // Filter pipeline workflows precisely matching our strict state properties
     const waitingList = todayAppointments.filter(
       (a) =>
         a.status === "Approved" ||
         a.status === "pending" ||
-        a.status === "checked-in",
+        a.status === "checked-in" ||
+        a.status === "waiting",
     );
     const treatmentList = todayAppointments.filter(
-      (a) => a.status === "in-treatment",
+      (a) => a.status === "in-treatment" || a.status === "treatment",
     );
     const completedList = todayAppointments.filter(
       (a) => a.status === "completed",
     );
 
-    // Update Header Counters
+    // Sync Telemetry Counts Live
     if (countWaiting) countWaiting.textContent = waitingList.length;
     if (countTreatment) countTreatment.textContent = treatmentList.length;
     if (countCompleted) countCompleted.textContent = completedList.length;
 
-    // Update Stat Badges/Cards
     if (statRemaining)
       statRemaining.textContent = `${waitingList.length} Waiting`;
     if (statActiveChair)
@@ -173,229 +167,137 @@ document.addEventListener("DOMContentLoaded", () => {
     if (statCompleted)
       statCompleted.textContent = `${completedList.length} Sessions`;
 
-    // Render the live Kanban columns
-    renderCards(waitingList, colWaiting, "waiting");
-    renderCards(treatmentList, colTreatment, "treatment");
-    renderCards(completedList, colCompleted, "completed");
+    // Process Dynamic Card Generation Runs
+    renderDynamicCards(waitingList, colWaiting, "waiting");
+    renderDynamicCards(treatmentList, colTreatment, "treatment");
+    renderDynamicCards(completedList, colCompleted, "completed");
 
-    // Bind click event listeners to the new cards
-    bindCardActions();
-
-    // 🚀 FIX: Pull active user select setting to prevent component regression on auto-sync refresh cycles
+    // Re-verify the current upcoming sort filter settings
     const currentFilterMode =
       document.getElementById("filter-upcoming-range")?.value ||
       "chronological";
-
-    // Build the upcoming table right below the board using the correct view context
     renderUpcomingTable(cachedUpcomingAppointments, currentFilterMode);
   }
 
-  // 4. Render Sorted Upcoming Data Panels
-  function renderUpcomingTable(upcomingAppointments, mode = "chronological") {
-    const container = document.getElementById("upcoming-table-container");
-    if (!container) return;
-
-    if (upcomingAppointments.length === 0) {
-      container.innerHTML = `
-      <div class="text-center py-8">
-        <p class="text-sm text-slate-500 italic">No future appointments scheduled in this system matrix.</p>
-      </div>`;
-      return;
-    }
-
-    // Helper row builder closure function
-    const createRowHTML = (app) => {
-      const dateObj = new Date(app.date);
-      const dateString = dateObj.toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      });
-
-      const patientDisplayName =
-        app.patientId && typeof app.patientId === "object"
-          ? `${app.patientId.firstName || ""} ${app.patientId.lastName || ""}`
-          : app.patientName || "Scheduled Patient";
-
-      return `
-      <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
-        <td class="p-3 text-sm font-semibold text-slate-800">${patientDisplayName.trim()}</td>
-        <td class="p-3 text-sm text-slate-600 font-medium">${dateString}</td>
-        <td class="p-3 text-sm font-mono text-slate-600">${app.time || "TBD"}</td>
-        <td class="p-3 text-sm text-slate-600">${app.service || app.treatmentName || "Consultation"}</td>
-        <td class="p-3">
-          <span class="text-[11px] font-bold bg-blue-50 text-blue-600 border border-blue-200 px-2.5 py-0.5 rounded-full uppercase tracking-wider">${app.status}</span>
-        </td>
-      </tr>
-    `;
-    };
-
-    // Helper table skeleton wrapper structure macro
-    const createTableHTML = (rows) => `
-    <div class="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-sm mb-6">
-      <table class="w-full text-left border-collapse">
-        <thead>
-          <tr class="bg-slate-50 border-b border-slate-200">
-            <th class="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Patient</th>
-            <th class="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
-            <th class="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Time</th>
-            <th class="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Service</th>
-            <th class="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">${rows}</tbody>
-      </table>
-    </div>
-  `;
-
-    // --- RENDERING MODAL SORT ROUTER OPTIONS ---
-
-    // MODE A: Traditional Flat Ordered List View
-    if (mode === "chronological") {
-      const rows = upcomingAppointments.map(createRowHTML).join("");
-      container.innerHTML = createTableHTML(rows);
-      return;
-    }
-
-    // MODE B & C: Segmented Group Categorization mapping routines
-    const groupedData = {};
-
-    upcomingAppointments.forEach((app) => {
-      // Avoid time-zone shifting variations by parsing date string accurately
-      const cleanDateStr = app.date.includes("T")
-        ? app.date.split("T")[0]
-        : app.date;
-      const [partsYear, partsMonth, partsDay] = cleanDateStr.split("-");
-      const d = new Date(partsYear, partsMonth - 1, partsDay);
-
-      let groupKey = "";
-
-      if (mode === "day") {
-        groupKey = d.toLocaleDateString(undefined, {
-          weekday: "long",
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        });
-      } else if (mode === "month") {
-        groupKey = d.toLocaleDateString(undefined, {
-          month: "long",
-          year: "numeric",
-        });
-      }
-
-      if (!groupedData[groupKey]) groupedData[groupKey] = [];
-      groupedData[groupKey].push(app);
-    });
-
-    // Render out the dictionary into clean UI group rows blocks
-    let aggregateHTML = "";
-    Object.keys(groupedData).forEach((titleKey) => {
-      const groupRows = groupedData[titleKey].map(createRowHTML).join("");
-
-      aggregateHTML += `
-      <div class="mt-2 mb-4">
-        <div class="flex items-center gap-2 mb-2 px-1">
-          <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-          <h4 class="text-xs font-black text-slate-700 uppercase tracking-wider">${titleKey}</h4>
-          <span class="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full ml-auto">${groupedData[titleKey].length} Bookings</span>
-        </div>
-        ${createTableHTML(groupRows)}
-      </div>
-    `;
-    });
-
-    container.innerHTML = aggregateHTML;
-  }
-
-  // 5. Render Individual Patient Cards
-  function renderCards(appointments, container, type) {
+  // 4. Dynamic HTML Card Generation with UX Spec Layout Engine
+  function renderDynamicCards(appointments, container, type) {
     if (appointments.length === 0) {
-      container.innerHTML = `<div class="p-6 text-center border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-xs font-bold uppercase tracking-wider">Empty</div>`;
+      container.innerHTML = `
+        <div class="p-6 text-center border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-xs font-bold uppercase tracking-wider select-none">
+          Empty Column
+        </div>`;
       return;
     }
 
     appointments.forEach((app) => {
       const currentAppointmentId = app._id || app.id;
       const card = document.createElement("div");
-      card.className =
-        "bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3 group";
 
-      let actionHTML = "";
-      let statusBadge = "";
-
-      if (type === "waiting") {
-        statusBadge = `<span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-md">Lobby</span>`;
-        actionHTML = `<button data-id="${currentAppointmentId}" data-action="chair" class="action-btn w-full py-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-600 hover:text-white font-bold text-[10px] uppercase rounded-lg transition-colors cursor-pointer">Call to Chair</button>`;
-      } else if (type === "treatment") {
-        statusBadge = `<span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md animate-pulse">In Room</span>`;
-        actionHTML = `<button data-id="${currentAppointmentId}" data-action="complete" class="action-btn w-full py-2 bg-emerald-500 text-white hover:bg-emerald-600 font-bold text-[10px] uppercase rounded-lg transition-colors shadow-sm cursor-pointer">Finalize Procedure</button>`;
-      } else if (type === "completed") {
-        statusBadge = `<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">Checked Out</span>`;
-      }
-
-      const dateString = app.date
-        ? new Date(app.date).toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-          })
-        : "Today";
-
-      const timeDisplayHTML = app.isWalkIn
-        ? `<span class="text-[10px] font-black bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded uppercase">🚨 Walk-In</span>`
-        : `<span class="text-xs font-bold font-mono text-slate-700">${dateString} | ${app.time || "Scheduled"}</span>`;
-
-      // Safely read the ID out of the populated object or string fallback
+      // Extract details dynamically, normalizing alternate field patterns from Mongo schemas
       const rawId =
         app.patientId?._id || app.patientId || currentAppointmentId || "NEW";
       const shortId =
         typeof rawId === "string" ? rawId.slice(-5).toUpperCase() : "WLKIN";
 
-      // Compute full patient name based on backend population
-      let finalPatientName = "";
+      let patientName = "Walk-In Patient";
       if (app.patientId && typeof app.patientId === "object") {
-        const fName = app.patientId.firstName || "";
-        const lName = app.patientId.lastName || "";
-        finalPatientName = `${fName} ${lName}`.trim();
+        patientName =
+          `${app.patientId.firstName || ""} ${app.patientId.lastName || ""}`.trim();
+      } else {
+        patientName = app.patientName || app.firstName || patientName;
       }
 
-      // Fallback if registered locally via form inputs
-      if (!finalPatientName) {
-        finalPatientName =
-          app.patientName || app.firstName || "Walk-In Patient";
+      const procedure = app.service || app.treatmentName || "Consultation";
+
+      // Target contextual doctor object reference fields safely for later
+      const doctorName =
+        app.doctorName ||
+        (app.doctorId && typeof app.doctorId === "object"
+          ? app.doctorId.name
+          : null) ||
+        "Dr. Santos";
+
+      // Apply distinct UX styles and inline micro-actions per lifecycle status stage
+      if (type === "waiting") {
+        card.className =
+          "bg-slate-50 border border-slate-200/80 p-4 rounded-xl space-y-3 hover:border-slate-300 transition-all shadow-xs flex flex-col";
+        card.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="text-[9px] font-mono font-black text-slate-400 uppercase tracking-wider block">ID: #PT-${shortId}</span>
+              <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wide mt-0.5">${patientName}</h4>
+            </div>
+            <span class="text-[9px] font-bold bg-amber-100/70 border border-amber-200/60 text-amber-800 px-2 py-0.5 rounded-md flex items-center gap-1">
+              ⏱️ ${app.waitTime || "Live Queue"}
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-500 leading-normal font-medium">Primary Issue: ${procedure}</p>
+          <button data-id="${currentAppointmentId}" data-action="chair" class="action-btn w-full mt-2 bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-200 text-sky-600 font-bold text-[10px] py-2 rounded-lg uppercase tracking-wider transition-all cursor-pointer shadow-2xs">
+            Seat Patient ➡️
+          </button>
+        `;
+      } else if (type === "treatment") {
+        card.className =
+          "bg-white border border-slate-200 p-4 rounded-xl space-y-3 shadow-xs flex flex-col";
+        card.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="text-[9px] font-mono font-black text-slate-400 uppercase tracking-wider block">ID: #PT-${shortId}</span>
+              <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wide mt-0.5">${patientName}</h4>
+            </div>
+            <span class="text-[9px] font-bold bg-sky-50 border border-sky-200 text-sky-700 px-2 py-0.5 rounded-md">
+              🪑 ${app.chair || "Chair 01"}
+            </span>
+          </div>
+          <div class="text-[11px] text-slate-500 font-medium space-y-0.5">
+            <p>Doctor: <span class="text-slate-700 font-bold">${doctorName}</span></p>
+            <p>Status: <span class="text-amber-600 font-bold animate-pulse">${app.progress || "In Progress"}</span></p>
+          </div>
+          <button data-id="${currentAppointmentId}" data-action="complete" class="action-btn w-full mt-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-[10px] py-2 rounded-lg uppercase tracking-wider transition-all cursor-pointer shadow-xs">
+            Complete & Bill 💳
+          </button>
+        `;
+      } else if (type === "completed") {
+        const transactionTime =
+          app.time ||
+          new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        const finalPaymentAmount = app.amount || "₱1,500.00";
+
+        card.className =
+          "bg-slate-50/60 border border-slate-200/60 p-4 rounded-xl space-y-3 opacity-85 hover:opacity-100 transition-opacity flex flex-col";
+        card.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="text-[9px] font-mono font-black text-slate-400 uppercase tracking-wider block">ID: #PT-${shortId}</span>
+              <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide mt-0.5">${patientName}</h4>
+            </div>
+            <span class="text-[9px] font-mono font-bold text-slate-400">${transactionTime}</span>
+          </div>
+          <p class="text-[11px] font-semibold text-emerald-700">Paid Amount: ${finalPaymentAmount}</p>
+          <button class="w-full mt-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 font-bold text-[10px] py-1.5 rounded-lg uppercase tracking-wider transition-all cursor-pointer shadow-2xs" onclick="alert('Printing document route... #PT-${shortId}')">
+            Print Receipt 📄
+          </button>
+        `;
       }
-
-      card.innerHTML = `
-      <div class="flex justify-between items-start">
-          <div>
-              <h4 class="text-sm font-black text-slate-900">${finalPatientName}</h4>
-              <p class="text-[10px] text-slate-500 font-mono mt-0.5">Chart: #PT-${shortId}</p>
-          </div>
-          ${statusBadge}
-      </div>
-
-      <div class="bg-slate-50 rounded-lg p-2.5 flex items-center justify-between border border-slate-100">
-          <div class="flex flex-col">
-              <span class="text-[9px] font-bold text-slate-400 uppercase">Procedure</span>
-              <span class="text-xs font-bold text-slate-700 truncate max-w-[120px]">${app.service || app.treatmentName || "Consultation"}</span>
-          </div>
-          <div class="text-right flex flex-col">
-              <span class="text-[9px] font-bold text-slate-400 uppercase">Time</span>
-              ${timeDisplayHTML}
-          </div>
-      </div>
-
-      ${actionHTML ? `<div class="pt-1">${actionHTML}</div>` : ""}
-    `;
 
       container.appendChild(card);
     });
+
+    // Directly execute structural mutation listeners for newly compiled DOM elements
+    bindCardActions();
   }
 
-  // 6. Kanban Action Buttons (Moving Cards)
+  // 5. State Transition Pipeline Integration Methods
   function bindCardActions() {
     document.querySelectorAll(".action-btn").forEach((button) => {
-      button.addEventListener("click", async (e) => {
+      // Remove any previously bound listeners before adding a fresh one to avoid double clicks
+      const clearButton = button.cloneNode(true);
+      button.parentNode.replaceChild(clearButton, button);
+
+      clearButton.addEventListener("click", async (e) => {
         const appointmentId = e.currentTarget.getAttribute("data-id");
         const actionType = e.currentTarget.getAttribute("data-action");
         const nextStatus =
@@ -417,18 +319,118 @@ document.addEventListener("DOMContentLoaded", () => {
             },
           );
 
-          if (!response.ok) throw new Error("Could not move patient card.");
-          await fetchDailyQueue(); // Refresh board instantly
+          if (!response.ok)
+            throw new Error("Could not transform system data record status.");
+
+          await fetchDailyQueue(); // Instantly reload matching application layout states
         } catch (err) {
           alert(`Network Sync Error: ${err.message}`);
-          e.currentTarget.innerText = "Retry";
-          e.currentTarget.disabled = false;
+          clearButton.innerText = "Retry";
+          clearButton.disabled = false;
         }
       });
     });
   }
 
-  // 7. Walk-In Form Submission Handler
+  // 6. Upcoming Booking Analytics Data Engine
+  function renderUpcomingTable(upcomingAppointments, mode = "chronological") {
+    const container = document.getElementById("upcoming-table-container");
+    if (!container) return;
+
+    if (upcomingAppointments.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-8">
+          <p class="text-sm text-slate-500 italic">No future appointments scheduled in this system matrix.</p>
+        </div>`;
+      return;
+    }
+
+    const createRowHTML = (app) => {
+      const dateString = new Date(app.date).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+      let patientDisplayName = "Scheduled Patient";
+      if (app.patientId && typeof app.patientId === "object") {
+        patientDisplayName = `${app.patientId.firstName || ""} ${app.patientId.lastName || ""}`;
+      } else {
+        patientDisplayName = app.patientName || patientDisplayName;
+      }
+
+      return `
+        <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
+          <td class="p-3 text-sm font-semibold text-slate-800">${patientDisplayName.trim()}</td>
+          <td class="p-3 text-sm text-slate-600 font-medium">${dateString}</td>
+          <td class="p-3 text-sm font-mono text-slate-600">${app.time || "TBD"}</td>
+          <td class="p-3 text-sm text-slate-600">${app.service || app.treatmentName || "Consultation"}</td>
+          <td class="p-3">
+            <span class="text-[11px] font-bold bg-blue-50 text-blue-600 border border-blue-200 px-2.5 py-0.5 rounded-full uppercase tracking-wider">${app.status}</span>
+          </td>
+        </tr>`;
+    };
+
+    const createTableHTML = (rows) => `
+      <div class="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-sm mb-6">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200">
+              <th class="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Patient</th>
+              <th class="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
+              <th class="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Time</th>
+              <th class="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Service</th>
+              <th class="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">${rows}</tbody>
+        </table>
+      </div>`;
+
+    if (mode === "chronological") {
+      container.innerHTML = createTableHTML(
+        upcomingAppointments.map(createRowHTML).join(""),
+      );
+      return;
+    }
+
+    const groupedData = {};
+    upcomingAppointments.forEach((app) => {
+      const cleanDateStr = app.date.includes("T")
+        ? app.date.split("T")[0]
+        : app.date;
+      const [partsYear, partsMonth, partsDay] = cleanDateStr.split("-");
+      const d = new Date(partsYear, partsMonth - 1, partsDay);
+      const groupKey =
+        mode === "day"
+          ? d.toLocaleDateString(undefined, {
+              weekday: "long",
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })
+          : d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+      if (!groupedData[groupKey]) groupedData[groupKey] = [];
+      groupedData[groupKey].push(app);
+    });
+
+    let aggregateHTML = "";
+    Object.keys(groupedData).forEach((titleKey) => {
+      aggregateHTML += `
+        <div class="mt-2 mb-4">
+          <div class="flex items-center gap-2 mb-2 px-1">
+            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+            <h4 class="text-xs font-black text-slate-700 uppercase tracking-wider">${titleKey}</h4>
+            <span class="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full ml-auto">${groupedData[titleKey].length} Bookings</span>
+          </div>
+          ${createTableHTML(groupedData[titleKey].map(createRowHTML).join(""))}
+        </div>`;
+    });
+
+    container.innerHTML = aggregateHTML;
+  }
+
+  // 7. Walk-In Intake Registry Handler
   if (formWalkIn) {
     formWalkIn.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -460,7 +462,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         formWalkIn.reset();
         modalWalkIn.classList.add("hidden");
-        await fetchDailyQueue(); // Visual update right away!
+        await fetchDailyQueue();
       } catch (err) {
         alert(`Error: ${err.message}`);
       } finally {
@@ -475,5 +477,6 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.replace("/staffLogin.html");
   }
 
+  // Launch Engine runtime sequence
   initializeDashboard();
 });
