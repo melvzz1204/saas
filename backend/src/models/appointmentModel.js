@@ -64,6 +64,11 @@ const appointmentSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    dentistId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Staff",
+      default: null,
+    },
   },
   { timestamps: true }, // Keeps createdAt and updatedAt working
 );

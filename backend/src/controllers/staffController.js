@@ -151,3 +151,26 @@ export const loginClinicalStaff = async (req, res) => {
     });
   }
 };
+export const getClinicalStaffByRole = async (req, res) => {
+  try {
+    const { role } = req.query;
+
+    // Build query filter; if a role is passed (like ?role=dentist), apply it
+    const filter = {};
+    if (role) {
+      // Use a case-insensitive regex check to prevent matching mismatch issues
+      filter.role = { $regex: new RegExp(`^${role}$`, "i") };
+    }
+
+    // Query your Staff model collection
+    const staff = await Staff.find(filter).select("-password"); // Hide password hashes safely
+
+    return res.status(200).json({
+      success: true,
+      count: staff.length,
+      staff,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

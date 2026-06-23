@@ -356,3 +356,39 @@ document
 
 // Trigger bootstrap routine once script parsing evaluates
 initializeDashboard();
+// =========================================================================
+// ⚡ REAL-TIME PATIENT PIPELINE REACTION ENGINE
+// =========================================================================
+const socket = io("http://localhost:5000", {
+  transports: ["websocket"],
+  upgrade: false,
+});
+
+socket.on("connect", () => {
+  console.log("🟢 Patient Dashboard linked to real-time live sync pipeline!");
+});
+
+socket.on("connect_error", (err) => {
+  console.error("🔴 Patient Live Sync Error:", err.message);
+});
+
+// Intercept pipeline updates from the clinic network
+socket.on("pipeline-update", async (data) => {
+  console.log("🔔 Clinic Pipeline Event Intercepted:", data.message);
+
+  // 🎯 Dynamically check for whatever naming convention your patient dashboard uses:
+  if (typeof fetchPatientAppointments === "function") {
+    console.log("🔄 Re-fetching patient personalized booking ledger...");
+    await fetchPatientAppointments();
+  } else if (typeof loadDashboardData === "function") {
+    console.log("🔄 Re-fetching patient workspace container...");
+    await loadDashboardData();
+  } else {
+    // Fallback: If data functions are wrapped/unreachable, do a clean page soft-refresh
+    console.log(
+      "⚠️ Scoped wrapper detected. Executing page state soft-refresh fallback...",
+    );
+    window.location.reload();
+  }
+});
+// =========================================================================

@@ -6,13 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clinical Operator | Dentist Dashboard</title>
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-    </style>
 </head>
 
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
@@ -24,16 +19,9 @@
                     class="w-9 h-9 rounded-xl bg-sky-600 flex items-center justify-center text-white font-black text-lg shadow-md shadow-sky-600/20">
                     🦷</div>
                 <div>
-                    <h1 class="text-sm font-black text-slate-900 tracking-tight uppercase">Apex Dental</h1>
+                    <h1 class="text-sm font-black text-slate-900 tracking-tight uppercase"></h1>
                     <p class="text-[10px] text-slate-400 font-bold tracking-wider uppercase">Clinical Provider Deck</p>
                 </div>
-            </div>
-            <div class="flex items-center gap-4">
-                <span
-                    class="text-[11px] font-bold bg-sky-50 border border-sky-200 text-sky-700 px-3 py-1 rounded-full flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Dr. Alex Santos, DMD
-                </span>
             </div>
         </div>
     </header>
@@ -52,15 +40,16 @@
                         <span
                             class="text-[9px] font-black text-sky-600 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded-md uppercase tracking-wider">Active
                             Treatment Unit</span>
-                        <h2 id="active-patient-name" class="text-xl font-black text-slate-900 tracking-tight mt-1">Maria
-                            Clara</h2>
-                        <p class="text-xs text-slate-500 font-medium mt-0.5">Assigned Procedure: <span
-                                class="text-slate-800 font-bold">Deep Root Canal (Molar #14)</span></p>
+                        <h2 id="active-patient-name" class="text-xl font-black text-slate-900 tracking-tight mt-1">
+                            Loading Case...</h2>
+                        <!-- 🎯 FIXED: Appended secure clear identification string -->
+                        <p id="active-procedure-container" class="text-xs text-slate-500 font-medium mt-0.5">Syncing
+                            treatment data matrix...</p>
                     </div>
                     <div class="flex items-center gap-3">
                         <div class="text-right">
                             <p class="text-[9px] font-black uppercase text-slate-400 tracking-wider">Session Clock</p>
-                            <p id="session-timer" class="text-lg font-mono font-bold text-slate-800">24:15</p>
+                            <p id="session-timer" class="text-lg font-mono font-bold text-slate-800">00:00</p>
                         </div>
                         <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xl">🪑</div>
                     </div>
@@ -71,7 +60,6 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <h3 class="text-[10px] font-black uppercase text-slate-400 tracking-wider">Interactive 16-Tooth
                             Dental Arc Map</h3>
-                        <!-- Arch Switch Control Toggles -->
                         <div class="inline-flex rounded-lg bg-slate-100 p-0.5 border border-slate-200/80">
                             <button id="toggle-maxillary" type="button"
                                 class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md cursor-pointer transition-all bg-white text-slate-800 shadow-2xs">
@@ -84,7 +72,6 @@
                         </div>
                     </div>
 
-                    <!-- Target element for your JavaScript file injection -->
                     <div id="odontogram-container"
                         class="border border-slate-200 rounded-xl p-4 bg-slate-50/50 flex flex-wrap justify-center gap-1.5 min-h-[100px] items-center">
                         <!-- Component items compiled via module -->
@@ -122,45 +109,20 @@
                         Assigned Case Manifest
                     </h3>
                     <span
-                        class="bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-black px-2 py-0.5 rounded-md">3
+                        class="bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-black px-2 py-0.5 rounded-md">0
                         Left</span>
                 </div>
 
+                <!-- Live Container targets rendering via dentistDashboard.js -->
                 <div class="flex-1 overflow-y-auto space-y-3 pr-1">
-                    <div class="border-2 border-sky-500 bg-sky-50/20 p-4 rounded-xl space-y-1 relative">
-                        <span
-                            class="absolute top-3 right-3 text-[9px] font-black uppercase text-sky-600 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-sm">In
-                            Chair</span>
-                        <p class="text-[9px] font-mono font-bold text-slate-400">10:00 AM</p>
-                        <h4 class="text-xs font-black text-slate-800 uppercase tracking-wide">Maria Clara</h4>
-                        <p class="text-[11px] text-slate-500 font-medium">Root Canal Treatment</p>
-                    </div>
-
-                    <div
-                        class="border border-slate-200 bg-white p-4 rounded-xl space-y-1 hover:border-slate-300 transition-colors">
-                        <p class="text-[9px] font-mono font-bold text-slate-400">11:15 AM</p>
-                        <h4 class="text-xs font-black text-slate-700 uppercase tracking-wide">Liam Conor</h4>
-                        <p class="text-[11px] text-slate-500 font-medium">Crown Installation Placement</p>
-                    </div>
-
-                    <div
-                        class="border border-slate-200 bg-white p-4 rounded-xl space-y-1 hover:border-slate-300 transition-colors">
-                        <p class="text-[9px] font-mono font-bold text-slate-400">02:00 PM</p>
-                        <h4 class="text-xs font-black text-slate-700 uppercase tracking-wide">Amara Soon</h4>
-                        <p class="text-[11px] text-slate-500 font-medium">Routine Consult & Scaling</p>
-                    </div>
+                    <p class="text-xs font-semibold text-slate-400 text-center py-8">Contacting clinical data stream...
+                    </p>
                 </div>
             </div>
         </div>
     </main>
 
-    <script>
-        document.getElementById('clinical-notes-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            alert('Clinical record sealed. Pipeline event emitted to front desk cashier engine.');
-        });
-    </script>
-    <!-- Linked file location syntax fix -->
+    <!-- Main Clinical Orchestration Engine Modules -->
     <script type="module" src="/src/util/teeth.js"></script>
     <script type="module" src="./src/pages/dentistDashboard.js"></script>
 </body>

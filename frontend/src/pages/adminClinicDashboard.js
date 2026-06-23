@@ -1,8 +1,3 @@
-// adminDashboard.js
-
-// =========================================================================
-// 🛡️ SECURITY GUARD: Block unauthenticated traffic instantly
-// =========================================================================
 const token = localStorage.getItem("token");
 const userData = JSON.parse(localStorage.getItem("user") || "null");
 
@@ -20,12 +15,9 @@ if (!token || !userData || !authorizedPersonnel.includes(userData.role)) {
   window.location.href = "/clinicLogin.html";
 }
 
-// Extraction: Capture tenant identifier context strings safely
 const clinicId = userData.clinicId;
+let globalTreatmentsData = []; // Ensure this is explicitly declared globally
 
-// =========================================================================
-// 🔌 UNIFIED INITIALIZATION LAYER (DOM Content Loaded)
-// =========================================================================
 document.addEventListener("DOMContentLoaded", () => {
   // 1. Render logged-in user context profiles
   const displayEmailEl = document.getElementById("display-user-email");
@@ -182,7 +174,6 @@ function renderAppointmentsTable(appointments) {
   const todayCount = appointments.filter((appt) => {
     if (!appt.date) return false;
     const cleanDate = String(appt.date).trim().split("T")[0];
-
     return cleanDate === dynamicToday;
   }).length;
 
@@ -240,117 +231,62 @@ function renderAppointmentsTable(appointments) {
       ) {
         statusClass = "bg-rose-500/10 text-rose-400 border border-rose-500/20";
       } else if (currentStatus === "missed" || currentStatus === "no-show") {
-        // 🎨 Sleek slate/gray badge look for unattended appointments
         statusClass =
           "bg-slate-500/10 text-slate-400 border border-slate-500/20";
       }
-      // 🆕 FIXED RELATIONAL FUZZY LOOKUP PIPELINE
+
       const matchedTreatment = (
         typeof globalTreatmentsData !== "undefined" ? globalTreatmentsData : []
       ).find((t) => {
         if (!t.name) return false;
-
         const dbName = t.name.toLowerCase().trim();
         const apptService = calculatedService.toLowerCase().trim();
         const dbSlug = t.slug ? t.slug.toLowerCase().trim() : "";
 
-        // Absolute text match or slug match
         if (dbName === apptService || dbSlug === apptService) return true;
-
-        // Partial matching safety fallback (e.g., matching "Consultation" with "General Consultation")
         return dbName.includes(apptService) || apptService.includes(dbName);
       });
 
-      // Format price correctly matching back to controller target property: "basePricePhp"
       const calculatedFee =
         matchedTreatment && matchedTreatment.basePricePhp !== undefined
           ? `₱${Number(matchedTreatment.basePricePhp).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
           : "₱0.00";
 
       return `
-   <tr class="hover:bg-slate-900/10 transition-colors">
-    <td class="p-4 font-bold text-slate-700">${calculatedPatientName}</td>
-    <td class="p-4 font-mono text-[11px] text-slate-400 uppercase">${appt.date} @ ${appt.time}</td>
-    <td class="p-4 text-slate-400 truncate max-w-[150px]">${calculatedService}</td>
-    <td class="p-4">
-        <span class="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200/60">
-            ${calculatedFee}
-        </span>
-    </td>
-    <td class="p-4">
-        <span class="px-2.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider ${statusClass}">
-            ${appt.status}
-        </span>
-    </td>
-    <td class="p-4 text-right space-x-1">
-     ${
-       currentStatus === "pending"
-         ? `
-        <button onclick="modifyAppointmentStatus('${appt._id}', 'Approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded font-bold text-[10px] tracking-wide transition-colors">Approve</button>
-        <button onclick="modifyAppointmentStatus('${appt._id}', 'Declined')" class="bg-rose-50 hover:bg-rose-100 text-slate-700 hover:text-rose-600 border border-slate-200 hover:border-rose-200 px-2.5 py-1 rounded-md font-bold text-[10px] tracking-wide uppercase transition-colors cursor-pointer shadow-sm shadow-slate-100">Declined</button>
-      `
-         : currentStatus === "approved" || currentStatus === "confirmed"
-           ? `
-        <button onclick="modifyAppointmentStatus('${appt._id}', 'Missed')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 px-2.5 py-1 rounded font-bold text-[10px] tracking-wide transition-colors">Mark Missed</button>
-      `
-           : `<span class="text-[11px] text-slate-500 font-medium capitalize">${currentStatus}</span>`
-     }
-    </td>
-</tr>
-    `;
+       <tr class="hover:bg-slate-900/10 transition-colors">
+        <td class="p-4 font-bold text-slate-700">${calculatedPatientName}</td>
+        <td class="p-4 font-mono text-[11px] text-slate-400 uppercase">${appt.date} @ ${appt.time}</td>
+        <td class="p-4 text-slate-400 truncate max-w-[150px]">${calculatedService}</td>
+        <td class="p-4">
+            <span class="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200/60">
+                ${calculatedFee}
+            </span>
+        </td>
+        <td class="p-4">
+            <span class="px-2.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider ${statusClass}">
+                ${appt.status}
+            </span>
+        </td>
+        <td class="p-4 text-right space-x-1">
+         ${
+           currentStatus === "pending"
+             ? `
+             <button onclick="modifyAppointmentStatus('${appt._id}', 'Approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded font-bold text-[10px] tracking-wide transition-colors">Approve</button>
+             <button onclick="modifyAppointmentStatus('${appt._id}', 'Declined')" class="bg-rose-50 hover:bg-rose-100 text-slate-700 hover:text-rose-600 border border-slate-200 hover:border-rose-200 px-2.5 py-1 rounded-md font-bold text-[10px] tracking-wide uppercase transition-colors cursor-pointer shadow-sm shadow-slate-100">Declined</button>
+           `
+             : currentStatus === "approved" || currentStatus === "confirmed"
+               ? `
+             <button onclick="modifyAppointmentStatus('${appt._id}', 'Missed')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 px-2.5 py-1 rounded font-bold text-[10px] tracking-wide transition-colors">Mark Missed</button>
+           `
+               : `<span class="text-[11px] text-slate-500 font-medium capitalize">${currentStatus}</span>`
+         }
+        </td>
+    </tr>
+        `;
     })
     .join("");
 }
-// Fetch Appointments, Staff Count, and Dental Service Prices simultaneously
-async function fetchDashboardData() {
-  if (!clinicId) return;
-  try {
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      "x-clinic-id": clinicId,
-    };
 
-    // 1. Fetch primary dashboard records concurrently
-    const [apptRes, staffRes] = await Promise.all([
-      fetch("http://localhost:5000/api/v1/admin/appointments", { headers }),
-      fetch("http://localhost:5000/api/v1/admin/staff", { headers }),
-    ]);
-
-    const appts = await apptRes.json();
-    const staff = await staffRes.json();
-
-    // 2. Isolated block for your specific Controller route schema
-    try {
-      // ⚠️ Note: Adjust this URL route to match your exact backend server router setup for getServices
-      const servicesRes = await fetch(
-        "http://localhost:5000/api/v1/dental-price/services",
-        { headers },
-      );
-      if (servicesRes && servicesRes.ok) {
-        const servicesJson = await servicesRes.json();
-        if (servicesJson && servicesJson.success) {
-          globalTreatmentsData = servicesJson.data || [];
-        }
-      }
-    } catch (serviceErr) {
-      console.warn(
-        "⚠️ dentalServicePriceController endpoint is unreachable. Defaulting to ₱0.00:",
-        serviceErr,
-      );
-      globalTreatmentsData = [];
-    }
-
-    // 3. Render downstream interface views safely
-    if (appts.success) renderAppointmentsTable(appts.data);
-
-    const kpiStaffEl = document.getElementById("kpi-total-staff");
-    if (staff.success && kpiStaffEl) {
-      kpiStaffEl.textContent = staff.data.length;
-    }
-  } catch (err) {
-    console.error("Workspace data synch failure:", err);
-  }
-}
 async function modifyAppointmentStatus(appointmentId, newStatus) {
   try {
     console.log(
@@ -378,8 +314,6 @@ async function modifyAppointmentStatus(appointmentId, newStatus) {
     console.error("Failed to dispatch patch operation:", err);
   }
 }
-
-// Explicitly bind target functions to the browser window dictionary space for inline HTML buttons
 window.modifyAppointmentStatus = modifyAppointmentStatus;
 
 async function handleStaffOnboarding(e) {
@@ -387,18 +321,13 @@ async function handleStaffOnboarding(e) {
 
   const pinRevealBox = document.getElementById("pin-reveal-box");
   const generatedPinDisplay = document.getElementById("generated-pin-display");
-
-  // Hide the previous PIN layout at the start of a new request
   if (pinRevealBox) pinRevealBox.classList.add("hidden");
 
-  // 🔑 GENERATE A SECURE 6-DIGIT ACCESS PIN AUTOMATICALLY
   const autoGeneratedPin = Math.floor(
     100000 + Math.random() * 900000,
   ).toString();
 
   const staffNameValue = document.getElementById("staff-name").value.trim();
-
-  // 🎯 FIXED PAYLOAD: Satisfies backend validation rules
   const payload = {
     name: staffNameValue,
     fullName: staffNameValue,
@@ -408,7 +337,7 @@ async function handleStaffOnboarding(e) {
     email: document.getElementById("staff-email").value.trim(),
     phone: document.getElementById("staff-phone").value.trim(),
     accessPin: autoGeneratedPin,
-    clinicId: clinicId, // Ensure 'clinicId' is defined in your outer scope
+    clinicId: clinicId,
   };
 
   try {
@@ -418,14 +347,12 @@ async function handleStaffOnboarding(e) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Ensure 'token' is defined in your outer scope
+          Authorization: `Bearer ${token}`,
           "x-clinic-id": clinicId,
         },
         body: JSON.stringify(payload),
       },
     );
-
-    // 1. Check HTTP Status First
     if (!response.ok) {
       const errorText = await response.text();
       let parseMessage = "Failed to compile registration parameters.";
@@ -437,29 +364,20 @@ async function handleStaffOnboarding(e) {
       }
       throw new Error(parseMessage);
     }
-
     const result = await response.json();
-
-    // 2. Flexible Backend Verification Checklist
-    // Adapts to: { success: true }, { status: "success" }, or status code 200/201 returning data
     const isSuccessful =
       result.success === true ||
       result.status === "success" ||
       response.status === 201 ||
       response.status === 200;
-
     if (isSuccessful) {
-      // 3. Render the PIN to the UI instantly
       if (pinRevealBox && generatedPinDisplay) {
         generatedPinDisplay.textContent = autoGeneratedPin;
         pinRevealBox.classList.remove("hidden");
       }
-
-      // Reset fields smoothly using the accurate element ID
       const staffForm = document.getElementById("add-staff-form");
       if (staffForm) staffForm.reset();
 
-      // Update metrics instantly
       if (typeof fetchDashboardData === "function") {
         fetchDashboardData();
       }
@@ -474,8 +392,45 @@ async function handleStaffOnboarding(e) {
   }
 }
 
-// Handle Logout Actions clean down
 function handleLogout() {
   localStorage.clear();
   window.location.href = "/clinicLogin.html";
 }
+
+// =========================================================================
+// ⚡ REAL-TIME WEBSOCKET REACTION ENGINE
+// =========================================================================
+const socket = io("http://localhost:5000", {
+  transports: ["websocket"],
+  upgrade: false,
+});
+
+socket.on("connect", () => {
+  console.log("🟢 Admin Clinic Dashboard linked to real-time live event grid!");
+});
+
+socket.on("connect_error", (err) => {
+  console.error("🔴 Live Sync Disconnect Error:", err.message);
+});
+
+socket.on("pipeline-update", async (data) => {
+  console.log("🔔 Real-Time Event Intercepted:", data.message);
+  if (typeof fetchAdminAppointments === "function") {
+    console.log("🔄 Re-fetching admin clinic data matrix...");
+    await fetchAdminAppointments();
+  } else if (typeof fetchDailyAppointments === "function") {
+    console.log("🔄 Re-fetching standard daily appointment data...");
+    await fetchDailyAppointments();
+  } else if (typeof loadLiveQueue === "function") {
+    console.log("🔄 Re-fetching live queue records...");
+    await loadLiveQueue();
+  } else if (typeof renderKanbanBoard === "function") {
+    console.log("🔄 Redrawing kanban UI layout structure...");
+    await renderKanbanBoard();
+  } else {
+    console.log(
+      "⚠️ Scoped wrapper detected. Executing page state soft-refresh fallback...",
+    );
+    window.location.reload();
+  }
+});

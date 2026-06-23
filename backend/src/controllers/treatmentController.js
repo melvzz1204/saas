@@ -1,4 +1,5 @@
 // src/controllers/treatmentController.js
+import mongoose from "mongoose";
 import Treatment from "../models/treatmentModel.js";
 
 // Handles the form submission from the Dentist Dashboard
@@ -7,7 +8,6 @@ export const completeProcedure = async (req, res) => {
     const { treatmentId, treatedTooth, clinicalNotes, billingAmount } =
       req.body;
 
-    // Auth metadata pulled straight from your verified JWT token middleware
     const dentistId = req.user.id;
     const clinicId = req.user.clinicId;
 
@@ -19,18 +19,18 @@ export const completeProcedure = async (req, res) => {
       });
     }
 
-    // Find the active chair record and update it to release the patient to checkout
+    // 1. Find and update the active treatment tracking session
     const activeSession = await Treatment.findOneAndUpdate(
       { _id: treatmentId, clinicId: clinicId, dentistId: dentistId },
       {
         $set: {
           treatedTooth: treatedTooth ? parseInt(treatedTooth) : null,
           clinicalNotes: clinicalNotes.trim(),
-          billingAmount: billingAmount || 150.0, // Fallback base fee if empty
-          status: "COMPLETED_PENDING_BILL", // ⚡ This state change shifts the front-desk Kanban column!
+          billingAmount: billingAmount || 150.0,
+          status: "COMPLETED_PENDING_BILL",
         },
       },
-      { new: true }, // Return updated document structure
+      { new: true },
     );
 
     if (!activeSession) {
@@ -41,8 +41,40 @@ export const completeProcedure = async (req, res) => {
       });
     }
 
-    // NOTE: If using WebSockets (Socket.io), trigger the event right here:
-    // req.io.to(clinicId).emit("kanban_update", { event: "RELEASE_PATIENT", data: activeSession });
+    // 2. Cross-sync the parent appointment collection state securely
+    if (activeSession.appointmentId) {
+      try {
+        await mongoose.model("Appointment").findByIdAndUpdate(
+          activeSession.appointmentId,
+          { $set: { status: "COMPLETED_PENDING_BILL" } }, // Syncing the parent status!
+        );
+        console.log(
+          `🔄 Parent appointment ${activeSession.appointmentId} synced to COMPLETED_PENDING_BILL.`,
+        );
+      } catch (dbError) {
+        console.error("⚠️ Mongoose cross-sync warning:", dbError.message);
+      }
+    }
+
+    // =============================================================
+    // ⚡ REAL-TIME PIPELINE WEBSOCKET EMISSION
+    // =============================================================
+    const ioInstance = global.io; // Grab the socket server instance from the Node global scope context
+
+    if (ioInstance) {
+      ioInstance.emit("pipeline-update", {
+        message: "Patient procedure finalized by clinical operator.",
+        appointmentId: activeSession.appointmentId,
+      });
+      console.log(
+        "⚡ Broadcast sent: pipeline-update dispatched downstream successfully!",
+      );
+    } else {
+      console.log(
+        "❌ CRITICAL: Could not find the socket 'io' instance on global scope!",
+      );
+    }
+    // =============================================================
 
     return res.status(200).json({
       success: true,
@@ -58,6 +90,32 @@ export const completeProcedure = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal runtime server pipeline fault.",
+    });
+  }
+};
+
+export const getDentistQueue = async (req, res) => {
+  try {
+    const dentistId = req.user.id;
+    const clinicId = req.user.clinicId;
+
+    // 🎯 Only fetch patients actively in the chair right now
+    const treatments = await Treatment.find({
+      clinicId: clinicId,
+      dentistId: dentistId,
+      status: "IN_CHAIR",
+    }).sort({ createdAt: 1 });
+
+    return res.status(200).json({
+      success: true,
+      count: treatments.length,
+      treatments,
+    });
+  } catch (error) {
+    console.error("Critical error in getDentistQueue controller:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal framework exception.",
     });
   }
 };

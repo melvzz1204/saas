@@ -11,12 +11,16 @@ import initAppointmentCleanupJob from "./utils/appointmentCleanup.js";
 import treatmentRoutes from "./routes/treatmentRoutes.js";
 
 dotenv.config();
-
 const app = express();
-
 initAppointmentCleanupJob();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
+    credentials: true, // Required for WebSockets handshake authentication/CORS headers
+  }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

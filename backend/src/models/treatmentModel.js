@@ -3,6 +3,11 @@ import mongoose from "mongoose";
 
 const treatmentSchema = new mongoose.Schema(
   {
+    appointmentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Appointment",
+      default: null,
+    },
     clinicId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Clinic",
@@ -30,11 +35,12 @@ const treatmentSchema = new mongoose.Schema(
     },
     clinicalNotes: {
       type: String,
-      required: true,
+      required: false, // 🎯 FIXED: Changed to false so reception can seat patients before notes exist!
+      default: "", // Starts clean and empty for the dentist
     },
     status: {
       type: String,
-      enum: ["IN_CHAIR", "COMPLETED_PENDING_BILL", "SETTLED"],
+      enum: ["IN_CHAIR", "COMPLETED_PENDING_BILL", "DONE"],
       default: "IN_CHAIR",
     },
     billingAmount: {

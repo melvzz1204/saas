@@ -5,6 +5,7 @@ import {
   getTodayAppointments,
   createWalkInAppointment,
   updateAppointmentStatus,
+  settlePayment,
 } from "../controllers/appointmentController.js";
 
 const router = express.Router();
@@ -15,5 +16,6 @@ router.get("/patient/:patientId", getPatientAppointments);
 router.post("/walk-in", createWalkInAppointment);
 router.patch("/:id/status", updateAppointmentStatus);
 router.get("/today", getTodayAppointments);
+router.patch("/settle-payment", settlePayment);
 
 export default router;
