@@ -79,11 +79,13 @@ userSchema.index(
   },
 );
 
-// Automatically hash password before saving to MongoDB
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+userSchema.pre("save", async function () {
+  // 1. If the password hasn't changed, stop execution here safely
+  if (!this.isModified("password")) return;
+
+  // 2. Hash the password cleanly using await
+  // (Mongoose automatically handles moving to the next step when this finishes!)
   this.password = await bcrypt.hash(this.password, 12);
-  next();
 });
 
 // Helper method to compare passwords during login
