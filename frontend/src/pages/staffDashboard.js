@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --- 3. Core Functions ---
-  async function fetchAvailableDentists() {
+  /*  async function fetchAvailableDentists() {
     const dentistDropdown = document.getElementById("modal-dentist-dropdown");
     if (!dentistDropdown) return;
 
@@ -78,6 +78,67 @@ document.addEventListener("DOMContentLoaded", () => {
       );
     } catch (err) {
       console.error("⚠️ Dynamic dentist sync failed:", err);
+    }
+  }
+ */
+
+  async function fetchAvailableDentists() {
+    const dentistDropdown = document.getElementById("modal-dentist-dropdown");
+    if (!dentistDropdown) return;
+
+    // 1. Grab the current clinic scope identifier from storage
+    const clinicName = localStorage.getItem("clinicName");
+    const clinicId = localStorage.getItem("clinicId"); // Use clinicId instead if your backend tracks IDs!
+
+    try {
+      // 2. Pass the clinic identifier into your query parameters!
+      let url = `${API_BASE_URL}/api/v1/staff?role=dentist`;
+      if (clinicId) {
+        url += `&clinicId=${clinicId}`;
+      } else if (clinicName) {
+        url += `&clinicName=${encodeURIComponent(clinicName)}`;
+      }
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok)
+        throw new Error("Failed to populate operator registry lists.");
+
+      const data = await response.json();
+      const dentists =
+        data.staff ||
+        data.users ||
+        data.data ||
+        (Array.isArray(data) ? data : []);
+
+      dentistDropdown.innerHTML = `<option value="">-- Choose Operator --</option>`;
+
+      dentists.forEach((doc) => {
+        const option = document.createElement("option");
+        option.value = doc._id || doc.id;
+
+        let rawName = "";
+        if (doc.fullName) rawName = doc.fullName;
+        else if (doc.name) rawName = doc.name;
+        else if (doc.firstName || doc.lastName) {
+          rawName = `${doc.firstName || ""} ${doc.lastName || ""}`;
+        }
+
+        rawName = rawName.trim() || "Unknown Operator";
+
+        option.textContent = rawName.startsWith("Dr.")
+          ? rawName
+          : `Dr. ${rawName}`;
+        dentistDropdown.appendChild(option);
+      });
+    } catch (err) {
+      console.error("⚠️ Error rendering dynamic operator lists:", err);
     }
   }
 

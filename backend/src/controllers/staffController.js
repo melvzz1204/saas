@@ -151,7 +151,7 @@ export const loginClinicalStaff = async (req, res) => {
     });
   }
 };
-export const getClinicalStaffByRole = async (req, res) => {
+/* export const getClinicalStaffByRole = async (req, res) => {
   try {
     const { role } = req.query;
 
@@ -163,6 +163,49 @@ export const getClinicalStaffByRole = async (req, res) => {
     }
 
     // Query your Staff model collection
+    const staff = await Staff.find(filter).select("-password"); // Hide password hashes safely
+
+    return res.status(200).json({
+      success: true,
+      count: staff.length,
+      staff,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}; */
+
+export const getClinicalStaffByRole = async (req, res) => {
+  try {
+    // 1. Destructure role and optional clinic selectors from the query
+    const { role, clinicName, clinicId } = req.query;
+
+    // 2. Also check if your authentication middleware populated req.user from the JWT token
+    const tokenClinicName = req.user?.clinicName;
+    const tokenClinicId = req.user?.clinicId;
+
+    const filter = {};
+
+    // Build role filter
+    if (role) {
+      filter.role = { $regex: new RegExp(`^${role}$`, "i") };
+    }
+
+    // 🎯 THE FIX: Constrain the search to the active clinic context only!
+    // We prioritize secure token data over easily spoofed URL query parameters
+    const activeClinicId = tokenClinicId || clinicId;
+    const activeClinicName = tokenClinicName || clinicName;
+
+    if (activeClinicId) {
+      filter.clinicId = activeClinicId; // Mapped by database ID string
+    } else if (activeClinicName) {
+      // Mapped by name string (case-insensitive regex to protect against typos)
+      filter.clinicName = {
+        $regex: new RegExp(`^${activeClinicName.trim()}$`, "i"),
+      };
+    }
+
+    // Query your Staff model collection with the isolated clinic workspace filter
     const staff = await Staff.find(filter).select("-password"); // Hide password hashes safely
 
     return res.status(200).json({
