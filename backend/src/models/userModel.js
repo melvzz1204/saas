@@ -83,8 +83,6 @@ userSchema.pre("save", async function () {
   // 1. If the password hasn't changed, stop execution here safely
   if (!this.isModified("password")) return;
 
-  // 2. Hash the password cleanly using await
-  // (Mongoose automatically handles moving to the next step when this finishes!)
   this.password = await bcrypt.hash(this.password, 12);
 });
 
