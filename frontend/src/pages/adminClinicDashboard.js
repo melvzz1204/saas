@@ -16,8 +16,7 @@ if (!token || !userData || !authorizedPersonnel.includes(userData.role)) {
 }
 
 const clinicId = userData.clinicId;
-let globalTreatmentsData = []; // Ensure this is explicitly declared globally
-
+let globalTreatmentsData = [];
 document.addEventListener("DOMContentLoaded", () => {
   // 1. Render logged-in user context profiles
   const displayEmailEl = document.getElementById("display-user-email");

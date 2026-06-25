@@ -329,7 +329,7 @@
             const user = localStorage.getItem("user");
             if (!token || !user) {
                 console.warn("⚠️ Unauthorized state caught. Evicting worker session.");
-                window.location.replace("/patientLogin.html?clinic=radiant-smiles");
+
             }
         })();
         function updateFormPriceIndicator(selectElement) {
