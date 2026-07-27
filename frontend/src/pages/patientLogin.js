@@ -23,6 +23,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  // 📝 CRITICAL FIX A: Cache clinicSlug globally into storage layers right away
+  localStorage.setItem("clinicSlug", clinicSlug);
+
   if (registerLink) {
     registerLink.href = `/patientRegistration?clinic=${clinicSlug}`;
   }
@@ -122,9 +125,11 @@ async function handlePatientLoginSubmit(e) {
       localStorage.setItem("token", String(cleanToken).trim());
       localStorage.setItem("user", JSON.stringify(userPayload));
 
-      // Redirect out smoothly
+      // 📝 CRITICAL FIX B: Pass the active routing scope query param over to the dashboard page view
+      const activeSlug = localStorage.getItem("clinicSlug") || "default";
+
       setTimeout(() => {
-        window.location.href = "/patientDashboard.html";
+        window.location.href = `/patientDashboard.html?clinic=${activeSlug}`;
       }, 1500);
     } else {
       showBanner(

@@ -2,11 +2,12 @@ const API_PRICING_URL = "http://localhost:5000/api/v1/dental-price/services";
 const token = localStorage.getItem("token");
 const userJson = localStorage.getItem("user");
 
+/* // 🛡️ Redirect immediately to login if credentials do not exist
 if (!token || !userJson) {
   console.warn("⚠️ Credentials missing. Redirecting to login gate.");
   const sessionSlug = localStorage.getItem("clinicSlug") || "default";
   window.location.href = `/patientLogin.html?clinic=${sessionSlug}`;
-}
+} */
 
 // 🛡️ HELPER: Safely decodes JWT strings without character truncation
 function parseJwt(tokenString) {
@@ -43,9 +44,34 @@ const bookingsTableBody = document.getElementById("bookings-table-body");
 const clinicNameHeading = document.getElementById("clinic-name-heading");
 const logoutBtn = document.getElementById("logout-btn");
 
-// UI Display Greeting Initialization
-if (userGreeting && currentUser.firstName) {
-  userGreeting.textContent = `👋 Welcome, ${currentUser.firstName} ${currentUser.lastName}`;
+// 🎯 FIXED WELCOME GREETING: Filters out fallback clinic names
+if (userGreeting) {
+  let displayName = "";
+
+  // 1. Try targeting clear personal profile properties
+  if (currentUser && currentUser.firstName) {
+    displayName =
+      `${currentUser.firstName} ${currentUser.lastName || ""}`.trim();
+  } else if (
+    currentUser &&
+    currentUser.name &&
+    typeof currentUser.name === "string"
+  ) {
+    displayName = currentUser.name;
+  }
+  // 2. Read from token claims, but REJECT it if it equals the clinic name
+  else if (
+    decodedToken?.name &&
+    decodedToken.name.toLowerCase() !== "clinica climen"
+  ) {
+    displayName = decodedToken.name;
+  } else if (decodedToken?.firstName) {
+    displayName = decodedToken.firstName;
+  }
+  if (!displayName || displayName.toLowerCase() === "clinica climen") {
+    displayName = "Valued Patient";
+  }
+  userGreeting.textContent = `👋 Welcome, ${displayName}`;
 }
 
 // 1. Fetch Clinic Meta Context Dynamically
@@ -62,9 +88,7 @@ async function fetchClinicName() {
       `http://localhost:5000/api/v1/tenants/${DYNAMIC_CLINIC_ID}`,
       {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       },
     );
     const result = await response.json();
@@ -102,7 +126,7 @@ async function syncDynamicPricingElements() {
 
     const services = resData.data;
 
-    if (services.length === 0) {
+    if (!services || services.length === 0) {
       if (serviceSelect)
         serviceSelect.innerHTML =
           '<option value="" disabled>No services available</option>';
@@ -112,7 +136,6 @@ async function syncDynamicPricingElements() {
       return;
     }
 
-    // Map values into booking dropdown options
     if (serviceSelect) {
       serviceSelect.innerHTML = services
         .map((service, index) => {
@@ -121,14 +144,12 @@ async function syncDynamicPricingElements() {
         })
         .join("");
 
-      // Trigger fallback initialization text value on setup mount
       if (services[0] && formPriceIndicator) {
         const firstPriceFormatted = `₱${Number(services[0].basePricePhp).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         formPriceIndicator.textContent = firstPriceFormatted;
       }
     }
 
-    // Map values into reference catalog ledger table
     if (pricingLedgerBody) {
       pricingLedgerBody.innerHTML = services
         .map((service) => {
@@ -138,8 +159,7 @@ async function syncDynamicPricingElements() {
                 <td class="py-4 px-5 font-bold text-slate-900">${service.name}</td>
                 <td class="py-4 px-5 text-slate-400">${service.description || "No descriptive scope provided."}</td>
                 <td class="py-4 px-5 text-right font-black text-slate-900 whitespace-nowrap">${formattedPrice}</td>
-            </tr>
-          `;
+            </tr>`;
         })
         .join("");
     }
@@ -160,14 +180,32 @@ async function syncDynamicPricingElements() {
 async function loadPatientBookings() {
   if (!bookingsTableBody) return;
 
+  // 🟢 GUEST MODE SAFE CHECK: Instead of hard-crashing, check if they are logged out
   if (!verifiedPatientId || verifiedPatientId === "undefined") {
-    console.error(
-      "❌ Session Error: Patient unique ID is missing from localStorage user payload.",
-    );
-    bookingsTableBody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-amber-500 font-semibold">Session Error: Please log out and log back in to refresh your keys.</td></tr>`;
+    console.log("ℹ️ Guest context detected. Rendering sign-in prompt on ledger matrix.");
+
+    bookingsTableBody.innerHTML = `
+      <tr>
+        <td colspan="3" class="py-10 text-center">
+          <div class="flex flex-col items-center justify-center space-y-2.5">
+            <span class="text-xl">🔒</span>
+            <p class="text-xs font-bold text-slate-700 uppercase tracking-wide">Secure Appointment History Ledger</p>
+            <p class="text-[11px] text-slate-400 max-w-xs leading-relaxed -mt-1">
+              Please sign in to verify your identity parameters and view your historical scheduled clinic sessions.
+            </p>
+          </div>
+        </td>
+      </tr>
+    `;
+
+    // Also clear out the "Next Confirmed Visit" stat widget at the top if it exists
+    const statNextVisit = document.getElementById("stat-next-visit");
+    if (statNextVisit) statNextVisit.textContent = "Sign In Required";
+
     return;
   }
 
+  // 🔒 AUTHENTICATED PATIENT TRACK RUNTIME
   try {
     const response = await fetch(
       `http://localhost:5000/api/v1/appointments/patient/${verifiedPatientId}`,
@@ -175,14 +213,13 @@ async function loadPatientBookings() {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "X-Clinic-ID": DYNAMIC_CLINIC_ID,
           "x-clinic-id": DYNAMIC_CLINIC_ID,
           Authorization: `Bearer ${token}`,
         },
-      },
+      }
     );
 
-    const result = await response.json();
+/*     const result = await response.json();
     if (response.ok && result.data) {
       renderBookingsList(result.data);
     } else {
@@ -192,6 +229,22 @@ async function loadPatientBookings() {
     console.error("Error connecting to bookings engine:", error);
     bookingsTableBody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-rose-400 italic">Network error connecting to database.</td></tr>`;
   }
+} */
+
+const result = await response.json();
+
+if (result.success && result.data) {
+  contextClinicId = result.data._id;
+  if (titleElement) titleElement.textContent = `${result.data.name}`;
+}
+// 🛠️ DEVELOPER FALLBACK BLOCK
+else if (clinicSlug === "default") {
+  console.warn("⚠️ Using local developer workspace bypass rules.");
+  contextClinicId = "640f1234567890abcdef1234"; // Fake MongoDB Object ID mock
+  if (titleElement) titleElement.textContent = "Clinica Climen (Local Dev Workspace)";
+}
+else {
+  throw new Error("Target clinical location context not registered in our SaaS directory.");
 }
 
 // 4. Render Table DOM Content
@@ -215,11 +268,7 @@ function renderBookingsList(appointmentsList) {
       ? booking.status.toLowerCase()
       : "pending";
 
-    if (
-      localizedStatus === "approved" ||
-      localizedStatus === "confirmed" ||
-      localizedStatus === "accepted"
-    ) {
+    if (["approved", "confirmed", "accepted"].includes(localizedStatus)) {
       badgeClass = "bg-emerald-50 text-emerald-700 border border-emerald-200";
       nextConfirmedVisit = `${booking.date} at ${booking.time}`;
     } else if (localizedStatus === "pending") {
@@ -238,8 +287,7 @@ function renderBookingsList(appointmentsList) {
         <span class="px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase ${badgeClass}">
           ${booking.status}
         </span>
-      </td>
-    `;
+      </td>`;
     bookingsTableBody.appendChild(row);
   });
 
@@ -254,11 +302,24 @@ if (bookingForm) {
   bookingForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    const selectedDateStr = document.getElementById("booking-date").value;
+    const selectedTimeStr = document.getElementById("booking-time").value;
+
+    const selectedDateTime = new Date(`${selectedDateStr} ${selectedTimeStr}`);
+    const currentSystemTime = new Date();
+
+    if (selectedDateTime < currentSystemTime) {
+      alert(
+        "⚠️ Booking Window Error: The selected time window has already passed. Please pick a future slot.",
+      );
+      return;
+    }
+
     const payload = {
       patientId: verifiedPatientId,
       service: document.getElementById("booking-service").value,
-      date: document.getElementById("booking-date").value,
-      time: document.getElementById("booking-time").value,
+      date: selectedDateStr,
+      time: selectedTimeStr,
     };
 
     try {
@@ -268,7 +329,6 @@ if (bookingForm) {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-Clinic-ID": DYNAMIC_CLINIC_ID,
             "x-clinic-id": DYNAMIC_CLINIC_ID,
             Authorization: `Bearer ${token}`,
           },
@@ -294,14 +354,88 @@ if (bookingForm) {
   });
 }
 
-// 6. Logout Handler
-if (logoutBtn) {
-  logoutBtn.addEventListener("click", () => {
-    const contextSlug = localStorage.getItem("clinicSlug") || "default";
-    localStorage.clear();
-    alert("Logged out safely.");
-    window.location.href = `/patientLogin.html?clinic=${contextSlug}`;
-  });
+// DOM Element Registry Links (Make sure to replace logoutBtn with authBtn)
+const authBtn = document.getElementById("auth-btn");
+const isLoggedIn = !!(
+  token &&
+  userJson &&
+  verifiedPatientId &&
+  verifiedPatientId !== "undefined"
+);
+
+// 🎯 DYNAMIC NAVIGATION AUTH TOGGLE ENGINE
+if (authBtn) {
+  const contextSlug = localStorage.getItem("clinicSlug") || "default";
+
+  if (isLoggedIn) {
+    // 🔴 Render Log Out Layout Mode
+    authBtn.className =
+      "inline-flex items-center justify-center px-4 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200/40 text-rose-600 text-xs font-bold rounded-xl tracking-wide transition-all uppercase cursor-pointer shadow-xs active:scale-[0.98]";
+    authBtn.innerHTML = `
+      <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+      </svg>
+      Log Out
+    `;
+
+    // Attach standard logout runtime handler
+    authBtn.addEventListener("click", () => {
+      localStorage.clear();
+      alert("Logged out safely.");
+      window.location.href = `/patientLogin.html?clinic=${contextSlug}`;
+    });
+  } else {
+    // 🟢 Render Log In Layout Mode
+    authBtn.className =
+      "inline-flex items-center justify-center px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl tracking-wide transition-all uppercase cursor-pointer shadow-md active:scale-[0.98]";
+    authBtn.innerHTML = `
+      <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h16.5a1.5 1.5 0 001.5-1.5V12a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 12v8.25a1.5 1.5 0 001.5 1.5z" />
+      </svg>
+      Log In
+    `;
+
+    // Attach immediate routing gateway to the sign-in form
+    authBtn.addEventListener("click", () => {
+      window.location.href = `/patientLogin.html?clinic=${contextSlug}`;
+    });
+  }
+}
+
+// 🎯 SAFE LOOKUP ENGINE FOR PATIENT GREETINGS
+if (userGreeting) {
+  let displayName = "";
+
+  if (isLoggedIn && currentUser?.firstName) {
+    displayName =
+      `${currentUser.firstName} ${currentUser.lastName || ""}`.trim();
+  } else if (
+    isLoggedIn &&
+    decodedToken?.name &&
+    decodedToken.name.toLowerCase() !== "clinica climen"
+  ) {
+    displayName = decodedToken.name;
+  }
+
+  // Fallback signature name text if missing authentication variables
+  if (!displayName || displayName.toLowerCase() === "clinica climen") {
+    displayName = "Guest Patient";
+  }
+
+  userGreeting.textContent = `👋 Welcome, ${displayName}`;
+}
+
+// Enforce calendar constraint dates
+function initializeBookingCalendar() {
+  const dateInput = document.getElementById("booking-date");
+  if (!dateInput) return;
+
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  dateInput.setAttribute("min", `${year}-${month}-${day}`);
 }
 
 // 🚀 Unified Sequential App Initialization Lifecycle
@@ -310,52 +444,15 @@ async function initializeDashboard() {
   console.log("-> Loaded Patient Hex:", verifiedPatientId);
   console.log("-> Loaded Tenant Hex:", DYNAMIC_CLINIC_ID);
 
+  initializeBookingCalendar();
   await fetchClinicName();
-  await syncDynamicPricingElements(); // Safely running inside initialization loop sequence
+  await syncDynamicPricingElements();
   await loadPatientBookings();
 }
 
-// Run this when your patient booking modal or view mounts
-function initializeBookingCalendar() {
-  const dateInput = document.getElementById("booking-date");
-  if (!dateInput) return;
-
-  // 📆 Get real-time current date in local "YYYY-MM-DD" format
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-
-  const minDateString = `${year}-${month}-${day}`;
-
-  // Enforce the baseline timeline boundary on the input element
-  dateInput.setAttribute("min", minDateString);
-}
-// Locate your form submit listener function inside patientDashboard.js
-document
-  .getElementById("booking-form")
-  .addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const selectedDateStr = document.getElementById("booking-date").value; // YYYY-MM-DD
-    const selectedTimeStr = document.getElementById("booking-time").value; // e.g., "09:00 AM"
-
-    const selectedDateTime = new Date(`${selectedDateStr} ${selectedTimeStr}`);
-    const currentSystemTime = new Date(); // Real time evaluation node
-
-    // 🛡️ Double-layer verification check block
-    if (selectedDateTime < currentSystemTime) {
-      alert(
-        "⚠️ Booking Window Error: The selected structural time window has already passed for today. Please pick a later slot.",
-      );
-      return; // Halt form transmission
-    }
-
-    // ... your existing fetch/axios submission logic can continue safely here ...
-  });
-
-// Trigger bootstrap routine once script parsing evaluates
+// Trigger runtime loop sequence execution
 initializeDashboard();
+
 // =========================================================================
 // ⚡ REAL-TIME PATIENT PIPELINE REACTION ENGINE
 // =========================================================================
@@ -364,31 +461,10 @@ const socket = io("http://localhost:5000", {
   upgrade: false,
 });
 
-socket.on("connect", () => {
-  console.log("🟢 Patient Dashboard linked to real-time live sync pipeline!");
-});
-
-socket.on("connect_error", (err) => {
-  console.error("🔴 Patient Live Sync Error:", err.message);
-});
-
-// Intercept pipeline updates from the clinic network
-socket.on("pipeline-update", async (data) => {
-  console.log("🔔 Clinic Pipeline Event Intercepted:", data.message);
-
-  // 🎯 Dynamically check for whatever naming convention your patient dashboard uses:
-  if (typeof fetchPatientAppointments === "function") {
-    console.log("🔄 Re-fetching patient personalized booking ledger...");
-    await fetchPatientAppointments();
-  } else if (typeof loadDashboardData === "function") {
-    console.log("🔄 Re-fetching patient workspace container...");
-    await loadDashboardData();
+socket.on("pipeline-update", async () => {
+  if (typeof loadPatientBookings === "function") {
+    await loadPatientBookings();
   } else {
-    // Fallback: If data functions are wrapped/unreachable, do a clean page soft-refresh
-    console.log(
-      "⚠️ Scoped wrapper detected. Executing page state soft-refresh fallback...",
-    );
     window.location.reload();
   }
 });
-// =========================================================================
