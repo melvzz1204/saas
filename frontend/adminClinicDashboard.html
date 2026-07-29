@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Clinic Admin Command Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
@@ -11,7 +11,6 @@
 
 <body
     class="bg-slate-50 text-slate-700 font-sans min-h-screen flex antialiased selection:bg-indigo-100 selection:text-indigo-900">
-
     <aside
         class="w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between p-5 shrink-0 hidden md:flex shadow-2xs">
         <div class="space-y-7">
@@ -37,7 +36,9 @@
             </div>
 
             <nav id="sidebar-nav" class="space-y-1">
-                <p class="text-[10px] font-bold text-slate-400 tracking-widest uppercase px-2 mb-2">Management</p>
+                <p class="text-[10px] font-bold text-slate-400 tracking-widest uppercase px-2 mb-2">
+                    Management
+                </p>
 
                 <a href="#" id="nav-appointments" data-target="panel-appointments"
                     class="nav-item group flex items-center justify-between bg-slate-100 text-slate-900 px-3 py-2 rounded-lg text-xs font-semibold border border-slate-200/50 cursor-pointer transition-all">
@@ -96,7 +97,9 @@
             </nav>
 
             <nav class="space-y-1 pt-2 border-t border-slate-100">
-                <p class="text-[10px] font-bold text-slate-400 tracking-widest uppercase px-2 mb-2">Platform Hub</p>
+                <p class="text-[10px] font-bold text-slate-400 tracking-widest uppercase px-2 mb-2">
+                    Platform Hub
+                </p>
                 <a id="viewLiveSiteBtn"
                     class="group flex items-center space-x-2.5 text-slate-600 hover:text-indigo-600 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all">
                     <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition-colors"
@@ -124,10 +127,15 @@
             <div class="flex items-center space-x-2.5 px-1">
                 <div
                     class="w-7 h-7 bg-slate-100 rounded-md flex items-center justify-center text-xs font-bold text-slate-700 border border-slate-200/60">
-                    AD</div>
+                    AD
+                </div>
                 <div class="truncate max-w-[150px]">
-                    <p id="display-user-email" class="text-xs font-bold text-slate-800 truncate">admin@clinic.com</p>
-                    <p class="text-[9px] text-slate-400 font-mono tracking-wider font-semibold">CLINIC_ADMIN</p>
+                    <p id="display-user-email" class="text-xs font-bold text-slate-800 truncate">
+                        admin@clinic.com
+                    </p>
+                    <p class="text-[9px] text-slate-400 font-mono tracking-wider font-semibold">
+                        CLINIC_ADMIN
+                    </p>
                 </div>
             </div>
             <button id="logout-btn"
@@ -138,13 +146,14 @@
     </aside>
 
     <main class="flex-1 p-6 md:p-8 overflow-y-auto space-y-8">
-
         <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div>
-                <h1 id="dashboard-title" class="text-xl font-black tracking-tight text-slate-900">Operations Overview
+                <h1 id="dashboard-title" class="text-xl font-black tracking-tight text-slate-900">
+                    Operations Overview
                 </h1>
-                <p id="dashboard-subtitle" class="text-xs text-slate-500 font-medium">Real-time scheduling and medical
-                    provider routing execution paths</p>
+                <p id="dashboard-subtitle" class="text-xs text-slate-500 font-medium">
+                    Real-time scheduling and medical provider routing execution paths
+                </p>
             </div>
             <div id="connection-status"
                 class="flex items-center space-x-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold uppercase tracking-wide px-3 py-1.5 rounded-lg w-fit">
@@ -155,20 +164,36 @@
 
         <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div class="bg-white border border-slate-200/80 rounded-xl p-5 space-y-1 shadow-xs">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Scheduled Today</p>
-                <p id="kpi-today-bookings" class="text-2xl font-black text-slate-900">0</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    Total Scheduled Today
+                </p>
+                <p id="kpi-today-bookings" class="text-2xl font-black text-slate-900">
+                    0
+                </p>
             </div>
             <div class="bg-white border border-slate-200/80 rounded-xl p-5 space-y-1 shadow-xs">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">This Month's Bookings</p>
-                <p id="kpi-monthly-bookings" class="text-2xl font-black text-indigo-600">0</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    This Month's Bookings
+                </p>
+                <p id="kpi-monthly-bookings" class="text-2xl font-black text-indigo-600">
+                    0
+                </p>
             </div>
             <div class="bg-white border border-slate-200/80 rounded-xl p-5 space-y-1 shadow-xs">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Clinical Staff</p>
-                <p id="kpi-total-staff" class="text-2xl font-black text-indigo-600">0</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    Active Clinical Staff
+                </p>
+                <p id="kpi-total-staff" class="text-2xl font-black text-indigo-600">
+                    0
+                </p>
             </div>
             <div class="bg-white border border-slate-200/80 rounded-xl p-5 space-y-1 shadow-xs">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pending Bookings</p>
-                <p id="kpi-pending-bookings" class="text-2xl font-black text-amber-500">0</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    Pending Bookings
+                </p>
+                <p id="kpi-pending-bookings" class="text-2xl font-black text-amber-500">
+                    0
+                </p>
             </div>
         </section>
         <div id="dashboard-panels">
@@ -177,11 +202,13 @@
                     class="xl:col-span-3 bg-white border border-slate-200/80 rounded-xl shadow-xs overflow-hidden flex flex-col justify-between">
                     <div>
                         <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Live Appointment
-                                Queue</h3>
+                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">
+                                Live Appointment Queue
+                            </h3>
                             <button id="refresh-appointments"
-                                class="text-[11px] text-indigo-600 hover:text-indigo-700 font-bold uppercase tracking-wider transition-colors cursor-pointer">Sync
-                                Nodes</button>
+                                class="text-[11px] text-indigo-600 hover:text-indigo-700 font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                                refresh
+                            </button>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse">
@@ -199,9 +226,9 @@
                                 <tbody id="appointment-table-body"
                                     class="text-xs text-slate-700 divide-y divide-slate-100">
                                     <tr>
-                                        <td colspan="6" class="p-8 text-center text-slate-400 italic font-medium">No
-                                            active
-                                            patients synchronized to this node context.</td>
+                                        <td colspan="6" class="p-8 text-center text-slate-400 italic font-medium">
+                                            No active patients synchronized to this node context.
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -212,26 +239,32 @@
 
             <div id="panel-staff" class="dashboard-panel hidden grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <div class="xl:col-span-2 bg-white border border-slate-200/80 rounded-xl shadow-xs p-5">
-                    <h3 class="font-black text-xs uppercase tracking-wider text-slate-800 mb-4">Active Staff Roster</h3>
-                    <p class="text-xs text-slate-400 italic">Select tab items to access your configuration parameters
-                        table
-                        views...</p>
+                    <h3 class="font-black text-xs uppercase tracking-wider text-slate-800 mb-4">
+                        Active Staff
+                    </h3>
+                    <p class="text-xs text-slate-400 italic">
+                        Select tab items to access your configuration parameters table
+                        views...
+                    </p>
                 </div>
 
                 <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs space-y-4 h-fit">
                     <div>
-                        <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Onboard Clinical Staff
+                        <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">
+                            Onboard Clinical Staff
                         </h3>
-                        <p class="text-[11px] text-slate-400 font-medium mt-0.5">Register a new practitioner node into
-                            the
-                            active directory.</p>
+                        <p class="text-[11px] text-slate-400 font-medium mt-0.5">
+                            Register a new practitioner node into the active directory.
+                        </p>
                     </div>
                     <div id="pin-reveal-box"
                         class="hidden mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
-                        <p class="text-[10px] font-bold text-amber-800 uppercase tracking-wider">⚠️ Security Credential
-                            Node
-                            Generated</p>
-                        <p class="text-xs text-amber-700 font-medium">Temporary Authentication Access PIN Code:</p>
+                        <p class="text-[10px] font-bold text-amber-800 uppercase tracking-wider">
+                            ⚠️ Security Credential Node Generated
+                        </p>
+                        <p class="text-xs text-amber-700 font-medium">
+                            Temporary Authentication Access PIN Code:
+                        </p>
                         <div class="flex items-center space-x-2 pt-1">
                             <span id="generated-pin-display"
                                 class="font-mono font-black text-lg text-slate-900 bg-white border border-amber-200/60 px-3 py-1 rounded shadow-3xs tracking-widest">000000</span>
@@ -242,13 +275,13 @@
                             <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Full
                                 Name</label>
                             <input type="text" id="staff-name" required placeholder="Dr. Jane Doe"
-                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
+                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" />
                         </div>
                         <div>
                             <label
                                 class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Specialization</label>
                             <input type="text" id="staff-spec" placeholder="Orthodontics"
-                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
+                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" />
                         </div>
                         <div>
                             <label
@@ -266,18 +299,19 @@
                                 class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Workspace
                                 Email Address</label>
                             <input type="email" id="staff-email" required placeholder="provider@clinic.com"
-                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
+                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" />
                         </div>
                         <div>
                             <label
                                 class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Contact
                                 Phone Number</label>
                             <input type="text" id="staff-phone" required placeholder="+63 912 345 6789"
-                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
+                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" />
                         </div>
                         <button type="submit"
-                            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold tracking-wide uppercase text-[11px] py-2.5 rounded-lg transition-all shadow-md cursor-pointer mt-2">Onboard
-                            Staff Member</button>
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold tracking-wide uppercase text-[11px] py-2.5 rounded-lg transition-all shadow-md cursor-pointer mt-2">
+                            Register Staff Member
+                        </button>
                     </form>
                 </div>
             </div>
@@ -287,12 +321,13 @@
                     class="xl:col-span-2 bg-white border border-slate-200/80 rounded-xl shadow-xs overflow-hidden flex flex-col justify-between">
                     <div>
                         <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Live Dynamic
-                                Treatment Ledger
+                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">
+                                Live Dynamic Treatment Ledger
                             </h3>
                             <button id="refresh-prices"
-                                class="text-[11px] text-emerald-600 hover:text-emerald-700 font-bold uppercase tracking-wider transition-colors cursor-pointer">Re-fetch
-                                Fees</button>
+                                class="text-[11px] text-emerald-600 hover:text-emerald-700 font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                                Re-fetch Fees
+                            </button>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse">
@@ -300,7 +335,7 @@
                                     <tr
                                         class="bg-slate-50 border-b border-slate-200/90 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
                                         <th class="p-3.5 pl-5">Treatment Service Item</th>
-                                        <th class="p-3.5">Slug Index Mapping</th>
+                                        <th class="p-3.5">Reference Code</th>
                                         <th class="p-3.5">Current Rate</th>
                                         <th class="p-3.5 pr-5 text-right">Actions</th>
                                     </tr>
@@ -308,8 +343,8 @@
                                 <tbody id="pricing-table-body" class="text-xs text-slate-700 divide-y divide-slate-100">
                                     <tr>
                                         <td colspan="4" class="p-8 text-center text-slate-400 italic font-medium">
-                                            Syncing live
-                                            dynamic treatment database tracks...</td>
+                                            Syncing live dynamic treatment database tracks...
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -320,44 +355,46 @@
                 <div class="space-y-6">
                     <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs space-y-4">
                         <div>
-                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Modify Operational
-                                Rates</h3>
-                            <p class="text-[11px] text-slate-400 font-medium mt-0.5">Quickly adjust base patient pricing
-                                for a
-                                service.</p>
+                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">
+                                Modify Operational Rates
+                            </h3>
+                            <p class="text-[11px] text-slate-400 font-medium mt-0.5">
+                                Quickly adjust base patient pricing for a service.
+                            </p>
                         </div>
                         <form id="edit-price-form" class="space-y-3">
                             <div>
                                 <label
-                                    class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Target
-                                    Service Slug</label>
+                                    class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">reference
+                                    code</label>
                                 <input type="text" id="edit-slug" required placeholder="routine-cleaning"
-                                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all">
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all" />
                             </div>
                             <div>
                                 <label
                                     class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">New
-                                    Base
-                                    Fee (PHP)</label>
+                                    Base Fee (PHP)</label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-2 text-xs font-bold text-slate-400">₱</span>
                                     <input type="number" step="0.01" id="edit-price" required placeholder="1850.00"
-                                        class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-7 pr-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all">
+                                        class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-7 pr-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all" />
                                 </div>
                             </div>
                             <button type="submit"
-                                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold tracking-wide uppercase text-[11px] py-2.5 rounded-lg transition-all shadow-md cursor-pointer">Commit
-                                Fee Structure Modification</button>
+                                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold tracking-wide uppercase text-[11px] py-2.5 rounded-lg transition-all shadow-md cursor-pointer">
+                                Modify fee
+                            </button>
                         </form>
                     </div>
 
                     <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs space-y-4">
                         <div>
-                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Onboard New Treatment
+                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">
+                                New operational Treatment
                             </h3>
-                            <p class="text-[11px] text-slate-400 font-medium mt-0.5">Add a new operational treatment
-                                item and
-                                rate.</p>
+                            <p class="text-[11px] text-slate-400 font-medium mt-0.5">
+                                Add a new operational treatment item and rate.
+                            </p>
                         </div>
                         <form id="add-price-form" class="space-y-3">
                             <div>
@@ -365,14 +402,14 @@
                                     class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Display
                                     Service Name</label>
                                 <input type="text" id="add-name" required placeholder="Premium Titanium Dental Implant"
-                                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" />
                             </div>
                             <div>
                                 <label
-                                    class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Unique
-                                    Identifier Slug</label>
+                                    class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">reference
+                                    code</label>
                                 <input type="text" id="add-slug" required placeholder="dental-implants"
-                                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" />
                             </div>
                             <div>
                                 <label
@@ -389,12 +426,13 @@
                                 <div class="relative">
                                     <span class="absolute left-3 top-2 text-xs font-bold text-slate-400">₱</span>
                                     <input type="number" step="0.01" id="add-price" required placeholder="75000.00"
-                                        class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-7 pr-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
+                                        class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-7 pr-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" />
                                 </div>
                             </div>
                             <button type="submit"
-                                class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold tracking-wide uppercase text-[11px] py-2.5 rounded-lg transition-all shadow-md cursor-pointer">Register
-                                Treatment Node</button>
+                                class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold tracking-wide uppercase text-[11px] py-2.5 rounded-lg transition-all shadow-md cursor-pointer">
+                                Register new treatment
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -402,9 +440,12 @@
 
             <div id="panel-reports" class="dashboard-panel hidden">
                 <div class="bg-white border border-slate-200/80 rounded-xl shadow-xs p-6">
-                    <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">System Metrics & Analytics
+                    <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">
+                        System Metrics & Analytics
                     </h3>
-                    <p class="text-xs text-slate-400 mt-2">Analytical data streams are ready for review.</p>
+                    <p class="text-xs text-slate-400 mt-2">
+                        Analytical data streams are ready for review.
+                    </p>
                 </div>
             </div>
         </div>
@@ -412,7 +453,6 @@
     <script src="/src/util/nav.js"></script>
     <script src="/src/pages/adminClinicDashboard.js"></script>
     <script src="/src/pages/dentalPricing.js"></script>
-
 </body>
 
 </html>

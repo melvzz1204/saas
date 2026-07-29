@@ -1,3 +1,4 @@
+// src/routes/appointmentRoutes.js
 import express from "express";
 import {
   bookAppointment,
@@ -6,16 +7,19 @@ import {
   createWalkInAppointment,
   updateAppointmentStatus,
   settlePayment,
-} from "../controllers/appointmentController.js";
+} from "../controllers/appointmentController.js"; //[cite: 19]
+import { identifyTenant } from "../middlewares/tenantMiddleware.js";
+import { protectPatientRoute } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-// Define clean routes mapped straight to their controllers
-router.post("/book", bookAppointment);
-router.get("/patient/:patientId", getPatientAppointments);
-router.post("/walk-in", createWalkInAppointment);
-router.patch("/:id/status", updateAppointmentStatus);
-router.get("/today", getTodayAppointments);
-router.patch("/settle-payment", settlePayment);
+router.use(identifyTenant);
+
+router.post("/book", bookAppointment); //[cite: 19]
+router.get("/patient/:patientId", getPatientAppointments); //[cite: 19]
+router.post("/walk-in", createWalkInAppointment); //[cite: 19]
+router.patch("/:id/status", updateAppointmentStatus); //[cite: 19]
+router.get("/today", getTodayAppointments); //[cite: 19]
+router.patch("/settle-payment", protectPatientRoute, settlePayment); //[cite: 19]
 
 export default router;

@@ -1,14 +1,19 @@
+// src/routes/staffRoutes.js
 import express from "express";
 import {
   registerClinicalStaff,
   loginClinicalStaff,
   getClinicalStaffByRole,
-} from "../controllers/staffController.js";
+} from "../controllers/staffController.js"; //[cite: 22]
+import { identifyTenant } from "../middlewares/tenantMiddleware.js";
+import { protectStaffRoute } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/register", registerClinicalStaff);
-router.post("/login", loginClinicalStaff);
-router.get("/", getClinicalStaffByRole);
+router.post("/register", registerClinicalStaff); //[cite: 22]
+router.post("/login", loginClinicalStaff); //[cite: 22]
+
+// Dynamic fetch based on authenticated staff token context
+router.get("/", identifyTenant, protectStaffRoute, getClinicalStaffByRole); //[cite: 22]
 
 export default router;

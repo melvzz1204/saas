@@ -29,21 +29,24 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchClinicMetadata();
   fetchDashboardData();
 
-  // 3. View Patient Live Terminal Site Event Listener (REMOVED CLINIC FROM URL REDIRECT)
+  // 3. View Patient Live Terminal Site Event Listener
   const viewLiveSiteBtn = document.getElementById("viewLiveSiteBtn");
   if (viewLiveSiteBtn) {
     viewLiveSiteBtn.addEventListener("click", () => {
       const cachedSlug = localStorage.getItem("activeClinicSlug") || "default";
 
-      // Seed the necessary context keys internally so the dashboard loads up cleanly
+      // Seed the necessary context keys internally
       localStorage.setItem("clinicSlug", cachedSlug);
 
       console.log(
-        `🔗 Redirecting to live patient dashboard cleanly without clear text query parameters.`,
+        `🔗 Redirecting to live patient login with clinic tracking parameter: ${cachedSlug}`,
       );
 
-      // Opens dashboard seamlessly without tracking suffixes leaking into the URL bar
-      window.open("/patientDashboard.html", "_blank");
+      // Include the 'clinic' query parameter so patientLogin.js can parse the workspace context
+      window.open(
+        `/clinicHomePage.html?clinic=${encodeURIComponent(cachedSlug)}`,
+        "_blank",
+      );
     });
   }
 
@@ -274,6 +277,7 @@ async function modifyAppointmentStatus(appointmentId, newStatus) {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "x-clinic-id": clinicId, // 👈 Added the missing tenant context header
         },
         body: JSON.stringify({ status: newStatus }),
       },

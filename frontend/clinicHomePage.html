@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Our Practice | Patient Care Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes modalPop {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .animate-modal-pop {
+            animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col relative overflow-x-hidden selection:bg-indigo-500 selection:text-white">
+
+    <!-- Background Blueprint Grid & Ambient Blurs -->
+    <div
+        class="fixed inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none">
+    </div>
+    <div
+        class="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none">
+    </div>
+    <div
+        class="fixed bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-emerald-500/10 blur-[120px] pointer-events-none">
+    </div>
+
+    <!-- MAIN CLINIC HEADER -->
+    <header class="sticky top-0 z-30 w-full bg-white/85 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+
+            <!-- Dynamic Brand Header -->
+            <div class="flex items-center space-x-3">
+                <div
+                    class="flex items-center justify-center w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-700 to-blue-700 text-white font-black shadow-md shadow-indigo-600/20 shrink-0">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                </div>
+                <div>
+                    <span id="header-clinic-name"
+                        class="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight block line-clamp-1">
+                        Dental Care Practice
+                    </span>
+                    <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest block">Family &
+                        Cosmetic Dentistry</span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav
+                class="hidden md:flex items-center space-x-8 text-xs font-bold text-slate-600 uppercase tracking-wider">
+                <a href="#about" class="hover:text-indigo-600 transition-colors">About Practice</a>
+                <a href="#pricing" class="hover:text-indigo-600 transition-colors">Pricing Ledger</a>
+                <a href="#services" class="hover:text-indigo-600 transition-colors">Services</a>
+                <a href="#dentists" class="hover:text-indigo-600 transition-colors">Our Dentists</a>
+                <a href="#portal-features" class="hover:text-indigo-600 transition-colors">Patient Portal</a>
+            </nav>
+
+            <!-- Header Action -->
+            <div class="flex items-center space-x-3">
+                <button type="button" id="open-login-btn"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md shadow-indigo-600/10 transition-all uppercase tracking-wider cursor-pointer active:scale-[0.98]">
+                    Portal Access
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO SECTION WITH DYNAMIC ESTIMATOR PREVIEW -->
+    <section id="about" class="relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-8 md:pt-12 pb-16">
+        <div
+            class="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-3xl shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 relative">
+            <div
+                class="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-500">
+            </div>
+
+            <!-- Left Content Area -->
+            <div
+                class="lg:col-span-7 p-8 md:p-12 lg:p-14 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-100 bg-gradient-to-br from-slate-50/50 via-white to-indigo-50/20">
+                <div class="space-y-6">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <span
+                            class="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold tracking-wide">
+                            <span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span>✨ Now Accepting New Patients</span>
+                        </span>
+                        <span
+                            class="inline-flex items-center space-x-1 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold tracking-wide">
+                            <span class="text-teal-600">⚡</span>
+                            <span>Live Synced Portal Matrix</span>
+                        </span>
+                    </div>
+
+                    <div class="space-y-4">
+                        <h1 id="clinic-title"
+                            class="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 uppercase leading-tight">
+                            Loading Practice Details...
+                        </h1>
+                        <p class="text-slate-600 text-sm md:text-base max-w-xl leading-relaxed">
+                            Welcome to your modern dental home. We blend gentle, personalized patient care with advanced
+                            digital dentistry—making appointments, medical history, and care tracking effortless.
+                        </p>
+                    </div>
+
+                    <div class="pt-2 flex flex-wrap items-center gap-3">
+                        <button type="button" id="hero-login-btn"
+                            class="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold text-xs px-6 py-3.5 rounded-xl shadow-md shadow-indigo-600/10 transition-all uppercase tracking-wider cursor-pointer active:scale-[0.99] flex items-center space-x-2">
+                            <span>Access Patient Portal</span>
+                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="2.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                            </svg>
+                        </button>
+                        <button type="button" id="hero-register-btn"
+                            class="bg-white border border-slate-300 hover:border-slate-400 text-slate-700 hover:text-slate-900 font-bold text-xs px-6 py-3.5 rounded-xl transition-all uppercase tracking-wider cursor-pointer active:scale-[0.99]">
+                            Register New Patient
+                        </button>
+                    </div>
+                </div>
+
+                <div id="hours"
+                    class="pt-8 mt-8 border-t border-slate-100 flex flex-wrap gap-x-6 gap-y-3 text-slate-500 text-xs font-medium">
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                        <span>Mon - Fri: 8:00 AM - 5:00 PM</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.826-1.47-5.112-3.756-6.58-6.58l1.293-.97c.362-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
+                        </svg>
+                        <span>Emergency Care Line Available</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Interactive Dynamic Estimator Card -->
+            <div class="lg:col-span-5 p-6 md:p-8 flex flex-col justify-between bg-slate-50/70 relative">
+                <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+                    <div
+                        class="p-4 border-b border-slate-100 bg-gradient-to-b from-slate-50/50 to-white flex items-center justify-between">
+                        <h2
+                            class="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                            <span class="text-teal-600">✨</span>
+                            <span>Interactive Session Estimator</span>
+                        </h2>
+                        <span
+                            class="text-[9px] font-bold uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">Live
+                            Preview</span>
+                    </div>
+
+                    <div class="p-5 space-y-4">
+                        <div>
+                            <label
+                                class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Select
+                                Service Track</label>
+                            <!-- Dynamic Services drop-down -->
+                            <select id="booking-service" onchange="updateFormPriceIndicator(this)"
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all cursor-pointer">
+                                <option value="" disabled selected>Retrieving treatments...</option>
+                            </select>
+                        </div>
+
+                        <!-- Dynamic Price Indicator -->
+                        <div
+                            class="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3 flex justify-between items-center text-xs">
+                            <span class="font-bold text-indigo-900/60 uppercase text-[10px] tracking-wide">Estimated
+                                Cost:</span>
+                            <span id="form-price-indicator" class="font-black text-indigo-600 text-sm">₱0.00</span>
+                        </div>
+
+                        <!-- Reserve CTA Button -->
+                        <button type="button" onclick="document.getElementById('open-login-btn').click()"
+                            class="w-full bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold py-3.5 rounded-xl transition-all uppercase tracking-wider cursor-pointer active:scale-[0.99] flex items-center justify-center space-x-2 shadow-md">
+                            <span>Reserve Selected Time Slot</span>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div
+                    class="mt-4 border-t border-slate-200/60 flex items-center justify-between text-xs bg-white/60 backdrop-blur-xs p-3 rounded-2xl border border-slate-200/60">
+                    <div class="flex items-center space-x-2.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                        <span class="font-bold text-slate-700">Next Opening: <span class="text-indigo-600">Today at 2:30
+                                PM</span></span>
+                    </div>
+                    <a href="#dentists" class="text-[11px] font-bold text-indigo-600 hover:underline">View Dentists
+                        →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- LIVE PRICING & TREATMENT LEDGER WITH REAL-TIME SEARCH -->
+    <section id="pricing" class="relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="bg-white rounded-3xl p-8 border border-slate-200/80 shadow-xl">
+            <!-- Header & Controls -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div>
+                    <span class="text-[11px] font-black uppercase tracking-widest text-indigo-600">Transparent Practice
+                        Ledger</span>
+                    <h2 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Treatment Catalogue &
+                        Pricing Matrix
+                    </h2>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <!-- Search Input -->
+                    <div class="relative">
+                        <input id="treatment-search-input" type="text" placeholder="Search treatment..."
+                            class="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-64" />
+                    </div>
+
+                    <!-- Action Button -->
+                    <button
+                        class="book-treatment-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all shadow-xs cursor-pointer">
+                        Book Treatment
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pricing Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr
+                            class="border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                            <th class="py-3 px-6">Service Category & Name</th>
+                            <th class="py-3 px-6">Clinical Treatment Scope</th>
+                            <th class="py-3 px-6 text-right">Fixed Price</th>
+                        </tr>
+                    </thead>
+                    <tbody id="treatment-matrix-body">
+                        <!-- Rendered via clinicHomepage.js -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- MEET OUR DENTISTS SECTION -->
+    <section id="dentists" class="relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="text-center max-w-2xl mx-auto space-y-3 mb-12">
+            <span class="text-xs font-bold uppercase tracking-widest text-indigo-600">Expert Dental Specialists</span>
+            <h2 class="text-3xl font-black text-slate-900 uppercase tracking-tight">Meet Our Dentists</h2>
+            <p class="text-xs sm:text-sm text-slate-500 leading-relaxed">
+                Our highly qualified dental practitioners are committed to providing personalized, comfortable, and
+                state-of-the-art dental care.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div
+                class="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col items-center text-center group">
+                <div
+                    class="w-24 h-24 rounded-2xl bg-indigo-50 border-2 border-indigo-100 flex items-center justify-center text-indigo-600 mb-4 group-hover:scale-105 transition-transform overflow-hidden">
+                    <svg class="w-12 h-12" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                    </svg>
+                </div>
+                <span
+                    class="inline-block px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold tracking-wide uppercase mb-2">Lead
+                    Cosmetic Specialist</span>
+                <h3 class="text-lg font-black text-slate-900">Dr. Sarah Jenkins, DDS</h3>
+                <p class="text-xs text-indigo-600 font-bold mb-3">General & Cosmetic Dentistry</p>
+                <p class="text-xs text-slate-500 leading-relaxed mb-6">
+                    Specializing in smile makeovers, porcelain veneers, and preventative care with over 12 years of
+                    clinical excellence.
+                </p>
+                <button type="button"
+                    class="dentist-book-btn mt-auto w-full bg-slate-900 hover:bg-indigo-600 text-white font-bold text-xs py-2.5 rounded-xl transition-colors uppercase tracking-wider cursor-pointer">
+                    Book Consultation
+                </button>
+            </div>
+
+            <div
+                class="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col items-center text-center group">
+                <div
+                    class="w-24 h-24 rounded-2xl bg-emerald-50 border-2 border-emerald-100 flex items-center justify-center text-emerald-600 mb-4 group-hover:scale-105 transition-transform overflow-hidden">
+                    <svg class="w-12 h-12" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                    </svg>
+                </div>
+                <span
+                    class="inline-block px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold tracking-wide uppercase mb-2">Orthodontist</span>
+                <h3 class="text-lg font-black text-slate-900">Dr. Marcus Vance, DMD</h3>
+                <p class="text-xs text-emerald-600 font-bold mb-3">Orthodontics & Clear Aligners</p>
+                <p class="text-xs text-slate-500 leading-relaxed mb-6">
+                    Expert in Invisalign and traditional alignment techniques, committed to creating balanced, healthy
+                    smiles.
+                </p>
+                <button type="button"
+                    class="dentist-book-btn mt-auto w-full bg-slate-900 hover:bg-indigo-600 text-white font-bold text-xs py-2.5 rounded-xl transition-colors uppercase tracking-wider cursor-pointer">
+                    Book Consultation
+                </button>
+            </div>
+
+            <div
+                class="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col items-center text-center group">
+                <div
+                    class="w-24 h-24 rounded-2xl bg-purple-50 border-2 border-purple-100 flex items-center justify-center text-purple-600 mb-4 group-hover:scale-105 transition-transform overflow-hidden">
+                    <svg class="w-12 h-12" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                    </svg>
+                </div>
+                <span
+                    class="inline-block px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 text-[10px] font-bold tracking-wide uppercase mb-2">Pediatric
+                    Specialist</span>
+                <h3 class="text-lg font-black text-slate-900">Dr. Elena Rostova, DDS</h3>
+                <p class="text-xs text-purple-600 font-bold mb-3">Pediatric & Restorative Care</p>
+                <p class="text-xs text-slate-500 leading-relaxed mb-6">
+                    Dedicated to gentle dental visits for younger patients, early orthodontic screening, and anxiety
+                    management.
+                </p>
+                <button type="button"
+                    class="dentist-book-btn mt-auto w-full bg-slate-900 hover:bg-indigo-600 text-white font-bold text-xs py-2.5 rounded-xl transition-colors uppercase tracking-wider cursor-pointer">
+                    Book Consultation
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="relative z-10 border-t border-slate-200/60 bg-white/60 backdrop-blur-xs py-8 mt-auto">
+        <div
+            class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400 font-medium">
+            <p>🔒 AES-256 Secured Patient Portal Connection</p>
+            <p>&copy; Dental Care Practice. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <!-- LOGIN MODAL -->
+    <div id="login-modal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs transition-all duration-300">
+        <div
+            class="w-full max-w-md bg-white border border-slate-200 rounded-3xl shadow-2xl p-6 sm:p-8 space-y-6 relative animate-modal-pop">
+            <button type="button" id="close-login-btn"
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-all cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <header class="space-y-1 text-center pt-2">
+                <h2 class="text-xl font-extrabold tracking-tight text-slate-900 uppercase">Access Verification</h2>
+                <p class="text-xs text-slate-500">Provide your verified medical credentials to sign in.</p>
+            </header>
+            <div id="status-banner" class="hidden p-3.5 rounded-xl text-xs font-bold text-center border"></div>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Registered
+                        Email</label>
+                    <input type="email" id="login-email" required placeholder="name@example.com"
+                        class="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-3 text-xs focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label
+                        class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Password</label>
+                    <input type="password" id="login-password" required placeholder="••••••••"
+                        class="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-3 text-xs focus:outline-none focus:border-indigo-500">
+                </div>
+                <button type="submit" id="login-btn"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider cursor-pointer">
+                    Login Secure Session
+                </button>
+            </form>
+            <footer class="text-center pt-4 border-t border-slate-200/60">
+                <p class="text-xs text-slate-500">
+                    New to this clinic?
+                    <button type="button" id="open-register-btn"
+                        class="text-indigo-600 font-bold hover:underline ml-1 cursor-pointer">Register here</button>
+                </p>
+            </footer>
+        </div>
+    </div>
+
+    <!-- REGISTRATION MODAL -->
+    <div id="register-modal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs transition-all duration-300">
+        <div
+            class="w-full max-w-xl bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 md:p-10 space-y-6 relative animate-modal-pop max-h-[90vh] overflow-y-auto">
+            <button type="button" id="close-register-btn"
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-all cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <header class="text-center space-y-2 pt-2">
+                <h1 id="modal-clinic-title" class="text-xl font-black tracking-tight text-slate-900 uppercase">Clinic
+                    Registration</h1>
+                <p class="text-xs text-slate-500">Initialize your patient record to track treatments.</p>
+            </header>
+            <div id="registration-status-banner" class="hidden p-3 rounded-xl text-xs font-semibold text-center border">
+            </div>
+            <form id="registration-form" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">First
+                            Name</label>
+                        <input type="text" id="firstName" required placeholder="Jane"
+                            class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Last
+                            Name</label>
+                        <input type="text" id="lastName" required placeholder="Doe"
+                            class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Email
+                        Address</label>
+                    <input type="email" id="email" required placeholder="jane.doe@example.com"
+                        class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label
+                            class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Phone</label>
+                        <input type="tel" id="phone" required placeholder="(555) 000-0000"
+                            class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Date
+                            of Birth</label>
+                        <input type="date" id="dateOfBirth" required
+                            class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs">
+                    </div>
+                </div>
+                <div>
+                    <label
+                        class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Password</label>
+                    <input type="password" id="password" required placeholder="••••••••••••"
+                        class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs">
+                </div>
+                <button type="submit" id="submit-btn"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-3 rounded-xl uppercase tracking-wider cursor-pointer">
+                    Register Account
+                </button>
+            </form>
+            <footer class="text-center pt-2 border-t border-slate-100 flex items-center justify-between">
+                <button type="button" id="switch-to-login-btn"
+                    class="text-xs text-indigo-600 font-bold hover:underline cursor-pointer bg-transparent border-none">
+                    ← Back to Login
+                </button>
+                <p class="text-[10px] text-slate-400 font-semibold tracking-wide">🔒 AES-256 Secured</p>
+            </footer>
+        </div>
+    </div>
+
+    <!-- HELPER SCRIPT FOR DYNAMIC PRICE INDICATOR -->
+    <script>
+        function updateFormPriceIndicator(selectElement) {
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            const price = selectedOption.getAttribute('data-price') || '₱0.00';
+            const priceIndicator = document.getElementById('form-price-indicator');
+            if (priceIndicator) {
+                priceIndicator.textContent = price;
+            }
+        }
+    </script>
+
+    <!-- MODAL & DYNAMIC TITLE INTERACTION SCRIPT -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const loginModal = document.getElementById("login-modal");
+            const registerModal = document.getElementById("register-modal");
+
+            const openLoginBtn = document.getElementById("open-login-btn");
+            const heroLoginBtn = document.getElementById("hero-login-btn");
+            const heroRegisterBtn = document.getElementById("hero-register-btn");
+            const openRegisterBtn = document.getElementById("open-register-btn");
+            const switchToLoginBtn = document.getElementById("switch-to-login-btn");
+
+            const closeLoginBtn = document.getElementById("close-login-btn");
+            const closeRegisterBtn = document.getElementById("close-register-btn");
+            const dentistBookBtns = document.querySelectorAll(".dentist-book-btn");
+
+            const showModal = (modal) => {
+                modal.classList.remove("hidden");
+                document.body.classList.add("overflow-hidden");
+            };
+
+            const hideModal = (modal) => {
+                modal.classList.add("hidden");
+                if (loginModal.classList.contains("hidden") && registerModal.classList.contains("hidden")) {
+                    document.body.classList.remove("overflow-hidden");
+                }
+            };
+
+            [openLoginBtn, heroLoginBtn, switchToLoginBtn].forEach(btn => {
+                if (btn) btn.addEventListener("click", () => { hideModal(registerModal); showModal(loginModal); });
+            });
+
+            [openRegisterBtn, heroRegisterBtn, ...dentistBookBtns].forEach(btn => {
+                if (btn) btn.addEventListener("click", () => { hideModal(loginModal); showModal(registerModal); });
+            });
+
+            if (closeLoginBtn) closeLoginBtn.addEventListener("click", () => hideModal(loginModal));
+            if (closeRegisterBtn) closeRegisterBtn.addEventListener("click", () => hideModal(registerModal));
+
+            window.addEventListener("click", (e) => {
+                if (e.target === loginModal) hideModal(loginModal);
+                if (e.target === registerModal) hideModal(registerModal);
+            });
+
+            const mainTitle = document.getElementById("clinic-title");
+            const headerName = document.getElementById("header-clinic-name");
+
+            if (mainTitle && headerName) {
+                const observer = new MutationObserver(() => {
+                    if (mainTitle.textContent && !mainTitle.textContent.includes("Loading")) {
+                        headerName.textContent = mainTitle.textContent;
+                    }
+                });
+                observer.observe(mainTitle, { childList: true, subtree: true, characterData: true });
+            }
+        });
+    </script>
+
+    <!-- EXTERNAL JS MODULES -->
+    <script type="module" src="/src/pages/clinicHomepage.js"></script>
+    <script type="module" src="/src/pages/patientLogin.js"></script>
+    <script type="module" src="/src/pages/patientRegistrationForm.js"></script>
+</body>
+
+</html>

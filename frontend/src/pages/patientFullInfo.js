@@ -4,7 +4,7 @@ const userJson = localStorage.getItem("user");
 if (!token || !userJson) {
   console.warn("⚠️ Credentials missing. Redirecting to login gate.");
   const sessionSlug = localStorage.getItem("clinicSlug") || "default";
-  window.location.href = `/patientLogin.html?clinic=${sessionSlug}`;
+  window.location.href = `/clinicHomePage.html?clinic=${sessionSlug}`;
 }
 
 // Helper: Securely decode JWT properties to match dashboard fallback chain
