@@ -1,7 +1,10 @@
+// src/controllers/appointmentController.js
 import mongoose from "mongoose";
 import Appointment from "../models/appointmentModel.js";
 import Treatment from "../models/treatmentModel.js";
+import DentalService from "../models/dentalServicePrice.js";
 
+// 1. Book Appointment
 export const bookAppointment = async (req, res) => {
   try {
     const { patientId, service, date, time } = req.body;
@@ -10,18 +13,11 @@ export const bookAppointment = async (req, res) => {
       req.body.clinicId || req.headers["x-clinic-id"] || req.clinicId;
 
     if (typeof rawClinicId === "string" && rawClinicId.includes(",")) {
-      console.log(
-        "⚠️ Array duplication detected in header string. Splitting parameters...",
-      );
       rawClinicId = rawClinicId.split(",")[0];
     }
 
     const clinicId = String(rawClinicId || "").trim();
     const cleanPatientId = String(patientId || "").trim();
-
-    console.log("📥 [SANITISED CONTROLLER INTAKE]:");
-    console.log("-> Cleaned clinicId:", clinicId);
-    console.log("-> Cleaned patientId:", cleanPatientId);
 
     if (!clinicId || !cleanPatientId || !service || !date || !time) {
       return res.status(400).json({
@@ -49,17 +45,13 @@ export const bookAppointment = async (req, res) => {
       status: "Pending",
     });
 
-    // ⚡ REAL-TIME BROADCAST: Announce new appointment entry context
+    // WebSockets Broadcast
     const ioInstance = global.io;
     if (ioInstance) {
       ioInstance.emit("pipeline-update", {
-        message:
-          "A new appointment reservation has been compiled into the clinic directory.",
+        message: "A new appointment reservation has been added.",
         appointmentId: newAppointment._id,
       });
-      console.log(
-        "⚡ Broadcast sent: new appointment allocation dispatched downstream.",
-      );
     }
 
     return res.status(201).json({ success: true, data: newAppointment });
@@ -69,6 +61,7 @@ export const bookAppointment = async (req, res) => {
   }
 };
 
+// 2. Get Patient Appointments (With Dynamic Population)
 export const getPatientAppointments = async (req, res) => {
   try {
     const { patientId } = req.params;
@@ -76,14 +69,16 @@ export const getPatientAppointments = async (req, res) => {
     if (!patientId || !mongoose.Types.ObjectId.isValid(patientId)) {
       return res.status(422).json({
         success: false,
-        message:
-          "Unprocessable Entity: Malformed patient routing parameter signatures detected.",
+        message: "Unprocessable Entity: Malformed patient routing parameter.",
       });
     }
 
     const appointments = await Appointment.find({
       patientId: new mongoose.Types.ObjectId(String(patientId).trim()),
-    }).sort({ createdAt: -1 });
+    })
+      .populate("clinicId", "name slug address phone")
+      .populate("dentistId", "fullName specialization")
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({ success: true, data: appointments });
   } catch (error) {
@@ -92,6 +87,7 @@ export const getPatientAppointments = async (req, res) => {
   }
 };
 
+// 3. Get Admin Appointments
 export const getAdminAppointments = async (req, res) => {
   try {
     let tenantClinicId = req.headers["x-clinic-id"] || req.clinicId;
@@ -105,7 +101,7 @@ export const getAdminAppointments = async (req, res) => {
     if (!cleanClinicId || !mongoose.Types.ObjectId.isValid(cleanClinicId)) {
       return res.status(400).json({
         success: false,
-        message: "Tenant identification contextual header context is required.",
+        message: "Tenant identification contextual header is required.",
       });
     }
 
@@ -113,6 +109,7 @@ export const getAdminAppointments = async (req, res) => {
       clinicId: new mongoose.Types.ObjectId(cleanClinicId),
     })
       .populate("patientId", "firstName lastName email phone")
+      .populate("dentistId", "fullName specialization")
       .sort({ date: 1, time: 1 });
 
     return res.status(200).json({ success: true, data: appointments });
@@ -122,6 +119,7 @@ export const getAdminAppointments = async (req, res) => {
   }
 };
 
+// 4. Modify Appointment Status
 export const modifyAppointmentStatus = async (req, res) => {
   try {
     const { appointmentId } = req.params;
@@ -154,16 +152,12 @@ export const modifyAppointmentStatus = async (req, res) => {
       });
     }
 
-    // ⚡ REAL-TIME BROADCAST: Administrative administrative layout mutations
     const ioInstance = global.io;
     if (ioInstance) {
       ioInstance.emit("pipeline-update", {
-        message: `Appointment layout structural status reassigned to ${updatedAppointment.status}.`,
+        message: `Appointment status reassigned to ${updatedAppointment.status}.`,
         appointmentId: updatedAppointment._id,
       });
-      console.log(
-        "⚡ Broadcast sent: status layout sync dispatched downstream.",
-      );
     }
 
     return res.status(200).json({ success: true, data: updatedAppointment });
@@ -176,13 +170,15 @@ export const modifyAppointmentStatus = async (req, res) => {
   }
 };
 
+// 5. Get Today's Appointments
 export const getTodayAppointments = async (req, res) => {
   try {
+    const clinicId = req.headers["x-clinic-id"] || req.user?.clinicId;
     const today = new Date();
     const pad = (num) => String(num).padStart(2, "0");
     const dateString = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 
-    const allAppointments = await Appointment.find({
+    const query = {
       $or: [
         { date: { $gte: dateString } },
         {
@@ -201,8 +197,15 @@ export const getTodayAppointments = async (req, res) => {
           "COMPLETED_PENDING_BILL",
         ],
       },
-    })
-      .populate({ path: "patientId", select: "firstName lastName" })
+    };
+
+    if (clinicId && mongoose.Types.ObjectId.isValid(String(clinicId))) {
+      query.clinicId = new mongoose.Types.ObjectId(String(clinicId));
+    }
+
+    const allAppointments = await Appointment.find(query)
+      .populate("patientId", "firstName lastName email phone")
+      .populate("dentistId", "fullName specialization")
       .sort({ date: 1, time: 1 });
 
     return res
@@ -216,6 +219,7 @@ export const getTodayAppointments = async (req, res) => {
   }
 };
 
+// 6. Create Walk-In Appointment
 export const createWalkInAppointment = async (req, res) => {
   try {
     const { patientName, treatmentName, clinicId } = req.body;
@@ -230,16 +234,12 @@ export const createWalkInAppointment = async (req, res) => {
       service: "Walk-In Consult",
     });
 
-    // ⚡ REAL-TIME BROADCAST: Instantly draw new active walk-in patient profile on the board
     const ioInstance = global.io;
     if (ioInstance) {
       ioInstance.emit("pipeline-update", {
         message: `Walk-in patient ${patientName} checked into triage registry.`,
         appointmentId: newWalkIn._id,
       });
-      console.log(
-        "⚡ Broadcast sent: walk-in allocation sync dispatched downstream.",
-      );
     }
 
     return res.status(201).json({ success: true, appointment: newWalkIn });
@@ -251,6 +251,7 @@ export const createWalkInAppointment = async (req, res) => {
   }
 };
 
+// 7. Update Appointment Status
 export const updateAppointmentStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -319,27 +320,17 @@ export const updateAppointmentStatus = async (req, res) => {
           },
           { upsert: true, new: true },
         );
-        console.log(
-          `✨ Treatment session successfully synchronized for patient: ${pName}`,
-        );
       } catch (treatmentError) {
-        console.error(
-          "⚠️ Non-fatal core sync failure inside Treatment update block:",
-          treatmentError.message,
-        );
+        console.error("⚠️ Treatment sync error:", treatmentError.message);
       }
     }
 
-    // ⚡ REAL-TIME BROADCAST: Fixed error targeting to correct 'appointment' parameters
     const ioInstance = global.io;
     if (ioInstance) {
       ioInstance.emit("pipeline-update", {
         message: `Appointment status updated to ${appointment.status}.`,
         appointmentId: appointment._id,
       });
-      console.log(
-        "⚡ Broadcast sent: appointment pipeline sync dispatched downstream.",
-      );
     }
 
     return res.status(200).json({ success: true, appointment });
@@ -352,28 +343,39 @@ export const updateAppointmentStatus = async (req, res) => {
   }
 };
 
+// 8. Create Standard Appointment
 export const createAppointment = async (req, res) => {
   try {
-    const { date, time, service } = req.body;
+    const { date, time, service, patientId, clinicId } = req.body;
     const appointmentDateTime = new Date(`${date} ${time}`);
     const systemNow = new Date();
 
     if (appointmentDateTime < systemNow) {
       return res.status(400).json({
         success: false,
-        message:
-          "Booking failure: The selected date or time slot has already passed.",
+        message: "The selected date or time slot has already passed.",
       });
     }
-    // ... continue processing valid appointment saving logic ...
+
+    const newAppointment = await Appointment.create({
+      clinicId,
+      patientId,
+      service,
+      date,
+      time,
+      status: "Pending",
+    });
+
+    return res.status(201).json({ success: true, data: newAppointment });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// 9. Settle Payment
 export const settlePayment = async (req, res) => {
   try {
-    const { appointmentId, finalAmount, paymentMethod } = req.body;
+    const { appointmentId, finalAmount } = req.body;
 
     if (!appointmentId) {
       return res
@@ -394,37 +396,41 @@ export const settlePayment = async (req, res) => {
       });
     }
 
-    const TreatmentModel = mongoose.model("Treatment");
-    const updatedTreatment = await TreatmentModel.findOneAndUpdate(
+    let calculatedBilling = finalAmount;
+    if (calculatedBilling === undefined || calculatedBilling === null) {
+      const existingTreatment = await Treatment.findOne({ appointmentId });
+      if (existingTreatment && existingTreatment.billingAmount) {
+        calculatedBilling = existingTreatment.billingAmount;
+      } else {
+        const matchedService = await DentalService.findOne({
+          name: updatedAppointment.service,
+        });
+        calculatedBilling = matchedService ? matchedService.basePricePhp : 0;
+      }
+    }
+
+    const updatedTreatment = await Treatment.findOneAndUpdate(
       { appointmentId: appointmentId },
       {
         $set: {
           status: "DONE",
-          billingAmount: finalAmount || 1500.0,
+          billingAmount: Number(calculatedBilling),
         },
       },
       { new: true },
     );
 
-    console.log(
-      `¼ Processing checkout logs: ${appointmentId}. Treatment Log Synced: ${!!updatedTreatment}`,
-    );
-
-    // ⚡ REAL-TIME BROADCAST: Balanced ledger reconciliation tracking
     const ioInstance = global.io;
     if (ioInstance) {
       ioInstance.emit("pipeline-update", {
         message: `Appointment status updated to ${updatedAppointment.status}.`,
         appointmentId: updatedAppointment._id,
       });
-      console.log(
-        "⚡ Broadcast sent: appointment pipeline sync dispatched downstream.",
-      );
     }
 
     return res.status(200).json({
       success: true,
-      message: "Invoice settled cleanly. Record compiled and locked.",
+      message: "Invoice settled cleanly.",
       appointment: updatedAppointment,
       treatment: updatedTreatment,
     });

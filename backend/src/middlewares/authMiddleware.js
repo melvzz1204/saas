@@ -1,50 +1,84 @@
+// src/middlewares/authMiddleware.js
 import jwt from "jsonwebtoken";
 
-export const protectPatientRoute = (req, res, next) => {
-  let token;
+// 1. Generic Token Authentication Guard
+export const protectRoute = async (req, res, next) => {
+  try {
+    let token;
 
-  /*   console.log("DEBUG - Secret Key:", process.env.JWT_SECRET);
-  console.log("DEBUG - Incoming Token:", token);
-  const decoded = jwt.verify(token, process.env.JWT_SECRET); */
-  // 1. Guard Clause: Check if the Authorization header exists and follows the Bearer schema
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer ")
-  ) {
-    try {
-      const parts = req.headers.authorization.split(" ");
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer")
+    ) {
+      token = req.headers.authorization.split(" ")[1];
+    }
 
-      if (parts.length !== 2) {
-        return res.status(401).json({
-          success: false,
-          message:
-            "Not authorized, authorization header format must be: Bearer <token>",
-        });
-      }
-
-      token = parts[1];
-
-      // 2. Verify the token using your secret key
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      // 3. Attach the decrypted payload to BOTH identifiers to satisfy all controllers
-      req.patient = decoded;
-      req.user = decoded; // ✨ Added this line to fix the controller lookup crash!
-
-      return next();
-    } catch (error) {
-      console.error("❌ JWT Verification Error:", error.message);
+    if (!token) {
       return res.status(401).json({
         success: false,
-        message: "Not authorized, token invalid or expired",
+        message: "Unauthorized access. Authentication token missing.",
       });
     }
-  }
 
-  if (!token) {
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "fallback_saas_secret_key",
+    );
+
+    // Attach decoded user payload (id, role, clinicId) to the request object
+    req.user = decoded;
+    if (decoded.clinicId && !req.clinicId) {
+      req.clinicId = decoded.clinicId;
+    }
+
+    next();
+  } catch (error) {
     return res.status(401).json({
       success: false,
-      message: "Not authorized, no token provided or invalid header schema",
+      message: "Unauthorized access. Invalid or expired token.",
     });
   }
+};
+
+// 2. Patient Route Guard
+export const protectPatientRoute = (req, res, next) => {
+  protectRoute(req, res, () => {
+    next();
+  });
+};
+
+// 3. Admin Route Guard (SUPER_ADMIN & CLINIC_ADMIN)
+export const protectAdminRoute = (req, res, next) => {
+  protectRoute(req, res, () => {
+    const adminRoles = ["SUPER_ADMIN", "CLINIC_ADMIN"];
+
+    if (!req.user || !adminRoles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: Restricted to administrative personnel.",
+      });
+    }
+    next();
+  });
+};
+
+// 4. Staff Route Guard (Dentists, Staff & Admins)
+export const protectStaffRoute = (req, res, next) => {
+  protectRoute(req, res, () => {
+    const staffRoles = [
+      "SUPER_ADMIN",
+      "CLINIC_ADMIN",
+      "CLINIC_STAFF",
+      "DENTIST",
+      "dentist",
+    ];
+
+    if (!req.user || !staffRoles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: Restricted to clinical staff members.",
+      });
+    }
+    next();
+  });
 };

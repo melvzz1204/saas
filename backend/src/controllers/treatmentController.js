@@ -1,32 +1,46 @@
 // src/controllers/treatmentController.js
 import mongoose from "mongoose";
 import Treatment from "../models/treatmentModel.js";
+import DentalService from "../models/dentalServicePrice.js";
 
-// Handles the form submission from the Dentist Dashboard
+// 1. Complete Dental Procedure Session
 export const completeProcedure = async (req, res) => {
   try {
     const { treatmentId, treatedTooth, clinicalNotes, billingAmount } =
       req.body;
-
-    const dentistId = req.user.id;
-    const clinicId = req.user.clinicId;
+    const dentistId = req.user?.id || req.user?._id;
+    const clinicId = req.user?.clinicId || req.clinicId;
 
     if (!treatmentId || !clinicalNotes) {
       return res.status(400).json({
         success: false,
         message:
-          "Missing parameters: treatment tracking target or clinical validation prose missing.",
+          "Missing parameters: treatment tracking target or clinical notes required.",
       });
     }
 
-    // 1. Find and update the active treatment tracking session
+    // Dynamic price fallback: Query basePricePhp from service catalog if billingAmount is omitted
+    let finalBillingAmount = billingAmount;
+
+    if (finalBillingAmount === undefined || finalBillingAmount === null) {
+      const existingSession = await Treatment.findById(treatmentId);
+      if (existingSession?.procedureName) {
+        const matchingService = await DentalService.findOne({
+          name: existingSession.procedureName,
+        });
+        if (matchingService) {
+          finalBillingAmount = matchingService.basePricePhp;
+        }
+      }
+    }
+
     const activeSession = await Treatment.findOneAndUpdate(
       { _id: treatmentId, clinicId: clinicId, dentistId: dentistId },
       {
         $set: {
           treatedTooth: treatedTooth ? parseInt(treatedTooth) : null,
           clinicalNotes: clinicalNotes.trim(),
-          billingAmount: billingAmount || 150.0,
+          billingAmount: Number(finalBillingAmount || 0),
           status: "COMPLETED_PENDING_BILL",
         },
       },
@@ -37,56 +51,40 @@ export const completeProcedure = async (req, res) => {
       return res.status(404).json({
         success: false,
         message:
-          "Active treatment instance window not found or mismatch on security tokens.",
+          "Active treatment instance window not found or token context mismatch.",
       });
     }
 
-    // 2. Cross-sync the parent appointment collection state securely
+    // Cross-sync parent appointment collection status
     if (activeSession.appointmentId) {
       try {
-        await mongoose.model("Appointment").findByIdAndUpdate(
-          activeSession.appointmentId,
-          { $set: { status: "COMPLETED_PENDING_BILL" } }, // Syncing the parent status!
-        );
-        console.log(
-          `🔄 Parent appointment ${activeSession.appointmentId} synced to COMPLETED_PENDING_BILL.`,
-        );
+        await mongoose
+          .model("Appointment")
+          .findByIdAndUpdate(activeSession.appointmentId, {
+            $set: { status: "COMPLETED_PENDING_BILL" },
+          });
       } catch (dbError) {
         console.error("⚠️ Mongoose cross-sync warning:", dbError.message);
       }
     }
 
-    // =============================================================
-    // ⚡ REAL-TIME PIPELINE WEBSOCKET EMISSION
-    // =============================================================
-    const ioInstance = global.io; // Grab the socket server instance from the Node global scope context
-
+    // Real-time WebSocket emission
+    const ioInstance = global.io;
     if (ioInstance) {
       ioInstance.emit("pipeline-update", {
         message: "Patient procedure finalized by clinical operator.",
         appointmentId: activeSession.appointmentId,
       });
-      console.log(
-        "⚡ Broadcast sent: pipeline-update dispatched downstream successfully!",
-      );
-    } else {
-      console.log(
-        "❌ CRITICAL: Could not find the socket 'io' instance on global scope!",
-      );
     }
-    // =============================================================
 
     return res.status(200).json({
       success: true,
       message:
-        "Procedure finalized successfully. Patient routing matrix updated to checkout queue.",
+        "Procedure finalized successfully. Patient routed to checkout queue.",
       session: activeSession,
     });
   } catch (error) {
-    console.error(
-      "Exception caught inside complete procedure engine controller:",
-      error,
-    );
+    console.error("Exception in completeProcedure controller:", error);
     return res.status(500).json({
       success: false,
       message: "Internal runtime server pipeline fault.",
@@ -94,17 +92,26 @@ export const completeProcedure = async (req, res) => {
   }
 };
 
+// 2. Get Active Dentist Queue (With Dynamic Patient Population)
 export const getDentistQueue = async (req, res) => {
   try {
-    const dentistId = req.user.id;
-    const clinicId = req.user.clinicId;
+    const dentistId = req.user?.id || req.user?._id;
+    const clinicId = req.user?.clinicId || req.clinicId;
 
-    // 🎯 Only fetch patients actively in the chair right now
+    // Fetch patients actively in chair for this dentist & clinic workspace
     const treatments = await Treatment.find({
       clinicId: clinicId,
       dentistId: dentistId,
       status: "IN_CHAIR",
-    }).sort({ createdAt: 1 });
+    })
+      .populate({
+        path: "appointmentId",
+        populate: {
+          path: "patientId",
+          select: "firstName lastName email phone dateOfBirth gender",
+        },
+      })
+      .sort({ createdAt: 1 });
 
     return res.status(200).json({
       success: true,
