@@ -217,3 +217,53 @@ export const getClinicalStaffByRole = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+// =========================================================================
+// 🔑 RESET STAFF ACCESS PIN
+// =========================================================================
+export const resetStaffPin = async (req, res) => {
+  try {
+    const { staffId } = req.body;
+    const clinicId = req.headers["x-clinic-id"]; // Extra security: ensure admin owns this staff
+
+    if (!staffId) {
+      return res.status(400).json({
+        success: false,
+        message: "Staff ID is required.",
+      });
+    }
+
+    // 1. Generate a new random 6-digit PIN (Matches your onboarding logic)
+    const tempPin = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // 2. Update the Staff document in the database
+    // We check clinicId too so an admin can't reset a PIN for a different clinic's staff
+    const updatedStaff = await Staff.findOneAndUpdate(
+      { _id: staffId, clinicId: clinicId },
+      {
+        accessPin: tempPin,
+        // mustChangePin: true // Uncomment if you add this to your schema later
+      },
+      { new: true },
+    );
+
+    if (!updatedStaff) {
+      return res.status(404).json({
+        success: false,
+        message: "Staff member not found in your clinic directory.",
+      });
+    }
+
+    // 3. Return the new temporary PIN to the Admin dashboard
+    res.status(200).json({
+      success: true,
+      message: "Security PIN reset successfully.",
+      tempPin, // This matches what the frontend expects!
+    });
+  } catch (error) {
+    console.error("Reset PIN Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error resetting staff PIN.",
+    });
+  }
+};

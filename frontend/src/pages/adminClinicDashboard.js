@@ -423,7 +423,12 @@ function renderStaffTable(staffList) {
         <div>${member.email || "—"}</div>
         <div class="text-[10px] text-slate-400">${member.phone || "N/A"}</div>
       </td>
-      <td class="p-3.5 pr-5 text-right">
+      <td class="p-3.5 pr-5 text-right space-x-2">
+        <!-- 🎯 NEW RESET PIN BUTTON -->
+        <button onclick="handleResetStaffPassword('${member._id}')" class="text-[11px] text-amber-600 hover:text-amber-800 font-bold uppercase tracking-wider cursor-pointer">
+          Reset PIN
+        </button>
+        <!-- EXISTING DEACTIVATE BUTTON -->
         <button onclick="removeStaffMember('${member._id}')" class="text-[11px] text-rose-600 hover:text-rose-800 font-bold uppercase tracking-wider cursor-pointer">
           Deactivate
         </button>
@@ -469,7 +474,93 @@ const socket = io("http://localhost:5000", {
   transports: ["websocket"],
   upgrade: false,
 });
+// =========================================================================
+// 🔑 STAFF PIN RESET HANDLER (WITH CUSTOM POPUP MODAL)
+// =========================================================================
 
+async function handleResetStaffPassword(staffId) {
+  if (
+    !confirm(
+      "Are you sure you want to generate a new temporary PIN for this staff member?",
+    )
+  ) {
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("token").replace(/['"]+/g, "");
+
+    const response = await fetch(
+      "http://localhost:5000/api/v1/staff/reset-pin",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          "x-clinic-id": clinicId,
+        },
+        body: JSON.stringify({ staffId }),
+      },
+    );
+
+    const data = await response.json();
+
+    if (response.ok || data.success) {
+      // 🎯 Open the pop-up modal with the generated PIN!
+      openResetPinModal(data.tempPin);
+    } else {
+      alert(`❌ Failed to reset PIN: ${data.message}`);
+    }
+  } catch (err) {
+    console.error("Reset failed:", err);
+    alert("Network error resetting PIN. Please try again.");
+  }
+}
+window.handleResetStaffPassword = handleResetStaffPassword;
+
+// 🎯 Modal Helper Functions
+function openResetPinModal(tempPin) {
+  const modal = document.getElementById("reset-pin-modal");
+  const pinDisplay = document.getElementById("reset-modal-pin-display");
+  const copyBtnText = document.getElementById("copy-btn-text");
+
+  if (pinDisplay) pinDisplay.textContent = tempPin;
+  if (copyBtnText) copyBtnText.textContent = "Copy PIN";
+
+  if (modal) modal.classList.remove("hidden");
+}
+
+function closeResetPinModal() {
+  const modal = document.getElementById("reset-pin-modal");
+  if (modal) modal.classList.add("hidden");
+}
+
+async function copyResetPinToClipboard() {
+  const pinText = document.getElementById(
+    "reset-modal-pin-display",
+  )?.textContent;
+  const copyBtnText = document.getElementById("copy-btn-text");
+
+  if (!pinText) return;
+
+  try {
+    await navigator.clipboard.writeText(pinText);
+    if (copyBtnText) copyBtnText.textContent = "Copied! ✓";
+
+    // Reset button label back to 'Copy PIN' after 2.5 seconds
+    setTimeout(() => {
+      if (copyBtnText) copyBtnText.textContent = "Copy PIN";
+    }, 2500);
+  } catch (err) {
+    console.error("Clipboard copy failed:", err);
+  }
+}
+
+// Attach helpers to global window object
+window.openResetPinModal = openResetPinModal;
+window.closeResetPinModal = closeResetPinModal;
+window.copyResetPinToClipboard = copyResetPinToClipboard;
+window.handleResetStaffPassword = handleResetStaffPassword;
 socket.on("pipeline-update", async () => {
   if (typeof fetchDashboardData === "function") {
     await fetchDashboardData();
