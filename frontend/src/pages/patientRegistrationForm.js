@@ -53,6 +53,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       // Collect inputs using your exact layout IDs
       const payload = {
+        clinicId: resolvedTenantId, // 👈 ADD THIS LINE HERE
         firstName: document.getElementById("firstName").value.trim(),
         lastName: document.getElementById("lastName").value.trim(),
         email: document.getElementById("email").value.trim(),

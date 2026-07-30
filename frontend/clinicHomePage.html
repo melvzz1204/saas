@@ -65,18 +65,17 @@
             <!-- Navigation Links -->
             <nav
                 class="hidden md:flex items-center space-x-8 text-xs font-bold text-slate-600 uppercase tracking-wider">
-                <a href="#about" class="hover:text-indigo-600 transition-colors">About Practice</a>
-                <a href="#pricing" class="hover:text-indigo-600 transition-colors">Pricing Ledger</a>
+                <a href="#about" class="hover:text-indigo-600 transition-colors">About us</a>
+                <a href="#pricing" class="hover:text-indigo-600 transition-colors">Pricing</a>
                 <a href="#services" class="hover:text-indigo-600 transition-colors">Services</a>
                 <a href="#dentists" class="hover:text-indigo-600 transition-colors">Our Dentists</a>
-                <a href="#portal-features" class="hover:text-indigo-600 transition-colors">Patient Portal</a>
             </nav>
 
             <!-- Header Action -->
             <div class="flex items-center space-x-3">
                 <button type="button" id="open-login-btn"
                     class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md shadow-indigo-600/10 transition-all uppercase tracking-wider cursor-pointer active:scale-[0.98]">
-                    Portal Access
+                    Login
                 </button>
             </div>
         </div>
@@ -84,17 +83,13 @@
 
     <!-- HERO SECTION WITH DYNAMIC ESTIMATOR PREVIEW -->
     <section id="about" class="relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-8 md:pt-12 pb-16">
-        <div
-            class="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-3xl shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 relative">
+        <div>
             <div
-                class="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-500">
-            </div>
+                class="p-8 md:p-12 lg:p-14 flex flex-col items-center justify-center text-center bg-gradient-to-br from-slate-50/50 via-white to-indigo-50/20">
 
-            <!-- Left Content Area -->
-            <div
-                class="lg:col-span-7 p-8 md:p-12 lg:p-14 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-100 bg-gradient-to-br from-slate-50/50 via-white to-indigo-50/20">
-                <div class="space-y-6">
-                    <div class="flex flex-wrap items-center gap-3">
+                <div class="space-y-6 flex flex-col items-center">
+                    <!-- Badges (Centered) -->
+                    <div class="flex flex-wrap justify-center items-center gap-3">
                         <span
                             class="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold tracking-wide">
                             <span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -106,19 +101,21 @@
                             <span>Live Synced Portal Matrix</span>
                         </span>
                     </div>
-
-                    <div class="space-y-4">
+                    <!-- Text Content (Centered) -->
+                    <div class="space-y-4 flex flex-col items-center">
                         <h1 id="clinic-title"
                             class="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 uppercase leading-tight">
                             Loading Practice Details...
                         </h1>
-                        <p class="text-slate-600 text-sm md:text-base max-w-xl leading-relaxed">
+                        <!-- Added mx-auto to center the max-width paragraph block -->
+                        <p class="text-slate-600 text-sm md:text-base max-w-xl mx-auto leading-relaxed">
                             Welcome to your modern dental home. We blend gentle, personalized patient care with advanced
-                            digital dentistry—making appointments, medical history, and care tracking effortless.
+                            digital dentistry making appointments, medical history, and care tracking effortless.
                         </p>
                     </div>
 
-                    <div class="pt-2 flex flex-wrap items-center gap-3">
+                    <!-- Buttons (Centered) -->
+                    <div class="pt-2 flex flex-wrap justify-center items-center gap-3">
                         <button type="button" id="hero-login-btn"
                             class="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold text-xs px-6 py-3.5 rounded-xl shadow-md shadow-indigo-600/10 transition-all uppercase tracking-wider cursor-pointer active:scale-[0.99] flex items-center space-x-2">
                             <span>Access Patient Portal</span>
@@ -135,8 +132,9 @@
                     </div>
                 </div>
 
+                <!-- Hours (Centered) -->
                 <div id="hours"
-                    class="pt-8 mt-8 border-t border-slate-100 flex flex-wrap gap-x-6 gap-y-3 text-slate-500 text-xs font-medium">
+                    class="pt-8 mt-8 border-t border-slate-100/60 flex flex-wrap justify-center items-center gap-x-8 gap-y-3 text-slate-500 text-xs font-medium w-full max-w-2xl mx-auto">
                     <div class="flex items-center space-x-2">
                         <svg class="w-4 h-4 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none"
                             viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -154,66 +152,7 @@
                         <span>Emergency Care Line Available</span>
                     </div>
                 </div>
-            </div>
 
-            <!-- Right Interactive Dynamic Estimator Card -->
-            <div class="lg:col-span-5 p-6 md:p-8 flex flex-col justify-between bg-slate-50/70 relative">
-                <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
-                    <div
-                        class="p-4 border-b border-slate-100 bg-gradient-to-b from-slate-50/50 to-white flex items-center justify-between">
-                        <h2
-                            class="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-                            <span class="text-teal-600">✨</span>
-                            <span>Interactive Session Estimator</span>
-                        </h2>
-                        <span
-                            class="text-[9px] font-bold uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">Live
-                            Preview</span>
-                    </div>
-
-                    <div class="p-5 space-y-4">
-                        <div>
-                            <label
-                                class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Select
-                                Service Track</label>
-                            <!-- Dynamic Services drop-down -->
-                            <select id="booking-service" onchange="updateFormPriceIndicator(this)"
-                                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all cursor-pointer">
-                                <option value="" disabled selected>Retrieving treatments...</option>
-                            </select>
-                        </div>
-
-                        <!-- Dynamic Price Indicator -->
-                        <div
-                            class="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3 flex justify-between items-center text-xs">
-                            <span class="font-bold text-indigo-900/60 uppercase text-[10px] tracking-wide">Estimated
-                                Cost:</span>
-                            <span id="form-price-indicator" class="font-black text-indigo-600 text-sm">₱0.00</span>
-                        </div>
-
-                        <!-- Reserve CTA Button -->
-                        <button type="button" onclick="document.getElementById('open-login-btn').click()"
-                            class="w-full bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold py-3.5 rounded-xl transition-all uppercase tracking-wider cursor-pointer active:scale-[0.99] flex items-center justify-center space-x-2 shadow-md">
-                            <span>Reserve Selected Time Slot</span>
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div
-                    class="mt-4 border-t border-slate-200/60 flex items-center justify-between text-xs bg-white/60 backdrop-blur-xs p-3 rounded-2xl border border-slate-200/60">
-                    <div class="flex items-center space-x-2.5">
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-                        <span class="font-bold text-slate-700">Next Opening: <span class="text-indigo-600">Today at 2:30
-                                PM</span></span>
-                    </div>
-                    <a href="#dentists" class="text-[11px] font-bold text-indigo-600 hover:underline">View Dentists
-                        →</a>
-                </div>
             </div>
         </div>
     </section>
@@ -357,7 +296,6 @@
     <footer class="relative z-10 border-t border-slate-200/60 bg-white/60 backdrop-blur-xs py-8 mt-auto">
         <div
             class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400 font-medium">
-            <p>🔒 AES-256 Secured Patient Portal Connection</p>
             <p>&copy; Dental Care Practice. All Rights Reserved.</p>
         </div>
     </footer>
