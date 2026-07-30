@@ -1,4 +1,5 @@
 let activeSessionId = null;
+const API_BASE_URL = "http://localhost:5000";
 
 document.addEventListener("DOMContentLoaded", async () => {
   // 1. Core State Verification Layer
@@ -51,112 +52,62 @@ function initDynamicBranding(doctorName, clinicTitle) {
 }
 
 async function fetchClinicalQueue() {
-  const token = localStorage.getItem("token");
-  const manifestContainer = document.querySelector(
-    ".flex-1.overflow-y-auto.space-y-3",
-  );
-  const countBadge = document.querySelector(".bg-slate-100.text-slate-600");
+  const rawToken = localStorage.getItem("token");
+  const token = rawToken ? rawToken.replace(/['"]+/g, "") : "";
 
-  if (!manifestContainer) return;
+  const userData = JSON.parse(localStorage.getItem("user") || "{}");
+  let clinicId = localStorage.getItem("clinicId") || userData.clinicId || "";
+
+  // The ID of the currently logged-in dentist
+  const myDentistId = userData._id || userData.id;
+
+  if (!clinicId) {
+    console.error("❌ Critical: No clinicId found in session context.");
+    return;
+  }
 
   try {
-    // 🎯 FIXED: Re-routed to the Appointments database!
-    const response = await fetch(
-      "http://localhost:5000/api/v1/appointments/today",
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+    // 1. Use the working appointments route instead of the missing dentist route
+    let url = `${API_BASE_URL}/api/v1/appointments/today`;
+    if (clinicId) {
+      url += `?clinicId=${clinicId}`;
+    }
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "x-clinic-id": clinicId,
       },
-    );
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: Failed to fetch appointments.`);
+    }
 
     const data = await response.json();
+    const allAppointments = data.appointments || data.data || [];
 
-    if (!response.ok)
-      throw new Error(data.message || "Failed to fetch active pipeline.");
+    // 2. Filter the queue so this dentist only sees their assigned patients
+    const myQueue = allAppointments.filter((app) => {
+      // Handle cases where dentistId is populated as an object vs a raw string
+      const assignedId =
+        app.dentistId && typeof app.dentistId === "object"
+          ? app.dentistId._id
+          : app.dentistId;
 
-    // Extract the appointments array
-    const rawList = data.appointments || data.data || data || [];
-
-    // Filter for patients currently in treatment
-    const queue = rawList.filter((item) => {
-      const s = (item.status || "").toLowerCase();
-      return s === "in_chair" || s === "in-treatment" || s === "treatment";
+      return assignedId === myDentistId;
     });
 
-    if (countBadge) {
-      countBadge.textContent = `${queue.length} Left`;
+    console.log("📥 Filtered Dentist Queue loaded:", myQueue);
+
+    // 3. Render the UI
+    if (typeof renderDentistQueue === "function") {
+      renderDentistQueue(myQueue);
     }
-
-    manifestContainer.innerHTML = "";
-
-    if (queue.length === 0) {
-      manifestContainer.innerHTML = `<p class="text-xs font-semibold text-slate-400 text-center py-8">No assigned patients in queue.</p>`;
-      clearActiveChairView();
-      return;
-    }
-
-    let activePatient = queue[0];
-
-    if (activePatient) {
-      hydrateActiveChairView(activePatient);
-    } else {
-      clearActiveChairView();
-    }
-
-    queue.forEach((item) => {
-      const isCurrent = activePatient && activePatient._id === item._id;
-      const timeString = new Date(
-        item.createdAt || item.date || Date.now(),
-      ).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-
-      let displayName = "Unknown Patient";
-      if (item.patientId && typeof item.patientId === "object") {
-        if (item.patientId.fullName) {
-          displayName = item.patientId.fullName;
-        } else {
-          displayName =
-            `${item.patientId.firstName || ""} ${item.patientId.lastName || ""}`.trim();
-        }
-      } else if (item.patientName || item.fullName || item.firstName) {
-        displayName = item.patientName || item.fullName || item.firstName;
-      }
-
-      const displayProcedure =
-        item.procedureName ||
-        item.service ||
-        item.treatmentName ||
-        "General Consultation";
-
-      const card = document.createElement("div");
-      card.className = isCurrent
-        ? "border-2 border-sky-500 bg-sky-50/20 p-4 rounded-xl space-y-1 relative"
-        : "border border-slate-200 bg-white p-4 rounded-xl space-y-1 hover:border-slate-300 transition-colors cursor-pointer";
-
-      card.innerHTML = `
-        ${isCurrent ? '<span class="absolute top-3 right-3 text-[9px] font-black uppercase text-sky-600 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-sm">In Chair</span>' : ""}
-        <p class="text-[9px] font-mono font-bold text-slate-400">${timeString}</p>
-        <h4 class="text-xs font-black ${isCurrent ? "text-slate-800" : "text-slate-700"} uppercase tracking-wide">${displayName}</h4>
-        <p class="text-[11px] text-slate-500 font-medium">${displayProcedure}</p>
-      `;
-
-      if (!isCurrent) {
-        card.addEventListener("click", () => {
-          hydrateActiveChairView(item);
-          fetchClinicalQueue();
-        });
-      }
-
-      manifestContainer.appendChild(card);
-    });
   } catch (err) {
     console.error("Queue Synchronicity Fault:", err);
-    manifestContainer.innerHTML = `<p class="text-xs text-rose-500 font-bold p-4">Error sync tracking data matrix maps.</p>`;
   }
 }
 

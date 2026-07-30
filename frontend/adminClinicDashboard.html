@@ -233,16 +233,44 @@
             </div>
 
             <div id="panel-staff" class="dashboard-panel hidden grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <div class="xl:col-span-2 bg-white border border-slate-200/80 rounded-xl shadow-xs p-5">
-                    <h3 class="font-black text-xs uppercase tracking-wider text-slate-800 mb-4">
-                        Active Staff
-                    </h3>
-                    <p class="text-xs text-slate-400 italic">
-                        Select tab items to access your configuration parameters table
-                        views...
-                    </p>
+                <!-- Active Staff Directory Table -->
+                <div
+                    class="xl:col-span-2 bg-white border border-slate-200/80 rounded-xl shadow-xs overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">
+                                Active Staff Directory
+                            </h3>
+                            <button id="refresh-staff"
+                                class="text-[11px] text-indigo-600 hover:text-indigo-700 font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                                refresh
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr
+                                        class="bg-slate-50 border-b border-slate-200/90 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                                        <th class="p-3.5 pl-5">Staff Member</th>
+                                        <th class="p-3.5">Role</th>
+                                        <th class="p-3.5">Specialization</th>
+                                        <th class="p-3.5">Contact Details</th>
+                                        <th class="p-3.5 pr-5 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="staff-table-body" class="text-xs text-slate-700 divide-y divide-slate-100">
+                                    <tr>
+                                        <td colspan="5" class="p-8 text-center text-slate-400 italic font-medium">
+                                            Loading clinical staff directory...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
+                <!-- Onboard Clinical Staff Form -->
                 <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs space-y-4 h-fit">
                     <div>
                         <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">
@@ -285,7 +313,6 @@
                             <select id="staff-role" required
                                 class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
                                 <option value="Dentist">Dentist</option>
-                                <option value="Receptionist">Receptionist</option>
                                 <option value="Staff">Staff</option>
                             </select>
                         </div>
