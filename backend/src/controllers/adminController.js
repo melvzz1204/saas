@@ -1,4 +1,4 @@
-// src/controllers/adminController.js
+import bcrypt from "bcryptjs";
 import Appointment from "../models/appointmentModel.js";
 import User from "../models/userModel.js";
 import Staff from "../models/staffModel.js";
@@ -108,30 +108,44 @@ export const getClinicStaff = async (req, res) => {
 // 5. Authenticate Clinic Admins / Staff
 export const loginAdmin = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
+
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Fields required." });
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required.",
+      });
     }
 
+    const cleanEmail = email.trim();
+
+    // 1. Case-insensitive search (Fixes uppercase/lowercase mismatch in DB)
     const accountUser = await User.findOne({
-      email: email.toLowerCase().trim(),
+      email: { $regex: new RegExp(`^${cleanEmail}$`, "i") },
     });
 
     if (!accountUser) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid credentials." });
+      console.log(
+        `❌ Login Failed: No user account found with email "${cleanEmail}"`,
+      );
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials.",
+      });
     }
 
+    // 2. Role Clearance Verification
     const allowedRoles = [
       "SUPER_ADMIN",
       "CLINIC_ADMIN",
       "CLINIC_STAFF",
       "DENTIST",
     ];
+
     if (!allowedRoles.includes(accountUser.role)) {
+      console.log(
+        `⚠️ Login Blocked: User "${cleanEmail}" has role "${accountUser.role}" which cannot use staff portal.`,
+      );
       return res.status(403).json({
         success: false,
         message:
@@ -139,13 +153,20 @@ export const loginAdmin = async (req, res) => {
       });
     }
 
-    const isMatch = await accountUser.comparePassword(password);
+    // 3. Password Verification
+    const isMatch = await bcrypt.compare(password, accountUser.password);
+
     if (!isMatch) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid credentials." });
+      console.log(
+        `❌ Login Failed: Password mismatch for user "${cleanEmail}"`,
+      );
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials.",
+      });
     }
 
+    // 4. Generate JWT Token
     const token = jwt.sign(
       {
         id: accountUser._id,
@@ -166,7 +187,54 @@ export const loginAdmin = async (req, res) => {
       isActive: accountUser.isActive,
     };
 
+    console.log(`✅ Login Success: "${cleanEmail}" (${accountUser.role})`);
+
     return res.status(200).json({ success: true, token, user: sanitizedUser });
+  } catch (error) {
+    console.error("🔥 Admin Login Error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid credentials." });
+    }
+
+    // 🛑 If the user is a SaaS Admin, bypass clinic-level checks
+    if (user.role === "SAAS_ADMIN") {
+      const token = jwt.sign(
+        { id: user._id, role: user.role },
+        process.env.JWT_SECRET || "fallback-secret-key",
+        { expiresIn: "1d" },
+      );
+
+      return res.status(200).json({
+        success: true,
+        token,
+        user: {
+          id: user._id,
+          email: user.email,
+          role: user.role,
+        },
+      });
+    }
+
+    // --- Standard Clinic User Logic Below ---
+    // (Check active status, clinic status, tenant restrictions, etc.)
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }

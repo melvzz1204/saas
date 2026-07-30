@@ -2,10 +2,23 @@ import { registerUser, loginUser } from "../services/patientService.js";
 import PatientFullInfo from "../models/patientFullInfoModel.js";
 import User from "../models/userModel.js";
 
-// 📝 Patient Registration Controller
+// src/controllers/patientController.js
+// src/controllers/patientController.js
+
 export const registerPatientController = async (req, res) => {
   try {
-    const result = await registerUser(req.clinicId, req.body);
+    // 👈 FALLBACK RESOLVER: Reads from middleware, headers, or body
+    const clinicId =
+      req.clinicId || req.headers["x-clinic-id"] || req.body?.clinicId;
+
+    if (!clinicId) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing tenant context: clinicId is required.",
+      });
+    }
+
+    const result = await registerUser(clinicId, req.body);
 
     return res.status(201).json({
       success: true,

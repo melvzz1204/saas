@@ -10,15 +10,15 @@ document.addEventListener("DOMContentLoaded", () => {
       sub: "Real-time scheduling and medical provider routing execution paths",
     },
     "panel-staff": {
-      title: "Staff Directory Matrix",
+      title: "Staff Directory",
       sub: "Manage clinical personnel nodes, security permissions, and tracking access parameters",
     },
     "panel-pricing": {
-      title: "Clinical Financial Parameters",
+      title: "Healthcare financial metrics",
       sub: "Configure active service treatment catalogs, adjust base currencies, and manage billing codes",
     },
     "panel-reports": {
-      title: "System Analytics Engine",
+      title: "System Analytics",
       sub: "Review clinical conversion pipelines, operations summaries, and resource performance logs",
     },
   };

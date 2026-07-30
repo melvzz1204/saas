@@ -1,13 +1,14 @@
-// src/routes/tenantRoutes.js
+import bcrypt from "bcryptjs";
 import express from "express";
-import mongoose from "mongoose";
+import mongoose from "mongoose"; // 👈 FIX 1: Added missing mongoose import
 import Clinic from "../models/clinicModel.js";
-import User from "../models/userModel.js"; // 🎯 Imported to handle simultaneous CLINIC_ADMIN creation
+import User from "../models/userModel.js";
+import { uploadDocuments } from "../middlewares/uploadMiddleware.js";
 
 const router = express.Router();
 
 // ==========================================
-// 🚀 ENDPOINT 1: Register a New Clinic Workspace & Admin
+// 🏥 ENDPOINT 1: Register a New Clinic Workspace & Admin
 // POST /api/v1/tenants/register
 // ==========================================
 router.post("/register", async (req, res) => {
@@ -52,6 +53,9 @@ router.post("/register", async (req, res) => {
     });
 
     try {
+      // 👈 FIX 2: Hash the password before saving to MongoDB
+      const hashedPassword = await bcrypt.hash(password, 10);
+
       // 4. STEP TWO: Create the CLINIC_ADMIN bound to this new clinic ID
       const newAdminAccount = await User.create({
         clinicId: newClinic._id, // Link them explicitly via Mongoose Object ID mapping
@@ -59,7 +63,7 @@ router.post("/register", async (req, res) => {
         lastName: lastName.trim(),
         email: safeEmail,
         phone: phone.trim(),
-        password: password, // Pre-save hook inside userModel hashes this cleanly
+        password: hashedPassword, // 👈 Saved as a bcrypt hash ($2b$10$...)
         role: "CLINIC_ADMIN",
         isActive: true,
       });
@@ -112,10 +116,8 @@ router.get("/slug/:identifier", async (req, res) => {
     const isObjectId = /^[0-9a-fA-F]{24}$/.test(identifier);
 
     if (isObjectId) {
-      // 🎯 Query your clinic database collection directly using the hex ID
       clinicData = await Clinic.findById(identifier);
     } else {
-      // 🎯 Query using your clean slug string field
       clinicData = await Clinic.findOne({
         slug: identifier.toLowerCase().trim(),
       });
@@ -129,7 +131,6 @@ router.get("/slug/:identifier", async (req, res) => {
       });
     }
 
-    // Send the perfect structural layout back to patientLogin.js
     return res.status(200).json({
       success: true,
       data: {
@@ -148,7 +149,7 @@ router.get("/slug/:identifier", async (req, res) => {
 });
 
 // ==========================================
-// 🎯 ENDPOINT 3: Direct ID Lookup for Patient Dashboard
+// 📊 ENDPOINT 3: Direct ID Lookup for Patient Dashboard
 // GET /api/v1/tenants/:id
 // ==========================================
 router.get("/:id", async (req, res) => {
@@ -163,7 +164,7 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    // 2. Query your clinic collection using the imported Clinic model
+    // 2. Query clinic collection
     const clinicData = await Clinic.findById(id);
 
     // 3. Fallback safety check
@@ -174,7 +175,6 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    // 4. Return the complete document wrapper back to patientDashboard.js
     return res.status(200).json({
       success: true,
       data: clinicData,
@@ -187,5 +187,42 @@ router.get("/:id", async (req, res) => {
     });
   }
 });
+
+router.post(
+  "/:id/upload-docs",
+  uploadDocuments.array("documents", 5),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      if (!req.files || req.files.length === 0) {
+        return res
+          .status(400)
+          .json({ success: false, message: "No document files attached." });
+      }
+
+      const uploadedDocs = req.files.map((file) => ({
+        documentName: file.originalname,
+        fileUrl: `${req.protocol}://${req.get("host")}/uploads/documents/${file.filename}`,
+      }));
+
+      const clinic = await Clinic.findByIdAndUpdate(
+        id,
+        { $push: { submittedDocuments: { $each: uploadedDocs } } },
+        { new: true },
+      );
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Verification documents successfully submitted for SaaS review.",
+        data: clinic,
+      });
+    } catch (error) {
+      console.error("Document Upload Fault:", error);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  },
+);
 
 export default router;

@@ -3,44 +3,50 @@ document.addEventListener("DOMContentLoaded", () => {
   const registrationForm = document.getElementById("clinic-registration-form");
   const nameInput = document.getElementById("clinic-name");
   const slugInput = document.getElementById("clinic-slug");
-  const slugPreview = document.getElementById("slug-preview");
   const notificationBox = document.getElementById("notification-box");
 
-  // Helper: Enforce lowercase and trim logic matching the Mongoose schema requirements
+  if (!registrationForm) return;
+
+  // 1. Helper: Format clean slug string
   const formatSlug = (text) => {
     return text
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s-]/g, "") // Strip out special characters
-      .replace(/[\s_-]+/g, "-") // Turn spaces/underscores into clean dashes
-      .replace(/^-+|-+$/g, ""); // Clean dangling edge dashes
+      .replace(/[^\w\s-]/g, "") // Remove special characters
+      .replace(/[\s_-]+/g, "-") // Convert spaces to hyphens
+      .replace(/^-+|-+$/g, ""); // Trim edge hyphens
   };
 
-  // Auto-generate safe slug while the user types the name
-  nameInput.addEventListener("input", (e) => {
-    if (!slugInput.dataset.edited) {
-      const cleanSlug = formatSlug(e.target.value);
-      slugInput.value = cleanSlug;
-      slugPreview.textContent = cleanSlug || "...";
-    }
-  });
+  // Live auto-generate slug as user types clinic name
+  if (nameInput && slugInput) {
+    nameInput.addEventListener("input", (e) => {
+      if (!slugInput.dataset.edited) {
+        slugInput.value = formatSlug(e.target.value);
+      }
+    });
 
-  // Handle manual slug edits
-  slugInput.addEventListener("input", (e) => {
-    slugInput.dataset.edited = "true";
-    e.target.value = formatSlug(e.target.value);
-    slugPreview.textContent = e.target.value || "...";
-  });
+    slugInput.addEventListener("input", (e) => {
+      slugInput.dataset.edited = "true";
+      e.target.value = formatSlug(e.target.value);
+    });
+  }
 
-  // Form Submission
+  // 2. Form Submission Handler (Single, unified handler)
   registrationForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // Reset notification box visibility and colors
-    notificationBox.className = "hidden text-xs p-3.5 rounded-lg font-medium";
-    notificationBox.textContent = "";
+    // Reset notification state
+    notificationBox.className =
+      "hidden text-xs p-3.5 rounded-xl font-bold border text-center";
+    notificationBox.innerText = "";
 
-    // 1. Build the composite payload matching your multi-tenant controllers (dateOfBirth removed)
+    const submitBtn = registrationForm.querySelector("button[type='submit']");
+    const fileInput = document.getElementById("clinic-documents");
+
+    submitBtn.disabled = true;
+    submitBtn.innerText = "Deploying Workspace...";
+
+    // Construct Payload
     const payload = {
       clinicName: nameInput.value.trim(),
       slug: slugInput.value.trim(),
@@ -49,47 +55,92 @@ document.addEventListener("DOMContentLoaded", () => {
         lastName: document.getElementById("admin-lastname").value.trim(),
         email: document.getElementById("admin-email").value.trim(),
         phone: document.getElementById("admin-phone").value.trim(),
-        password: document.getElementById("admin-password").value,
+        password: document.getElementById("admin-password").value.trim(),
       },
     };
 
     try {
-      // 2. Dispatch data payload to backend endpoint
-      const response = await fetch(
+      // STEP 1: Register Tenant Clinic Workspace
+      const registerResponse = await fetch(
         "http://localhost:5000/api/v1/tenants/register",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         },
       );
 
-      const result = await response.json();
+      const registerResult = await registerResponse.json();
 
-      // 3. Evaluate server validation state response
-      if (!response.ok || !result.success) {
+      if (!registerResponse.ok || !registerResult.success) {
         throw new Error(
-          result.message || "Failed to provision workspace partition.",
+          registerResult.message || "Failed to deploy clinic workspace.",
         );
       }
 
-      // 4. Render Success feedback status UI
-      notificationBox.className =
-        "block bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs p-3.5 rounded-lg font-medium";
-      notificationBox.textContent = `Success! Workspace and Administrator account provisioned. Redirecting to staff login...`;
+      // Safely extract Clinic ID regardless of backend payload structure
+      const createdClinicId =
+        registerResult.data?._id ||
+        registerResult.data?.clinic?._id ||
+        registerResult.data?.id;
 
-      // 5. 🎯 Smoothly forward to the staff login gate after a short interval delay
-      setTimeout(() => {
-        window.location.href = "/clinicLogin.html";
-      }, 2000);
-    } catch (error) {
-      console.error("Workspace Provisioning Crash:", error);
-      // Render Error UI alert
+      if (!createdClinicId) {
+        throw new Error(
+          "Workspace registered, but target Clinic ID could not be resolved.",
+        );
+      }
+
+      // STEP 2: Upload Documents (If any files were attached)
+      if (fileInput && fileInput.files.length > 0) {
+        submitBtn.innerText = "Uploading Verification Credentials...";
+
+        const formData = new FormData();
+        for (let i = 0; i < fileInput.files.length; i++) {
+          formData.append("documents", fileInput.files[i]);
+        }
+
+        const uploadResponse = await fetch(
+          `http://localhost:5000/api/v1/tenants/${createdClinicId}/upload-docs`,
+          {
+            method: "POST",
+            body: formData, // Browser automatically sets multipart/form-data headers
+          },
+        );
+
+        const uploadResult = await uploadResponse.json();
+
+        if (!uploadResponse.ok || !uploadResult.success) {
+          throw new Error(
+            uploadResult.message ||
+              "Workspace created, but document upload failed.",
+          );
+        }
+      }
+
+      // Render Success Message
       notificationBox.className =
-        "block bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs p-3.5 rounded-lg font-medium";
-      notificationBox.textContent = error.message;
+        "block bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs p-3.5 rounded-xl font-bold text-center";
+      notificationBox.innerText =
+        "✨ Clinic registered successfully! Verification documents uploaded and pending SaaS review.";
+
+      registrationForm.reset();
+      if (slugInput) delete slugInput.dataset.edited;
+
+      // Close modal after 3 seconds
+      setTimeout(() => {
+        const modal = document.getElementById("clinic-register-modal");
+        if (modal) modal.classList.add("hidden");
+        document.body.classList.remove("overflow-hidden");
+      }, 3000);
+    } catch (error) {
+      console.error("❌ Registration Error:", error);
+      notificationBox.className =
+        "block bg-rose-50 border border-rose-200 text-rose-600 text-xs p-3.5 rounded-xl font-bold text-center";
+      notificationBox.innerText =
+        error.message || "An error occurred during registration.";
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerText = "Register clinic";
     }
   });
 });

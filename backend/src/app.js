@@ -9,10 +9,17 @@ import staffRoutes from "./routes/staffRoutes.js";
 import dentalServicePrice from "./routes/dentalServicePriceRoutes.js";
 import initAppointmentCleanupJob from "./utils/appointmentCleanup.js";
 import treatmentRoutes from "./routes/treatmentRoutes.js";
+import saasAdminRoutes from "./routes/saasAdminRoutes.js";
+import path from "path";
 
 dotenv.config();
 const app = express();
 initAppointmentCleanupJob();
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.use(
   cors({
@@ -31,6 +38,7 @@ app.use("/api/v1/appointments", appointmentRoutes);
 app.use("/api/v1/staff", staffRoutes);
 app.use("/api/v1/treatments", treatmentRoutes);
 app.use("/api/v1/dental-price", dentalServicePrice);
+app.use("/api/v1/saas-admin", saasAdminRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "Server is running smoothly" });

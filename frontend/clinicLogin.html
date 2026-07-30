@@ -172,8 +172,8 @@
 
                         <div>
                             <label
-                                class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Desired
-                                URL Slug</label>
+                                class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">clinic
+                                code</label>
                             <input type="text" id="clinic-slug" required placeholder="apexdental"
                                 class="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all lowercase">
                         </div>
@@ -229,6 +229,23 @@
                     </div>
                 </div>
 
+                <!-- Insert this inside #clinic-registration-form right before the submit button -->
+                <div class="space-y-3.5">
+                    <h3
+                        class="text-[10px] font-bold text-blue-600 uppercase tracking-widest border-b border-zinc-100 pb-1.5">
+                        3. Verification Credentials
+                    </h3>
+                    <div>
+                        <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">
+                            Upload Permits or Credentials (PDF / Images)
+                        </label>
+                        <input type="file" id="clinic-documents" multiple accept=".pdf,.png,.jpg,.jpeg"
+                            class="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2 text-xs text-zinc-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer">
+                        <p class="text-[10px] text-zinc-400 mt-1">Upload Mayor's Permit, DTI/SEC registration, or PRC
+                            License (Max 5MB
+                            each)</p>
+                    </div>
+                </div>
                 <button type="submit"
                     class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-3.5 rounded-xl shadow-lg shadow-blue-100 transition-all uppercase tracking-wider mt-2 cursor-pointer border border-blue-700/10">
                     Register clinic

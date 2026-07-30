@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaS Master Console | Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen selection:bg-indigo-500 selection:text-white pb-12">
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div
+                    class="w-9 h-9 bg-indigo-950 border border-indigo-700/50 rounded-xl flex items-center justify-center text-lg">
+                    🛡️
+                </div>
+                <div>
+                    <h1 class="text-sm font-black tracking-wider uppercase text-white">Platform Master Admin</h1>
+                    <p class="text-[10px] text-slate-400 font-mono">SaaS Root Control Center</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="hidden sm:flex flex-col text-right">
+                    <span id="admin-name-display" class="text-xs font-bold text-slate-200">SaaS Administrator</span>
+                    <span class="text-[10px] text-indigo-400 font-mono">SUPER_ADMIN</span>
+                </div>
+                <button id="logout-btn"
+                    class="bg-slate-800 hover:bg-rose-950 hover:text-rose-400 border border-slate-700 text-slate-300 text-xs font-bold px-3.5 py-2 rounded-xl transition-all cursor-pointer">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
+
+        <!-- 📊 Section 1: Platform Overview Cards -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-2">
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Clinics</p>
+                <div class="flex items-baseline justify-between">
+                    <span id="stat-total-clinics" class="text-3xl font-black text-white">--</span>
+                    <span class="text-indigo-400 text-xs font-semibold">Registered</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-2">
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Tenants</p>
+                <div class="flex items-baseline justify-between">
+                    <span id="stat-active-clinics" class="text-3xl font-black text-emerald-400">--</span>
+                    <span class="text-emerald-500/80 text-xs font-semibold">Live</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-2">
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Patients</p>
+                <div class="flex items-baseline justify-between">
+                    <span id="stat-total-patients" class="text-3xl font-black text-sky-400">--</span>
+                    <span class="text-sky-500/80 text-xs font-semibold">Platform-wide</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-2">
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Appointments</p>
+                <div class="flex items-baseline justify-between">
+                    <span id="stat-total-appointments" class="text-3xl font-black text-purple-400">--</span>
+                    <span class="text-purple-500/80 text-xs font-semibold">Booked</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 📋 Section 2: Pending Applications Review -->
+        <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
+                <div>
+                    <h2 class="text-base font-bold text-white uppercase tracking-wider">Pending Clinic Applications</h2>
+                    <p class="text-xs text-slate-400">Review submitted verification documents and accept or reject
+                        clinic onboarding requests.</p>
+                </div>
+                <span id="pending-count-badge"
+                    class="self-start sm:self-auto bg-indigo-950 border border-indigo-800 text-indigo-300 text-xs font-bold px-3 py-1 rounded-full">
+                    0 Pending
+                </span>
+            </div>
+
+            <div id="pending-applications-container" class="space-y-4">
+                <div class="text-center py-8 text-slate-500 text-xs">Loading pending applications...</div>
+            </div>
+        </section>
+
+        <!-- 🏢 Section 3: All Tenants Directory -->
+        <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <div class="border-b border-slate-800 pb-4">
+                <h2 class="text-base font-bold text-white uppercase tracking-wider">Tenant Directory</h2>
+                <p class="text-xs text-slate-400">Manage all registered tenant workspaces on the platform.</p>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="text-[10px] uppercase text-slate-400 bg-slate-950/50 border-b border-slate-800">
+                        <tr>
+                            <th class="p-3">Clinic Name</th>
+                            <th class="p-3">Slug Code</th>
+                            <th class="p-3">App Status</th>
+                            <th class="p-3">Workspace</th>
+                            <th class="p-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tenants-table-body" class="divide-y divide-slate-800/60 text-slate-300">
+                        <tr>
+                            <td colspan="5" class="text-center py-6 text-slate-500">Loading tenants...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 🚫 Rejection Reason Modal -->
+    <div id="rejection-modal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-2xl">
+            <h3 class="text-sm font-bold text-rose-400 uppercase tracking-wider">Reject Application</h3>
+            <p class="text-xs text-slate-400">Specify why this clinic application is being rejected. This notification
+                will be logged for the applicant.</p>
+
+            <textarea id="rejection-reason-input" rows="4"
+                placeholder="e.g. Invalid Mayor's Permit attached. Please re-upload a valid business permit."
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-rose-500 transition-all"></textarea>
+
+            <div class="flex items-center justify-end space-x-3 pt-2">
+                <button type="button" id="cancel-rejection-btn"
+                    class="text-xs font-bold text-slate-400 hover:text-white px-4 py-2 transition-colors">
+                    Cancel
+                </button>
+                <button type="button" id="confirm-rejection-btn"
+                    class="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all">
+                    Confirm Rejection
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/src/pages/saasAdminDashboard.js"></script>
+</body>
+
+</html>

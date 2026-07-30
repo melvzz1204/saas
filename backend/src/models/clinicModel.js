@@ -18,6 +18,21 @@ const clinicSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    applicationStatus: {
+      type: String,
+      enum: ["Pending", "Approved", "Rejected"],
+      default: "Pending",
+    },
+    submittedDocuments: [
+      {
+        documentName: String,
+        fileUrl: String, // URL to the uploaded file (e.g., AWS S3, Cloudinary, or local path)
+      },
+    ],
+    rejectionReason: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true },
 );
