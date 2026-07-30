@@ -224,5 +224,52 @@ router.post(
     }
   },
 );
+router.patch("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { slotDurationMinutes, operatingHours } = req.body;
+
+    // 1. Structural check to ensure it's a valid 24-character hexadecimal string
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid location database context structure.",
+      });
+    }
+
+    // 2. Update the clinic record in MongoDB
+    const updatedClinic = await Clinic.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          slotDurationMinutes: slotDurationMinutes,
+          operatingHours: operatingHours,
+        },
+      },
+      { new: true, runValidators: true },
+    );
+
+    // 3. Fallback safety check
+    if (!updatedClinic) {
+      return res.status(404).json({
+        success: false,
+        message: "Target clinical location context not registered.",
+      });
+    }
+
+    // 4. Return clean JSON response
+    return res.status(200).json({
+      success: true,
+      message: "Clinic schedule and slot duration updated successfully.",
+      data: updatedClinic,
+    });
+  } catch (error) {
+    console.error("Clinic Schedule Update Fault:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
 
 export default router;

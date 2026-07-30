@@ -81,6 +81,21 @@
                     <span class="active-dot w-1.5 h-1.5 rounded-full bg-emerald-500 hidden"></span>
                 </a>
 
+                <!-- 🕒 NEW: Operating Hours Nav Item -->
+                <a href="#" id="nav-hours" data-target="panel-hours"
+                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
+                    <div class="flex items-center space-x-2.5">
+                        <svg class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors"
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                        <span>Operating Hours</span>
+                    </div>
+                    <span class="active-dot w-1.5 h-1.5 rounded-full bg-indigo-600 hidden"></span>
+                </a>
+
                 <a href="#" id="nav-reports" data-target="panel-reports"
                     class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
                     <div class="flex items-center space-x-2.5">
@@ -233,16 +248,44 @@
             </div>
 
             <div id="panel-staff" class="dashboard-panel hidden grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <div class="xl:col-span-2 bg-white border border-slate-200/80 rounded-xl shadow-xs p-5">
-                    <h3 class="font-black text-xs uppercase tracking-wider text-slate-800 mb-4">
-                        Active Staff
-                    </h3>
-                    <p class="text-xs text-slate-400 italic">
-                        Select tab items to access your configuration parameters table
-                        views...
-                    </p>
+                <!-- Active Staff Directory Table -->
+                <div
+                    class="xl:col-span-2 bg-white border border-slate-200/80 rounded-xl shadow-xs overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">
+                                Active Staff Directory
+                            </h3>
+                            <button id="refresh-staff"
+                                class="text-[11px] text-indigo-600 hover:text-indigo-700 font-bold uppercase tracking-wider transition-colors cursor-pointer">
+                                refresh
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr
+                                        class="bg-slate-50 border-b border-slate-200/90 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                                        <th class="p-3.5 pl-5">Staff Member</th>
+                                        <th class="p-3.5">Role</th>
+                                        <th class="p-3.5">Specialization</th>
+                                        <th class="p-3.5">Contact Details</th>
+                                        <th class="p-3.5 pr-5 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="staff-table-body" class="text-xs text-slate-700 divide-y divide-slate-100">
+                                    <tr>
+                                        <td colspan="5" class="p-8 text-center text-slate-400 italic font-medium">
+                                            Loading clinical staff directory...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
+                <!-- Onboard Clinical Staff Form -->
                 <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs space-y-4 h-fit">
                     <div>
                         <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">
@@ -285,7 +328,6 @@
                             <select id="staff-role" required
                                 class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
                                 <option value="Dentist">Dentist</option>
-                                <option value="Receptionist">Receptionist</option>
                                 <option value="Staff">Staff</option>
                             </select>
                         </div>
@@ -443,11 +485,284 @@
                     </p>
                 </div>
             </div>
+            <!-- OPERATING HOURS PANEL -->
+            <div id="panel-hours" class="panel-section hidden space-y-6">
+                <div
+                    class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            Operating Hours & Availability
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-1">Configure your clinic's weekly working schedule and
+                            default
+                            appointment slot durations.</p>
+                    </div>
+
+                    <button id="btn-save-hours" type="button"
+                        class="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-sm transition-all cursor-pointer">
+                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                        </svg>
+                        <span>Save Schedule</span>
+                    </button>
+                </div>
+
+                <form id="form-operating-hours" class="space-y-6">
+
+                    <!-- General Settings: Slot Duration -->
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">General Configuration
+                        </h3>
+                        <div class="max-w-xs">
+                            <label for="slot-duration" class="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Appointment Slot Interval
+                            </label>
+                            <div class="relative">
+                                <select id="slot-duration"
+                                    class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all font-medium">
+                                    <option value="15">15 Minutes</option>
+                                    <option value="20">20 Minutes</option>
+                                    <option value="30" selected>30 Minutes (Recommended)</option>
+                                    <option value="45">45 Minutes</option>
+                                    <option value="60">60 Minutes (1 Hour)</option>
+                                </select>
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-1.5">This determines the length of each selectable
+                                time slot on
+                                the patient booking screen.</p>
+                        </div>
+                    </div>
+
+                    <!-- Weekly Schedule Table -->
+                    <div class="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+                        <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Weekly Business
+                                    Schedule</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">Toggle days off or set start and end times for
+                                    open days.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="divide-y divide-slate-100">
+
+                            <!-- Day Row Template (Repeated for Monday - Sunday) -->
+                            <!-- Monday -->
+                            <div class="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors"
+                                data-day="Monday">
+                                <div class="w-32 flex items-center gap-3">
+                                    <input type="checkbox" id="closed-Monday"
+                                        class="day-closed-checkbox w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
+                                    <label for="closed-Monday"
+                                        class="text-xs font-bold text-slate-800 cursor-pointer">Monday</label>
+                                </div>
+
+                                <div class="day-time-inputs flex items-center gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[11px] font-medium text-slate-400">Open:</span>
+                                        <input type="time"
+                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            value="09:00">
+                                    </div>
+                                    <span class="text-slate-300">—</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[11px] font-medium text-slate-400">Close:</span>
+                                        <input type="time"
+                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            value="17:00">
+                                    </div>
+                                </div>
+
+                                <span
+                                    class="status-badge text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 w-20 text-center">Open</span>
+                            </div>
+
+                            <!-- Tuesday -->
+                            <div class="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors"
+                                data-day="Tuesday">
+                                <div class="w-32 flex items-center gap-3">
+                                    <input type="checkbox" id="closed-Tuesday"
+                                        class="day-closed-checkbox w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
+                                    <label for="closed-Tuesday"
+                                        class="text-xs font-bold text-slate-800 cursor-pointer">Tuesday</label>
+                                </div>
+                                <div class="day-time-inputs flex items-center gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[11px] font-medium text-slate-400">Open:</span>
+                                        <input type="time"
+                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            value="09:00">
+                                    </div>
+                                    <span class="text-slate-300">—</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[11px] font-medium text-slate-400">Close:</span>
+                                        <input type="time"
+                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            value="17:00">
+                                    </div>
+                                </div>
+                                <span
+                                    class="status-badge text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 w-20 text-center">Open</span>
+                            </div>
+
+                            <!-- Wednesday -->
+                            <div class="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors"
+                                data-day="Wednesday">
+                                <div class="w-32 flex items-center gap-3">
+                                    <input type="checkbox" id="closed-Wednesday"
+                                        class="day-closed-checkbox w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
+                                    <label for="closed-Wednesday"
+                                        class="text-xs font-bold text-slate-800 cursor-pointer">Wednesday</label>
+                                </div>
+                                <div class="day-time-inputs flex items-center gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[11px] font-medium text-slate-400">Open:</span>
+                                        <input type="time"
+                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            value="09:00">
+                                    </div>
+                                    <span class="text-slate-300">—</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[11px] font-medium text-slate-400">Close:</span>
+                                        <input type="time"
+                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            value="17:00">
+                                    </div>
+                                </div>
+                                <span
+                                    class="status-badge text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 w-20 text-center">Open</span>
+                            </div>
+
+                            <!-- Thursday -->
+                            <div class="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors"
+                                data-day="Thursday">
+                                <div class="w-32 flex items-center gap-3">
+                                    <input type="checkbox" id="closed-Thursday"
+                                        class="day-closed-checkbox w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
+                                    <label for="closed-Thursday"
+                                        class="text-xs font-bold text-slate-800 cursor-pointer">Thursday</label>
+                                </div>
+                                <div class="day-time-inputs flex items-center gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[11px] font-medium text-slate-400">Open:</span>
+                                        <input type="time"
+                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            value="09:00">
+                                    </div>
+                                    <span class="text-slate-300">—</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[11px] font-medium text-slate-400">Close:</span>
+                                        <input type="time"
+                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            value="17:00">
+                                    </div>
+                                </div>
+                                <span
+                                    class="status-badge text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 w-20 text-center">Open</span>
+                            </div>
+
+                            <!-- Friday -->
+                            <div class="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors"
+                                data-day="Friday">
+                                <div class="w-32 flex items-center gap-3">
+                                    <input type="checkbox" id="closed-Friday"
+                                        class="day-closed-checkbox w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
+                                    <label for="closed-Friday"
+                                        class="text-xs font-bold text-slate-800 cursor-pointer">Friday</label>
+                                </div>
+                                <div class="day-time-inputs flex items-center gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[11px] font-medium text-slate-400">Open:</span>
+                                        <input type="time"
+                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            value="09:00">
+                                    </div>
+                                    <span class="text-slate-300">—</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[11px] font-medium text-slate-400">Close:</span>
+                                        <input type="time"
+                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            value="17:00">
+                                    </div>
+                                </div>
+                                <span
+                                    class="status-badge text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 w-20 text-center">Open</span>
+                            </div>
+
+                            <!-- Saturday -->
+                            <div class="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors"
+                                data-day="Saturday">
+                                <div class="w-32 flex items-center gap-3">
+                                    <input type="checkbox" id="closed-Saturday"
+                                        class="day-closed-checkbox w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
+                                    <label for="closed-Saturday"
+                                        class="text-xs font-bold text-slate-800 cursor-pointer">Saturday</label>
+                                </div>
+                                <div class="day-time-inputs flex items-center gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[11px] font-medium text-slate-400">Open:</span>
+                                        <input type="time"
+                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            value="09:00">
+                                    </div>
+                                    <span class="text-slate-300">—</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[11px] font-medium text-slate-400">Close:</span>
+                                        <input type="time"
+                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            value="14:00">
+                                    </div>
+                                </div>
+                                <span
+                                    class="status-badge text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 w-20 text-center">Open</span>
+                            </div>
+                            <!-- Sunday -->
+                            <div class="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors"
+                                data-day="Sunday">
+                                <div class="w-36 flex items-center gap-3">
+                                    <input type="checkbox" id="closed-Sunday"
+                                        class="day-closed-checkbox w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
+                                    <label for="closed-Sunday"
+                                        class="text-xs font-bold text-slate-800 cursor-pointer select-none">Sunday</label>
+                                </div>
+
+                                <div class="day-time-inputs flex items-center gap-3 transition-opacity duration-200">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[11px] font-medium text-slate-400">Open:</span>
+                                        <input type="time"
+                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            value="09:00">
+                                    </div>
+                                    <span class="text-slate-300">—</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[11px] font-medium text-slate-400">Close:</span>
+                                        <input type="time"
+                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            value="17:00">
+                                    </div>
+                                </div>
+
+                                <span
+                                    class="status-badge text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 w-20 text-center transition-colors">Open</span>
+                            </div>
+
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
     </main>
     <script src="/src/util/nav.js"></script>
     <script src="/src/pages/adminClinicDashboard.js"></script>
     <script src="/src/pages/dentalPricing.js"></script>
+    <script src="/src/util/operatingHours.js"></script>
 </body>
 
 </html>

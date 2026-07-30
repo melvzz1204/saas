@@ -94,12 +94,18 @@ document.addEventListener("DOMContentLoaded", () => {
           dateCell.className += "text-slate-700 hover:bg-slate-200/70";
         }
 
-        // Interactive Click Event Handler
+        // 🎯 THE FIX: Interactive Click Event Handler
         dateCell.addEventListener("click", () => {
           chosenDateStr = iterationDateStr;
+
+          // 1. Update the hidden input
           hiddenDateInput.value = iterationDateStr;
-          filterTimeSlots(iterationDateStr);
-          renderCalendarGrid(); // Refresh layout to sync state highlighting classes
+
+          // 2. WAKE UP booking.js by dispatching the change event!
+          hiddenDateInput.dispatchEvent(new Event("change"));
+
+          // 3. Refresh layout to sync state highlighting classes
+          renderCalendarGrid();
         });
       }
 
@@ -110,93 +116,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // Fire up initialization build process loops
   renderCalendarGrid();
 
-  // 🆕 Prefilter time slots for today on initialization mount
+  // 🆕 Prefetch time slots for today on initialization mount
   const initialYear = immutableToday.getFullYear();
   const initialMonth = String(immutableToday.getMonth() + 1).padStart(2, "0");
   const initialDay = String(immutableToday.getDate()).padStart(2, "0");
-  filterTimeSlots(`${initialYear}-${initialMonth}-${initialDay}`);
+  const initialDateStr = `${initialYear}-${initialMonth}-${initialDay}`;
+
+  chosenDateStr = initialDateStr;
+  hiddenDateInput.value = initialDateStr;
+
+  // Trigger the fetch for the initial load!
+  hiddenDateInput.dispatchEvent(new Event("change"));
 });
-
-function filterTimeSlots(selectedDateStr) {
-  const timeSelect = document.getElementById("booking-time");
-  const timeContainer = document.getElementById("time-select-container");
-  const afterHoursNotice = document.getElementById("after-hours-notice");
-  const submitBtn = document.getElementById("book-btn");
-
-  if (!timeSelect || !timeContainer || !afterHoursNotice) return;
-
-  const options = timeSelect.options;
-
-  // 📆 Dynamically calculate today's local date string (YYYY-MM-DD)
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-  const immutableTodayStr = `${year}-${month}-${day}`;
-
-  const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
-
-  let validSlotsAvailable = false;
-
-  // 1. Loop through options to flag validity if date is today
-  for (let i = 0; i < options.length; i++) {
-    const option = options[i];
-    const dataTime = option.getAttribute("data-time");
-    if (!dataTime) continue;
-
-    const [slotHour, slotMinute] = dataTime.split(":").map(Number);
-
-    if (selectedDateStr === immutableTodayStr) {
-      if (
-        currentHour > slotHour ||
-        (currentHour === slotHour && currentMinute >= slotMinute)
-      ) {
-        option.style.display = "none";
-        option.disabled = true;
-      } else {
-        option.style.display = "block";
-        option.disabled = false;
-        validSlotsAvailable = true;
-      }
-    } else {
-      option.style.display = "block";
-      option.disabled = false;
-      validSlotsAvailable = true;
-    }
-  }
-
-  // 2. 🛡️ AFTER-HOURS SWITCH NODE
-  if (
-    selectedDateStr === immutableTodayStr &&
-    (currentHour >= 17 || !validSlotsAvailable)
-  ) {
-    timeContainer.classList.add("hidden");
-    afterHoursNotice.classList.remove("hidden");
-
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Please Select a Valid Date";
-      submitBtn.className =
-        "w-full bg-slate-200 text-slate-400 text-xs font-bold py-3.5 rounded-xl cursor-not-allowed uppercase tracking-wider mt-2 transition-all";
-    }
-  } else {
-    timeContainer.classList.remove("hidden");
-    afterHoursNotice.classList.add("hidden");
-
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Submit Booking Request";
-      submitBtn.className =
-        "w-full bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold py-3.5 rounded-xl shadow-lg shadow-teal-900/10 transition-all uppercase tracking-wider mt-2 cursor-pointer active:scale-[0.99]";
-    }
-
-    for (let i = 0; i < options.length; i++) {
-      if (!options[i].disabled && options[i].value !== "") {
-        timeSelect.selectedIndex = i;
-        break;
-      }
-    }
-  }
-}

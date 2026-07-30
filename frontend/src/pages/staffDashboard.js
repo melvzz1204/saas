@@ -1,5 +1,11 @@
 const API_BASE_URL = "http://localhost:5000";
 
+const token = localStorage.getItem("token");
+if (!token) {
+  console.warn("🛡️ No active session found. Redirecting to login.");
+  window.location.replace("/staffLogin.html");
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   // --- 1. DOM Elements ---
   const clinicTitle = document.getElementById("clinic-branch-title");
@@ -86,12 +92,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const dentistDropdown = document.getElementById("modal-dentist-dropdown");
     if (!dentistDropdown) return;
 
-    // 1. Grab the current clinic scope identifier from storage
     const clinicName = localStorage.getItem("clinicName");
-    const clinicId = localStorage.getItem("clinicId"); // Use clinicId instead if your backend tracks IDs!
+    const clinicId = localStorage.getItem("clinicId");
+    const rawToken = localStorage.getItem("token");
+
+    // 1. Clean the token of any accidental stringified quotes
+    const token = rawToken ? rawToken.replace(/['"]+/g, "") : "";
 
     try {
-      // 2. Pass the clinic identifier into your query parameters!
       let url = `${API_BASE_URL}/api/v1/staff?role=dentist`;
       if (clinicId) {
         url += `&clinicId=${clinicId}`;
@@ -102,13 +110,25 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch(url, {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          "x-clinic-id": clinicId || "", // 👈 CRITICAL: Backend middleware likely requires this!
         },
       });
 
-      if (!response.ok)
-        throw new Error("Failed to populate operator registry lists.");
+      // 2. If the backend rejects the request, parse the exact error message
+      if (!response.ok) {
+        let serverError = "Unknown backend error";
+        try {
+          const errJson = await response.json();
+          serverError = errJson.message || JSON.stringify(errJson);
+        } catch {
+          serverError = await response.text();
+        }
+        throw new Error(
+          `Failed to populate operator registry lists. Server says: ${serverError}`,
+        );
+      }
 
       const data = await response.json();
       const dentists =
@@ -195,16 +215,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function fetchDailyQueue() {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/v1/appointments/today`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
+      const clinicId = localStorage.getItem("clinicId");
+      let url = `${API_BASE_URL}/api/v1/appointments/today`;
+
+      // Append clinicId as a query parameter if it exists
+      if (clinicId) {
+        url += `?clinicId=${clinicId}`;
+      }
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+          "x-clinic-id": clinicId || "", // Also send it as a header just in case!
         },
-      );
+      });
 
       if (!response.ok)
         throw new Error("Could not fetch daily operations roster.");
@@ -217,7 +243,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       console.error("Board sync failed:", err);
       if (colWaiting) {
-        colWaiting.innerHTML = `<p class="text-xs text-rose-500 font-bold p-4">⚠️ Sync connection lost.</p>`;
+        colWaiting.innerHTML = `<p class="text-xs text-rose-500 font-bold p-4">⚠️ Sync connection lost. Check login session.</p>`;
       }
     }
   }
@@ -697,6 +723,10 @@ document.addEventListener("DOMContentLoaded", () => {
     nextStatus,
     assignedDentistId = null,
   ) {
+    const rawToken = localStorage.getItem("token");
+    const token = rawToken ? rawToken.replace(/['"]+/g, "") : "";
+    const clinicId = localStorage.getItem("clinicId") || "";
+
     try {
       const payload = { status: nextStatus };
       if (assignedDentistId) {
@@ -708,15 +738,19 @@ document.addEventListener("DOMContentLoaded", () => {
         {
           method: "PATCH",
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
+            "x-clinic-id": clinicId, // 👈 Required tenant context header
           },
           body: JSON.stringify(payload),
         },
       );
 
-      if (!response.ok)
-        throw new Error("Could not transform system data record status.");
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || "Could not transform status.");
+      }
+
       await fetchDailyQueue();
     } catch (err) {
       alert(`Network Sync Error: ${err.message}`);
@@ -763,14 +797,20 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // 1. Safely extract token and clinic ID
+    const rawToken = localStorage.getItem("token");
+    const token = rawToken ? rawToken.replace(/['"]+/g, "") : "";
+    const clinicId = localStorage.getItem("clinicId") || "";
+
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/v1/appointments/settle-payment`,
         {
           method: "PATCH",
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
+            "x-clinic-id": clinicId, // 👈 REQUIRED: Tenant context header
           },
           body: JSON.stringify({
             appointmentId: appIdInput.value,
@@ -795,20 +835,35 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   window.executeLobbyCheckIn = async function (appointmentId) {
+    const rawToken = localStorage.getItem("token");
+    const token = rawToken ? rawToken.replace(/['"]+/g, "") : "";
+    const clinicId = localStorage.getItem("clinicId") || "";
+
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/v1/appointments/${appointmentId}/status`,
         {
           method: "PATCH",
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
+            "x-clinic-id": clinicId, // 👈 Required tenant context header
           },
           body: JSON.stringify({ status: "checked-in" }),
         },
       );
 
-      if (!response.ok) throw new Error("Failed to finalize check-in.");
+      if (!response.ok) {
+        let serverError = "Failed to finalize check-in.";
+        try {
+          const errJson = await response.json();
+          serverError = errJson.message || serverError;
+        } catch {
+          serverError = await response.text();
+        }
+        throw new Error(serverError);
+      }
+
       await fetchDailyQueue();
     } catch (err) {
       alert(`Check-in pipeline failure: ${err.message}`);
@@ -908,9 +963,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   window.activeCheckoutAppointmentId = null;
   function bindCheckoutModal() {
-    const checkoutModal = document.getElementById("checkout-modal"); // Update this ID if your modal has a different ID
-    const btnCloseCheckout = document.getElementById("btn-close-checkout"); // The cancel/close button
-    const btnConfirmCheckout = document.getElementById("btn-confirm-checkout"); // The submit/confirm button
+    const checkoutModal = document.getElementById("checkout-modal");
+    const btnCloseCheckout = document.getElementById("btn-close-checkout");
+    const btnConfirmCheckout = document.getElementById("btn-confirm-checkout");
     const paymentChannelSelect = document.getElementById(
       "modal-checkout-method",
     );
@@ -936,23 +991,27 @@ document.addEventListener("DOMContentLoaded", () => {
           ? paymentChannelSelect.value
           : "Cash";
 
+        // 1. Safely extract token and clinic ID
+        const rawToken = localStorage.getItem("token");
+        const token = rawToken ? rawToken.replace(/['"]+/g, "") : "";
+        const clinicId = localStorage.getItem("clinicId") || "";
+
         try {
           btnConfirmCheckout.disabled = true;
           btnConfirmCheckout.innerHTML = "Processing... ⏳";
 
-          const token = localStorage.getItem("token");
-
-          // Adjust the URL if your backend uses a different route for payments/checkout
+          // 2. Pass x-clinic-id in the headers
           const response = await fetch(
-            `http://localhost:5000/api/v1/appointments/${window.activeCheckoutAppointmentId}/checkout`,
+            `${API_BASE_URL}/api/v1/appointments/${window.activeCheckoutAppointmentId}/checkout`,
             {
               method: "PATCH",
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
+                "x-clinic-id": clinicId, // 👈 REQUIRED: Tenant context header
               },
               body: JSON.stringify({
-                status: "checked-out", // Or "completed" depending on your backend schema
+                status: "checked-out",
                 paymentMethod: selectedMethod,
               }),
             },
@@ -970,6 +1029,8 @@ document.addEventListener("DOMContentLoaded", () => {
           // Refresh the kanban board to move the card to the Checked Out column
           if (typeof window.fetchDailyQueue === "function") {
             await window.fetchDailyQueue();
+          } else if (typeof fetchDailyQueue === "function") {
+            await fetchDailyQueue();
           }
         } catch (err) {
           alert(`Billing Error: ${err.message}`);

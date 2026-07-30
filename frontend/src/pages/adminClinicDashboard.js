@@ -1,4 +1,4 @@
-// src/pages/adminDashboard.js
+// src/pages/adminClinicDashboard.js
 
 const token = localStorage.getItem("token");
 const userData = JSON.parse(localStorage.getItem("user") || "null");
@@ -50,9 +50,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 4. Data Refresh / Synchronization Click Listener
-  const refreshBtn = document.getElementById("refresh-appointments");
-  if (refreshBtn) refreshBtn.addEventListener("click", fetchDashboardData);
+  // 4. Data Refresh / Synchronization Click Listeners
+  const refreshAppointmentsBtn = document.getElementById(
+    "refresh-appointments",
+  );
+  if (refreshAppointmentsBtn) {
+    refreshAppointmentsBtn.addEventListener("click", fetchDashboardData);
+  }
+
+  const refreshStaffBtn = document.getElementById("refresh-staff");
+  if (refreshStaffBtn) {
+    refreshStaffBtn.addEventListener("click", fetchDashboardData);
+  }
 
   // 5. Staff Onboarding Form Submit Binder
   const staffForm = document.getElementById("add-staff-form");
@@ -132,9 +141,12 @@ async function fetchDashboardData() {
       renderAppointmentsTable(appts.data);
     }
 
-    const kpiStaffEl = document.getElementById("kpi-total-staff");
-    if (staff.success && kpiStaffEl) {
-      kpiStaffEl.textContent = staff.data.length;
+    if (staff.success) {
+      const kpiStaffEl = document.getElementById("kpi-total-staff");
+      if (kpiStaffEl) kpiStaffEl.textContent = staff.data.length;
+
+      // Render staff rows into the active staff directory table
+      renderStaffTable(staff.data);
     }
   } catch (err) {
     console.error("Workspace data synch failure:", err);
@@ -277,7 +289,7 @@ async function modifyAppointmentStatus(appointmentId, newStatus) {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
-          "x-clinic-id": clinicId, // 👈 Added the missing tenant context header
+          "x-clinic-id": clinicId,
         },
         body: JSON.stringify({ status: newStatus }),
       },
@@ -370,6 +382,87 @@ function handleLogout() {
   localStorage.clear();
   window.location.href = "/clinicLogin.html";
 }
+
+// Render Staff Array into the Active Staff Directory Table
+function renderStaffTable(staffList) {
+  const tbody = document.getElementById("staff-table-body");
+  if (!tbody) return;
+
+  if (!staffList || staffList.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="p-8 text-center text-slate-400 italic font-medium">
+          No active staff members registered for this clinic context.
+        </td>
+      </tr>`;
+    return;
+  }
+
+  tbody.innerHTML = staffList
+    .map((member) => {
+      const displayName =
+        member.fullName ||
+        member.name ||
+        `${member.firstName || ""} ${member.lastName || ""}`.trim() ||
+        "Staff Member";
+
+      return `
+    <tr class="hover:bg-slate-50/50 transition-colors">
+      <td class="p-3.5 pl-5">
+        <div class="font-bold text-slate-900">${displayName}</div>
+      </td>
+      <td class="p-3.5">
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+          ${member.role || "Staff"}
+        </span>
+      </td>
+      <td class="p-3.5 text-slate-600 font-medium">
+        ${member.specialization || "General Dentistry"}
+      </td>
+      <td class="p-3.5 text-slate-600">
+        <div>${member.email || "—"}</div>
+        <div class="text-[10px] text-slate-400">${member.phone || "N/A"}</div>
+      </td>
+      <td class="p-3.5 pr-5 text-right">
+        <button onclick="removeStaffMember('${member._id}')" class="text-[11px] text-rose-600 hover:text-rose-800 font-bold uppercase tracking-wider cursor-pointer">
+          Deactivate
+        </button>
+      </td>
+    </tr>`;
+    })
+    .join("");
+}
+
+// Staff Deactivation Handler
+async function removeStaffMember(staffId) {
+  if (!confirm("Are you sure you want to deactivate this staff member?"))
+    return;
+
+  try {
+    const response = await fetch(
+      `http://localhost:5000/api/v1/admin/staff/${staffId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "x-clinic-id": clinicId,
+        },
+      },
+    );
+
+    const resData = await response.json();
+    if (resData.success || response.ok) {
+      fetchDashboardData();
+    } else {
+      alert(
+        `Deactivation error: ${resData.message || "Unable to remove staff member."}`,
+      );
+    }
+  } catch (err) {
+    console.error("Failed to deactivate staff member:", err);
+  }
+}
+window.removeStaffMember = removeStaffMember;
 
 // Real-time Event Subscription Layout
 const socket = io("http://localhost:5000", {
