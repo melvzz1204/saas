@@ -1,4 +1,5 @@
 const API_PRICING_URL = "http://localhost:5000/api/v1/dental-price/services";
+const API_BASE_URL = "http://localhost:5000";
 const token = localStorage.getItem("token");
 const userJson = localStorage.getItem("user");
 
@@ -541,4 +542,124 @@ const socket = io("http://localhost:5000", {
 
 socket.on("pipeline-update", async () => {
   await loadPatientBookings();
+});
+async function fetchMyClinicalNotes() {
+  const rawToken = localStorage.getItem("token");
+  const token = rawToken ? rawToken.replace(/['"]+/g, "") : "";
+  const userData = JSON.parse(localStorage.getItem("user") || "{}");
+  const clinicId = localStorage.getItem("clinicId") || userData.clinicId || "";
+
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/clinical-notes/my-notes`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "x-clinic-id": clinicId,
+        },
+      },
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to fetch your clinical records.");
+    }
+
+    return data.data || [];
+  } catch (error) {
+    console.error("❌ Error fetching my notes:", error);
+    return [];
+  }
+}
+
+// 2. Render the notes into the Patient Dashboard UI
+function renderPatientDashboardNotes(notes) {
+  const container = document.getElementById("my-clinical-records-container");
+  if (!container) return;
+
+  if (!notes || notes.length === 0) {
+    container.innerHTML = `
+      <div class="flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white">
+        <span class="text-3xl mb-3">🗂️</span>
+        <h3 class="text-sm font-bold text-slate-600 uppercase tracking-wider">No Records Found</h3>
+        <p class="text-xs text-slate-400 mt-1">You do not have any past clinical notes or treatments on file yet.</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = notes
+    .map((note) => {
+      // Format the date
+      const dateObj = new Date(note.createdAt);
+      const formattedDate = dateObj.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+
+      // Safely get the dentist's name
+      const dentistName = note.dentistId
+        ? `Dr. ${note.dentistId.lastName || note.dentistId.firstName}`
+        : "Clinical Provider";
+
+      // Safely get specialization
+      const specialization =
+        note.dentistId?.specialization || "General Dentistry";
+
+      return `
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm mb-4 hover:shadow-md transition-shadow">
+        <div class="flex justify-between items-start border-b border-slate-100 pb-3 mb-3">
+          <div>
+            <span class="text-[10px] font-black text-teal-600 bg-teal-50 border border-teal-200 px-2 py-1 rounded-md uppercase tracking-wider">
+              ${formattedDate}
+            </span>
+            <h4 class="text-sm font-bold text-slate-800 mt-2">Treatment Record</h4>
+          </div>
+          <div class="text-right">
+            <p class="text-xs font-bold text-slate-700">${dentistName}</p>
+            <p class="text-[10px] font-medium text-slate-400">${specialization}</p>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Chief Complaint</span>
+            <p class="text-xs font-medium text-slate-700">${note.chiefComplaint || "N/A"}</p>
+          </div>
+
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Treatment Rendered</span>
+            <p class="text-xs font-medium text-slate-700">${note.treatmentRendered || "N/A"}</p>
+          </div>
+
+          ${
+            note.recommendations
+              ? `
+            <div class="bg-sky-50 p-3 rounded-xl border border-sky-100">
+              <span class="block text-[10px] font-black text-sky-600 uppercase tracking-wider mb-1">Doctor's Recommendations</span>
+              <p class="text-xs font-medium text-sky-900 italic">${note.recommendations}</p>
+            </div>
+          `
+              : ""
+          }
+        </div>
+      </div>
+    `;
+    })
+    .join("");
+}
+document.addEventListener("DOMContentLoaded", async () => {
+  // Show loading state first
+  const container = document.getElementById("my-clinical-records-container");
+  if (container) {
+    container.innerHTML = `<p class="text-xs text-slate-400 text-center py-10 font-bold animate-pulse">Syncing your clinical records...</p>`;
+  }
+
+  // Fetch and render
+  const myNotes = await fetchMyClinicalNotes();
+  renderPatientDashboardNotes(myNotes);
 });

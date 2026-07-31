@@ -10,6 +10,7 @@ import dentalServicePrice from "./routes/dentalServicePriceRoutes.js";
 import initAppointmentCleanupJob from "./utils/appointmentCleanup.js";
 import treatmentRoutes from "./routes/treatmentRoutes.js";
 import saasAdminRoutes from "./routes/saasAdminRoutes.js";
+import clinicalNoteRoutes from "./routes/clinicalNoteRoutes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -51,6 +52,7 @@ app.use("/api/v1/staff", staffRoutes);
 app.use("/api/v1/treatments", treatmentRoutes);
 app.use("/api/v1/dental-price", dentalServicePrice);
 app.use("/api/v1/saas-admin", saasAdminRoutes);
+app.use("/api/v1/clinical-notes", clinicalNoteRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "Server is running smoothly" });

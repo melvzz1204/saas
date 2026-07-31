@@ -33,6 +33,11 @@ const clinicSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    // Add this block right here:
+    slotDurationMinutes: {
+      type: Number,
+      default: 30,
+    },
     operatingHours: [
       {
         day: {

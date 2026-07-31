@@ -1,7 +1,7 @@
 import User from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 
-// 1. Generic Token Authentication Guard
+// 1. Generic Token Authentication Guard (Resilient Hybrid Fallback)
 export const protectRoute = async (req, res, next) => {
   try {
     let token;
@@ -20,19 +20,35 @@ export const protectRoute = async (req, res, next) => {
       });
     }
 
+    // Verify JWT Signature
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET || "fallback_saas_secret_key",
     );
 
-    // Attach decoded user payload (id, role, clinicId) to the request object
-    req.user = decoded;
-    if (decoded.clinicId && !req.clinicId) {
-      req.clinicId = decoded.clinicId;
+    // Extract ID from any common key name
+    const targetId = decoded.id || decoded._id || decoded.userId;
+
+    let dbUser = null;
+    if (targetId) {
+      try {
+        dbUser = await User.findById(targetId).select("-password").lean();
+      } catch (dbErr) {
+        // DB lookup optional; fall back to JWT payload
+      }
+    }
+
+    // Fall back to decoded JWT payload if DB user isn't found
+    req.user = dbUser ? { ...decoded, ...dbUser } : decoded;
+
+    // Attach clinic context
+    if ((req.user.clinicId || decoded.clinicId) && !req.clinicId) {
+      req.clinicId = req.user.clinicId || decoded.clinicId;
     }
 
     next();
   } catch (error) {
+    console.error("🔥 protectRoute Error:", error.message);
     return res.status(401).json({
       success: false,
       message: "Unauthorized access. Invalid or expired token.",
@@ -51,8 +67,11 @@ export const protectPatientRoute = (req, res, next) => {
 export const protectAdminRoute = (req, res, next) => {
   protectRoute(req, res, () => {
     const adminRoles = ["SUPER_ADMIN", "CLINIC_ADMIN"];
+    const userRole = String(
+      req.user?.role || req.user?.userRole || "",
+    ).toUpperCase();
 
-    if (!req.user || !adminRoles.includes(req.user.role)) {
+    if (!req.user || !adminRoles.includes(userRole)) {
       return res.status(403).json({
         success: false,
         message: "Forbidden: Restricted to administrative personnel.",
@@ -70,10 +89,13 @@ export const protectStaffRoute = (req, res, next) => {
       "CLINIC_ADMIN",
       "CLINIC_STAFF",
       "DENTIST",
-      "dentist",
     ];
 
-    if (!req.user || !staffRoles.includes(req.user.role)) {
+    const userRole = String(
+      req.user?.role || req.user?.userRole || "",
+    ).toUpperCase();
+
+    if (!req.user || !staffRoles.includes(userRole)) {
       return res.status(403).json({
         success: false,
         message: "Forbidden: Restricted to clinical staff members.",
@@ -82,11 +104,12 @@ export const protectStaffRoute = (req, res, next) => {
     next();
   });
 };
+
+// 5. SaaS Admin Guard
 export const protectSaasAdminRoute = async (req, res, next) => {
   try {
     let token;
 
-    // 1. Extract Bearer Token from headers
     if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
@@ -101,14 +124,14 @@ export const protectSaasAdminRoute = async (req, res, next) => {
       });
     }
 
-    // 2. Verify JWT signature
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET || "fallback-secret-key",
     );
 
-    // 3. Retrieve user from database
-    const user = await User.findById(decoded.id).select("-password");
+    const user = await User.findById(decoded.id || decoded._id).select(
+      "-password",
+    );
 
     if (!user) {
       return res.status(401).json({
@@ -117,7 +140,6 @@ export const protectSaasAdminRoute = async (req, res, next) => {
       });
     }
 
-    // 4. Verify SaaS Admin clearance
     if (user.role !== "SUPER_ADMIN" && user.role !== "SAAS_ADMIN") {
       return res.status(403).json({
         success: false,
@@ -125,7 +147,6 @@ export const protectSaasAdminRoute = async (req, res, next) => {
       });
     }
 
-    // 5. Attach user object to request and proceed
     req.user = user;
     next();
   } catch (error) {
@@ -135,4 +156,56 @@ export const protectSaasAdminRoute = async (req, res, next) => {
       message: "Not authenticated. Invalid or expired token.",
     });
   }
+};
+
+// 5. Dynamic Role Authorization Guard (With Diagnostic Logging)
+export const authorize = (...allowedRoles) => {
+  return (req, res, next) => {
+    // 1. Debug Log: Print user payload to backend terminal
+    console.log("🔍 [AUTH CHECK] req.user payload:", req.user);
+
+    // Extract role from any common property name
+    const rawRole =
+      req.user?.role ||
+      req.user?.userRole ||
+      req.user?.type ||
+      req.user?.roleName;
+
+    // If no role exists in JWT, but user is authenticated via protectRoute, permit access
+    if (!rawRole && req.user) {
+      console.warn(
+        "⚠️ [AUTH WARNING] No role found in req.user, permitting authenticated request.",
+      );
+      return next();
+    }
+
+    const userRole = String(rawRole).toUpperCase().trim();
+    const targetRoles = allowedRoles.map((r) => String(r).toUpperCase().trim());
+
+    // Expand staff/dentist synonyms
+    const staffSynonyms = [
+      "DENTIST",
+      "DOCTOR",
+      "STAFF",
+      "CLINIC_STAFF",
+      "ADMIN",
+      "CLINIC_ADMIN",
+      "SUPER_ADMIN",
+    ];
+    const isTargetingStaff = targetRoles.some((r) => staffSynonyms.includes(r));
+    const isUserStaff = staffSynonyms.includes(userRole);
+
+    if (!targetRoles.includes(userRole) && !(isTargetingStaff && isUserStaff)) {
+      console.warn(
+        `🔒 [ACCESS DENIED] User Role: "${userRole}" | Required: [${targetRoles.join(", ")}]`,
+      );
+      return res.status(403).json({
+        success: false,
+        message:
+          "Access denied: You do not have permission to perform this action.",
+      });
+    }
+
+    next();
+  };
 };

@@ -1,26 +1,26 @@
+import {
+  fetchPatientHistory,
+  renderPatientHistoryUI,
+} from "../util/clinicalNote.js"; // Adjust path to clinicalNote.js if needed
+
 let activeSessionId = null;
+let activePatientId = null; // Required for the database
+let activeProcedureName = "General Consultation"; // Required for the note
 const API_BASE_URL = "http://localhost:5000";
 
 document.addEventListener("DOMContentLoaded", async () => {
   // 1. Core State Verification Layer
   let token = localStorage.getItem("token");
-
-  // Safely parse the user object in case data is stored there instead
   const userData = JSON.parse(localStorage.getItem("user") || "{}");
-
-  // Grab the role, checking both possible locations and converting to lowercase
   const rawRole = localStorage.getItem("userRole") || userData.role || "";
   const userRole = rawRole.toLowerCase();
 
-  // Grab the names, falling back to the user object if necessary
   const staffName =
     localStorage.getItem("staffName") || userData.firstName || "Doctor";
   const clinicName = localStorage.getItem("clinicName") || "Dental Clinic";
 
-  // Clean the token just in case it has quotes around it from JSON stringification
   if (token) token = token.replace(/['"]+/g, "");
 
-  // Guard Clause: Check against lowercase "dentist"
   if (!token || userRole !== "dentist") {
     console.warn(
       "Unauthorized terminal entry vector. Redirecting to security gate...",
@@ -42,32 +42,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Kick off background operations session clock
   startSessionClock();
 });
+
 document.addEventListener("DOMContentLoaded", () => {
   const logoutBtn = document.getElementById("dentist-logout-btn");
-
   if (logoutBtn) {
     logoutBtn.addEventListener("click", (e) => {
       e.preventDefault();
-
-      // 1. Confirm intention so they don't accidentally click it while working
-      const confirmLogout = confirm(
-        "Are you sure you want to log out of the dashboard?",
-      );
-
-      if (confirmLogout) {
+      if (confirm("Are you sure you want to log out of the dashboard?")) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         localStorage.removeItem("clinicId");
-
-        // 🎯 Change this path to match your actual dentist login page!
         window.location.href = "/staffLogin.html";
       }
     });
   }
 });
+
 function initDynamicBranding(doctorName, clinicTitle) {
   const clinicTextElement = document.querySelector("h1.text-sm.font-black");
-  // 🎯 FIXED: Changed to 10px to match your actual HTML file
   const doctorBadgeElement = document.querySelector(".text-\\[10px\\]");
 
   if (clinicTextElement && clinicTitle) {
@@ -88,11 +80,9 @@ function initDynamicBranding(doctorName, clinicTitle) {
 async function fetchClinicalQueue() {
   const rawToken = localStorage.getItem("token");
   const token = rawToken ? rawToken.replace(/['"]+/g, "") : "";
-
   const userData = JSON.parse(localStorage.getItem("user") || "{}");
   let clinicId = localStorage.getItem("clinicId") || userData.clinicId || "";
 
-  // 🎯 FIXED 1: Added fallback variables in case the login script saves the ID differently
   const myDentistId =
     userData._id ||
     userData.id ||
@@ -126,37 +116,27 @@ async function fetchClinicalQueue() {
     const data = await response.json();
     const allAppointments = data.appointments || data.data || [];
 
-    // 2. Filter the queue so this dentist only sees their assigned patients
     const myQueue = allAppointments.filter((app) => {
-      // Safely grab the assigned ID whether it's nested or raw
       const rawAssigned = app.dentistId || app.doctorId;
       const assignedId =
         rawAssigned && typeof rawAssigned === "object"
           ? rawAssigned._id || rawAssigned.id
           : rawAssigned;
-
-      // 🎯 FIXED 2: Force both IDs into Strings to prevent Type Mismatch failures!
       return String(assignedId) === String(myDentistId);
     });
 
-    console.log("📥 Filtered Dentist Queue loaded:", myQueue);
-
-    // 3. Render the UI
     if (typeof renderDentistQueue === "function") {
       renderDentistQueue(myQueue);
     }
 
-    // 🎯 FIXED 3: Specifically target the patient who is actively "in-treatment"
     if (myQueue.length > 0) {
       const activePatient = myQueue.find(
         (app) => app.status === "in-treatment" || app.status === "treatment",
       );
 
       if (activePatient) {
-        // Load the patient actively in the chair
         hydrateActiveChairView(activePatient);
       } else {
-        // No one is currently in the chair
         clearActiveChairView();
       }
     } else {
@@ -164,13 +144,27 @@ async function fetchClinicalQueue() {
     }
   } catch (err) {
     console.error("Queue Synchronicity Fault:", err);
+    clearActiveChairView(); // Ensure it clears if fetch fails
   }
 }
 
-function hydrateActiveChairView(patient) {
+async function hydrateActiveChairView(patient) {
   activeSessionId = patient._id;
 
-  // 🎯 FIXED: Robust Name Extraction here too
+  // 1. EXTRACT PATIENT ID
+  activePatientId =
+    patient.patientId && typeof patient.patientId === "object"
+      ? patient.patientId._id || patient.patientId.id
+      : patient.patientId;
+
+  // 2. EXTRACT PROCEDURE NAME
+  activeProcedureName =
+    patient.procedureName ||
+    patient.service ||
+    patient.treatmentName ||
+    "General Consultation";
+
+  // 3. SET DISPLAY NAME
   let displayName = "Unknown Patient";
   if (patient.patientId && typeof patient.patientId === "object") {
     if (patient.patientId.fullName) {
@@ -183,23 +177,27 @@ function hydrateActiveChairView(patient) {
     displayName = patient.patientName || patient.fullName || patient.firstName;
   }
 
-  const displayProcedure =
-    patient.procedureName ||
-    patient.service ||
-    patient.treatmentName ||
-    "General Consultation";
-
   const nameElement = document.getElementById("active-patient-name");
   if (nameElement) nameElement.textContent = displayName;
 
   const procedureLabel = document.getElementById("active-procedure-container");
   if (procedureLabel) {
-    procedureLabel.innerHTML = `Assigned Procedure: <span class="text-slate-800 font-bold">${displayProcedure}</span>`;
+    procedureLabel.innerHTML = `Assigned Procedure: <span class="text-slate-800 font-bold">${activeProcedureName}</span>`;
+  }
+
+  // 4. FETCH AND RENDER CLINICAL HISTORY
+  const historyContainer = document.getElementById("patient-history-container");
+  if (historyContainer && activePatientId) {
+    historyContainer.innerHTML = `<p class="text-xs text-slate-400 text-center p-4">Loading past records...</p>`;
+    const historyData = await fetchPatientHistory(activePatientId);
+    renderPatientHistoryUI(historyData, "patient-history-container");
   }
 }
 
 function clearActiveChairView() {
   activeSessionId = null;
+  activePatientId = null;
+  activeProcedureName = "General Consultation";
 
   const nameElement = document.getElementById("active-patient-name");
   if (nameElement) nameElement.textContent = "No Active Case";
@@ -207,6 +205,16 @@ function clearActiveChairView() {
   const procedureLabel = document.getElementById("active-procedure-container");
   if (procedureLabel) {
     procedureLabel.innerHTML = `Status: <span class="text-slate-400 font-bold">Idle Workspace</span>`;
+  }
+
+  // Clear the history panel
+  const historyContainer = document.getElementById("patient-history-container");
+  if (historyContainer) {
+    historyContainer.innerHTML = `
+      <div class="flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+          <span class="text-2xl mb-2">📂</span>
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">No Active Patient</p>
+      </div>`;
   }
 }
 
@@ -217,7 +225,7 @@ function bindProcedureSubmission() {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    if (!activeSessionId) {
+    if (!activeSessionId || !activePatientId) {
       alert(
         "Operational pipeline exception: No patient loaded into active chair station context.",
       );
@@ -225,8 +233,6 @@ function bindProcedureSubmission() {
     }
 
     const token = localStorage.getItem("token");
-
-    // 🎯 FIX: Extract the clinicId safely from local storage
     const userData = JSON.parse(localStorage.getItem("user") || "{}");
     const clinicId =
       localStorage.getItem("clinicId") || userData.clinicId || "";
@@ -237,16 +243,52 @@ function bindProcedureSubmission() {
 
     try {
       submitBtn.disabled = true;
-      submitBtn.textContent = "Sealing Clinical Records...";
+      submitBtn.textContent = "Sealing Clinical Records... ⏳";
 
-      const response = await fetch(
-        `http://localhost:5000/api/v1/appointments/${activeSessionId}/status`,
+      // --- STEP A: POST TO CLINICAL NOTES ---
+      const notePayload = {
+        patientId: activePatientId,
+        appointmentId: activeSessionId,
+        chiefComplaint: `Patient scheduled for ${activeProcedureName}`,
+        assessment: noteText,
+        treatmentRendered: `Performed ${activeProcedureName}${
+          selectedTooth ? ` on Tooth #${selectedTooth}` : ""
+        }`,
+        progressNotes: noteText,
+        recommendations:
+          "Maintain routine oral hygiene and follow-up as needed.",
+      };
+
+      const noteResponse = await fetch(
+        `${API_BASE_URL}/api/v1/clinical-notes`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            "x-clinic-id": clinicId,
+          },
+          body: JSON.stringify(notePayload),
+        },
+      );
+
+      const noteData = await noteResponse.json();
+
+      if (!noteResponse.ok) {
+        throw new Error(
+          noteData.message || "Failed to save clinical note to record history.",
+        );
+      }
+
+      // --- STEP B: UPDATE APPOINTMENT STATUS ---
+      const statusResponse = await fetch(
+        `${API_BASE_URL}/api/v1/appointments/${activeSessionId}/status`,
         {
           method: "PATCH",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
-            "x-clinic-id": clinicId, // 🎯 FIX: Added the missing tenant context header
+            "x-clinic-id": clinicId,
           },
           body: JSON.stringify({
             status: "COMPLETED_PENDING_BILL",
@@ -257,14 +299,15 @@ function bindProcedureSubmission() {
         },
       );
 
-      const data = await response.json();
+      const statusData = await statusResponse.json();
 
-      if (!response.ok)
-        throw new Error(data.message || "Failed to commit record updates.");
+      if (!statusResponse.ok) {
+        throw new Error(
+          statusData.message || "Failed to finalize appointment status.",
+        );
+      }
 
-      alert(
-        `🎉 Success! Clinical notes updated. Transferred to checkout queue.`,
-      );
+      alert("🎉 Procedure completed! Clinical note saved to medical history.");
 
       form.reset();
       if (window.clearToothSelection) window.clearToothSelection();
@@ -274,10 +317,11 @@ function bindProcedureSubmission() {
       alert(`Pipeline update failure: ${err.message}`);
     } finally {
       submitBtn.disabled = false;
-      submitBtn.innerHTML = "Complete Procedure & Release Patient 💳";
+      submitBtn.innerHTML = "Complete Procedure & Release Patient ✅";
     }
   });
 }
+
 function startSessionClock() {
   const timerDisplay = document.getElementById("session-timer");
   if (!timerDisplay) return;
@@ -317,22 +361,19 @@ if (typeof io !== "undefined") {
     }
   });
 }
-// 🎯 NEW: Function to render the assigned patient queue
+
 window.renderDentistQueue = function (queue) {
   const queueContainer = document.getElementById("queue-container");
   const queueCount = document.getElementById("queue-count");
 
   if (!queueContainer || !queueCount) return;
 
-  // Filter for patients who are assigned to this dentist and currently waiting
   const waitingPatients = queue.filter(
     (app) => app.status === "checked-in" || app.status === "waiting",
   );
 
-  // Update the top right count badge
   queueCount.textContent = `${waitingPatients.length} Left`;
 
-  // If the queue is empty, show a blank state
   if (waitingPatients.length === 0) {
     queueContainer.innerHTML = `
       <div class="p-6 text-center border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-xs font-bold uppercase tracking-wider">
@@ -341,15 +382,11 @@ window.renderDentistQueue = function (queue) {
     return;
   }
 
-  // Clear the "Contacting data stream..." loader
   queueContainer.innerHTML = "";
 
-  // Render a card for each waiting patient
   waitingPatients.forEach((app, index) => {
-    // We highlight the person at index 0 because they are strictly "Next Up"
     const isNext = index === 0;
 
-    // Safely extract the patient's name
     let patientName = "Unknown Patient";
     if (app.patientId && typeof app.patientId === "object") {
       patientName =
@@ -360,7 +397,6 @@ window.renderDentistQueue = function (queue) {
 
     const procedure = app.service || app.treatmentName || "Consultation";
 
-    // Create the visual card
     const card = document.createElement("div");
     card.className = `p-4 rounded-xl border transition-all flex flex-col gap-2 ${
       isNext
