@@ -3,8 +3,6 @@ import PatientFullInfo from "../models/patientFullInfoModel.js";
 import User from "../models/userModel.js";
 
 // src/controllers/patientController.js
-// src/controllers/patientController.js
-
 export const registerPatientController = async (req, res) => {
   try {
     // 👈 FALLBACK RESOLVER: Reads from middleware, headers, or body

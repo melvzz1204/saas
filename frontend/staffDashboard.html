@@ -315,30 +315,21 @@
     </div>
 
     <script>
-        const socket = io("http://localhost:5000", {
-            transports: ["websocket"],
-            upgrade: false
-        });
+        (function () {
+            // 1. Safely grab and clean the role, forcing it to lowercase
+            const rawRole = localStorage.getItem("userRole") || "";
+            const role = rawRole.replace(/['"]+/g, "").toLowerCase();
 
-        socket.on("connect", () => {
-            console.log("🟢 Linked securely to real-time engine.");
-        });
+            // 2. Safely grab and clean the token
+            const rawToken = localStorage.getItem("token") || "";
+            const token = rawToken.replace(/['"]+/g, "");
 
-        socket.on("connect_error", (err) => {
-            console.error("🔴 Socket connection failure:", err.message);
-        });
-
-        socket.on("pipeline-update", async (data) => {
-            console.log("🔔 Data mutation notification captured:", data.message);
-
-            // 🎯 FIX: Changed lookups to check window scope where module functions are exposed
-            if (typeof window.fetchDailyQueue === "function") {
-                console.log("🔄 Running pipeline refresh wrapper...");
-                await window.fetchDailyQueue();
-            } else {
-                console.log("⚠️ Application window reference not fully loaded yet. Skipping direct module refresh.");
+            // 3. Check for valid credentials
+            if (!token || token === "null" || token === "undefined" || role !== "staff") {
+                console.warn("🛡️ Invalid or missing session data. Redirecting to login.");
+                window.location.replace("/staffLogin.html");
             }
-        });
+        })();
     </script>
     <script type="module" src="src/pages/staffDashboard.js"></script>
     <script type="module" src="src/util/dentistSelection.js"></script>

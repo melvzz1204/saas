@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clinical Operator | Dentist Dashboard</title>
+    <title>Dentist Dashboard</title>
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
@@ -114,7 +114,6 @@
             </div>
 
         </div>
-
         <div class="space-y-6">
             <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col h-[610px]">
                 <div class="border-b border-slate-100 pb-3 mb-4 flex justify-between items-center">
@@ -122,13 +121,14 @@
                         <span class="w-2 h-2 rounded-full bg-sky-500 shadow-[0_0_8px_rgba(59,130,246,0.4)]"></span>
                         Assigned Patient
                     </h3>
-                    <span
+                    <!-- 🎯 ADDED ID: queue-count -->
+                    <span id="queue-count"
                         class="bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-black px-2 py-0.5 rounded-md">0
                         Left</span>
                 </div>
 
-                <!-- Live Container targets rendering via dentistDashboard.js -->
-                <div class="flex-1 overflow-y-auto space-y-3 pr-1">
+                <!-- 🎯 ADDED ID: queue-container -->
+                <div id="queue-container" class="flex-1 overflow-y-auto space-y-3 pr-1">
                     <p class="text-xs font-semibold text-slate-400 text-center py-8">Contacting clinical data stream...
                     </p>
                 </div>

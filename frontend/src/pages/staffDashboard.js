@@ -1,7 +1,9 @@
 const API_BASE_URL = "http://localhost:5000";
 
-const token = localStorage.getItem("token");
-if (!token) {
+const rawGlobalToken = localStorage.getItem("token");
+const globalToken = rawGlobalToken ? rawGlobalToken.replace(/['"]+/g, "") : "";
+
+if (!globalToken || globalToken === "null" || globalToken === "undefined") {
   console.warn("🛡️ No active session found. Redirecting to login.");
   window.location.replace("/staffLogin.html");
 }
