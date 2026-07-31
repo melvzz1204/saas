@@ -282,7 +282,6 @@
                         </div>
                     </div>
                 </div>
-
                 <!-- Onboard Clinical Staff Form -->
                 <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs space-y-4 h-fit">
                     <div>
@@ -306,6 +305,7 @@
                                 class="font-mono font-black text-lg text-slate-900 bg-white border border-amber-200/60 px-3 py-1 rounded shadow-3xs tracking-widest">000000</span>
                         </div>
                     </div>
+
                     <form id="add-staff-form" class="space-y-3.5">
                         <div>
                             <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Full
@@ -319,32 +319,86 @@
                             <input type="text" id="staff-spec" placeholder="Orthodontics"
                                 class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" />
                         </div>
+
                         <div>
                             <label
                                 class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Workspace
-                                Assignment Role</label>
+                                Assignment
+                                Role</label>
+                            <!-- 🎯 Added a default empty option to ensure the 'change' event fires -->
                             <select id="staff-role" required
                                 class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all">
-                                <option value="Dentist">Dentist</option>
+                                <option value="" disabled selected>Select a role...</option>
                                 <option value="Staff">Staff</option>
+                                <option value="Dentist">Dentist</option>
                             </select>
                         </div>
+
                         <div>
                             <label
                                 class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Workspace
-                                Email Address</label>
+                                Email
+                                Address</label>
                             <input type="email" id="staff-email" required placeholder="provider@clinic.com"
                                 class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" />
                         </div>
                         <div>
                             <label
                                 class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Contact
-                                Phone Number</label>
+                                Phone
+                                Number</label>
                             <input type="text" id="staff-phone" required placeholder="+63 912 345 6789"
                                 class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" />
                         </div>
+
+                        <!-- 🎯 THE DENTIST WRAPPER (Hidden by default) -->
+                        <div id="dentist-fields-container"
+                            class="hidden space-y-3.5 mt-2 p-4 border border-sky-200 bg-sky-50 rounded-xl">
+                            <h4 class="text-[10px] font-black text-sky-700 uppercase tracking-wider mb-1">Dentist
+                                Credentials</h4>
+
+                            <!-- License Number -->
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">License
+                                    Number</label>
+                                <input type="text" id="reg-license" name="licenseNumber" placeholder="e.g. PRC-123456"
+                                    class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-sky-500 transition-all">
+                            </div>
+
+                            <!-- Experience -->
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Years
+                                    of
+                                    Experience</label>
+                                <input type="number" id="reg-experience" name="experienceYears" placeholder="e.g. 5"
+                                    min="0"
+                                    class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-sky-500 transition-all">
+                            </div>
+
+                            <!-- Bio -->
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Professional
+                                    Bio</label>
+                                <textarea id="reg-bio" name="bio" rows="3"
+                                    placeholder="Brief background about the dentist..."
+                                    class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-sky-500 transition-all"></textarea>
+                            </div>
+
+                            <!-- Profile Image Upload -->
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Profile
+                                    Photo</label>
+                                <input type="file" id="reg-image" name="profileImage" accept="image/*"
+                                    class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:uppercase file:tracking-wider file:bg-sky-100 file:text-sky-700 hover:file:bg-sky-200 transition-all cursor-pointer">
+                            </div>
+                        </div>
+
                         <button type="submit"
-                            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold tracking-wide uppercase text-[11px] py-2.5 rounded-lg transition-all shadow-md cursor-pointer mt-2">
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold tracking-wide uppercase text-[11px] py-2.5 rounded-lg transition-all shadow-md cursor-pointer mt-4">
                             Register Staff Member
                         </button>
                     </form>
@@ -809,6 +863,7 @@
     <script src="/src/pages/adminClinicDashboard.js"></script>
     <script src="/src/pages/dentalPricing.js"></script>
     <script src="/src/util/operatingHours.js"></script>
+    <script src="/src/util/dentistInfo.js"></script>
 </body>
 
 </html>

@@ -5,9 +5,19 @@ import jwt from "jsonwebtoken";
 
 export const registerClinicalStaff = async (req, res) => {
   try {
-    // 🎯 FIX: Destructure 'fullName' instead of 'name' from the incoming body
-    const { fullName, specialization, role, email, phone, accessPin } =
-      req.body;
+    // 🎯 FIX: Added accessPin to the destructuring so it doesn't throw a ReferenceError
+    const {
+      fullName,
+      role,
+      specialization,
+      email,
+      phone,
+      accessPin,
+      licenseNumber,
+      experienceYears,
+      bio,
+    } = req.body;
+
     const clinicId = req.headers["x-clinic-id"];
 
     // 1. Data Sanitization and Validation Guard
@@ -33,7 +43,7 @@ export const registerClinicalStaff = async (req, res) => {
     // 3. Hydrate Instance Matching the Passwordless Architecture
     const freshStaffNode = new Staff({
       clinicId: clinicId,
-      fullName: fullName.trim(), // 🎯 FIX: Matches your model specification perfectly now
+      fullName: fullName.trim(),
       specialization: specialization
         ? specialization.trim()
         : "General Dentistry",
@@ -41,6 +51,14 @@ export const registerClinicalStaff = async (req, res) => {
       email: email.toLowerCase().trim(),
       phone: phone.trim(),
       accessPin: accessPin.toString(),
+
+      // 🎯 FIX: We are now actually passing the new variables into the Mongoose document!
+      licenseNumber: licenseNumber ? licenseNumber.trim() : "",
+      experienceYears: experienceYears ? parseInt(experienceYears, 10) : 0,
+      bio: bio ? bio.trim() : "",
+
+      // 🎯 FIX: Check if Multer caught a file. If yes, save the filename. If no, use default.
+      profileImage: req.file ? req.file.filename : "default-avatar.png",
     });
 
     // 4. Commit to Persistent Database Engine
@@ -69,7 +87,6 @@ export const registerClinicalStaff = async (req, res) => {
     });
   }
 };
-
 export const loginClinicalStaff = async (req, res) => {
   try {
     const { email, accessPin } = req.body;
@@ -151,29 +168,6 @@ export const loginClinicalStaff = async (req, res) => {
     });
   }
 };
-/* export const getClinicalStaffByRole = async (req, res) => {
-  try {
-    const { role } = req.query;
-
-    // Build query filter; if a role is passed (like ?role=dentist), apply it
-    const filter = {};
-    if (role) {
-      // Use a case-insensitive regex check to prevent matching mismatch issues
-      filter.role = { $regex: new RegExp(`^${role}$`, "i") };
-    }
-
-    // Query your Staff model collection
-    const staff = await Staff.find(filter).select("-password"); // Hide password hashes safely
-
-    return res.status(200).json({
-      success: true,
-      count: staff.length,
-      staff,
-    });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
-  }
-}; */
 
 export const getClinicalStaffByRole = async (req, res) => {
   try {
@@ -217,6 +211,7 @@ export const getClinicalStaffByRole = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
 // =========================================================================
 // 🔑 RESET STAFF ACCESS PIN
 // =========================================================================
@@ -264,6 +259,40 @@ export const resetStaffPin = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error resetting staff PIN.",
+    });
+  }
+};
+
+// =========================================================================
+// 🦷 NEW: FETCH PUBLIC DENTIST PROFILES (For Patient Dashboard)
+// =========================================================================
+export const getClinicDentists = async (req, res) => {
+  try {
+    const { clinicId } = req.query;
+
+    if (!clinicId) {
+      return res.status(400).json({
+        success: false,
+        message: "Clinic ID is required to fetch dentists.",
+      });
+    }
+
+    // Find all active Dentists for this specific clinic
+    const dentists = await Staff.find({
+      clinicId: clinicId,
+      role: "Dentist",
+      status: "Active",
+    }).select("-accessPin -__v -createdAt -updatedAt"); // Exclude sensitive fields
+
+    res.status(200).json({
+      success: true,
+      dentists: dentists,
+    });
+  } catch (error) {
+    console.error("Error fetching clinic dentists:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while loading dentist profiles.",
     });
   }
 };

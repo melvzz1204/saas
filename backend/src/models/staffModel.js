@@ -44,6 +44,26 @@ const staffSchema = new mongoose.Schema(
       enum: ["Active", "On Leave", "Inactive"],
       default: "Active",
     },
+    licenseNumber: {
+      type: String,
+      required: function () {
+        return this.role === "Dentist";
+      }, // Only required if the user is a dentist
+      trim: true,
+    },
+    experienceYears: {
+      type: Number,
+      default: 0,
+    },
+    bio: {
+      type: String,
+      maxLength: 500,
+      trim: true,
+    },
+    profileImage: {
+      type: String,
+      default: "default-avatar.png", // Stores the file path or Cloudinary/AWS URL
+    },
   },
   { timestamps: true },
 );

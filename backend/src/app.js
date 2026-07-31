@@ -11,26 +11,38 @@ import initAppointmentCleanupJob from "./utils/appointmentCleanup.js";
 import treatmentRoutes from "./routes/treatmentRoutes.js";
 import saasAdminRoutes from "./routes/saasAdminRoutes.js";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 const app = express();
 initAppointmentCleanupJob();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-
+// 1. Configure CORS First
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173"],
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
-    credentials: true, // Required for WebSockets handshake authentication/CORS headers
+    credentials: true,
   }),
 );
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use(
+  "/uploads",
+  (req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
+  },
+  express.static(path.join(__dirname, "../public/uploads")),
+);
+
+// API Routes
 app.use("/api/v1/tenants", tenantRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/patients", patientRoutes);
