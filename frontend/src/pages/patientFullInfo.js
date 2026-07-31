@@ -344,8 +344,14 @@ if (intakeForm) {
       lastName: document.getElementById("pi_lastName").value,
       firstName: document.getElementById("pi_firstName").value,
       middleName: document.getElementById("pi_middleName").value,
-      birthdate: document.getElementById("pi_birthdate").value,
+      birthdate: document.getElementById("pi_birthdate").value || null,
+      age: document.getElementById("pi_age").value
+        ? Number(document.getElementById("pi_age").value)
+        : null,
       sex: document.getElementById("pi_sex").value,
+      email: document.getElementById("pi_emailAddress")
+        ? document.getElementById("pi_emailAddress").value
+        : "",
       religion: document.getElementById("pi_religion").value,
       nationality: document.getElementById("pi_nationality").value,
       nickname: document.getElementById("pi_nickname").value,
@@ -491,7 +497,6 @@ if (intakeForm) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
             "X-Clinic-ID": DYNAMIC_CLINIC_ID,
-            "x-clinic-id": DYNAMIC_CLINIC_ID,
           },
           body: JSON.stringify(payload),
         },
@@ -508,10 +513,15 @@ if (intakeForm) {
           "Success: Medical record saved under Smile Dental Clinic database.",
         );
       } else {
-        showToast(
-          `❌ Submission Rejected: ${result.message || "Invalid Data Validation"}`,
-          "red",
-        );
+        // Log everything the backend sent back (and what we sent) so the
+        // real field-level cause is visible, not just the top-level message.
+        console.error("Payload sent:", payload);
+        console.error("Full server response body:", result);
+
+        const detail = result.errors
+          ? JSON.stringify(result.errors)
+          : result.error || result.message || "Invalid Data Validation";
+        showToast(`❌ Submission Rejected: ${detail}`, "red");
       }
     } catch (error) {
       console.error("Submission Error Matrix:", error);
