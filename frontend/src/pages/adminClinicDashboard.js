@@ -19,6 +19,10 @@ if (!token || !userData || !authorizedPersonnel.includes(userData.role)) {
 
 const clinicId = userData.clinicId;
 let globalTreatmentsData = [];
+<<<<<<< HEAD
+=======
+let globalAppointmentsData = [];
+>>>>>>> Test
 
 document.addEventListener("DOMContentLoaded", () => {
   // 1. Render logged-in user context profiles
@@ -138,6 +142,7 @@ async function fetchDashboardData() {
     const staff = await staffRes.json();
 
     if (appts.success) {
+      globalAppointmentsData = appts.data || [];
       renderAppointmentsTable(appts.data);
     }
 
@@ -423,7 +428,16 @@ function renderStaffTable(staffList) {
         <div>${member.email || "—"}</div>
         <div class="text-[10px] text-slate-400">${member.phone || "N/A"}</div>
       </td>
+<<<<<<< HEAD
       <td class="p-3.5 pr-5 text-right">
+=======
+      <td class="p-3.5 pr-5 text-right space-x-2">
+        <!-- 🎯 NEW RESET PIN BUTTON -->
+        <button onclick="handleResetStaffPassword('${member._id}')" class="text-[11px] text-amber-600 hover:text-amber-800 font-bold uppercase tracking-wider cursor-pointer">
+          Reset PIN
+        </button>
+        <!-- EXISTING DEACTIVATE BUTTON -->
+>>>>>>> Test
         <button onclick="removeStaffMember('${member._id}')" class="text-[11px] text-rose-600 hover:text-rose-800 font-bold uppercase tracking-wider cursor-pointer">
           Deactivate
         </button>
@@ -469,7 +483,210 @@ const socket = io("http://localhost:5000", {
   transports: ["websocket"],
   upgrade: false,
 });
+// =========================================================================
+// 🔑 STAFF PIN RESET HANDLER (WITH CUSTOM POPUP MODAL)
+// =========================================================================
 
+<<<<<<< HEAD
+=======
+async function handleResetStaffPassword(staffId) {
+  if (
+    !confirm(
+      "Are you sure you want to generate a new temporary PIN for this staff member?",
+    )
+  ) {
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("token").replace(/['"]+/g, "");
+
+    const response = await fetch(
+      "http://localhost:5000/api/v1/staff/reset-pin",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          "x-clinic-id": clinicId,
+        },
+        body: JSON.stringify({ staffId }),
+      },
+    );
+
+    const data = await response.json();
+
+    if (response.ok || data.success) {
+      // 🎯 Open the pop-up modal with the generated PIN!
+      openResetPinModal(data.tempPin);
+    } else {
+      alert(`❌ Failed to reset PIN: ${data.message}`);
+    }
+  } catch (err) {
+    console.error("Reset failed:", err);
+    alert("Network error resetting PIN. Please try again.");
+  }
+}
+window.handleResetStaffPassword = handleResetStaffPassword;
+
+// 🎯 Modal Helper Functions
+function openResetPinModal(tempPin) {
+  const modal = document.getElementById("reset-pin-modal");
+  const pinDisplay = document.getElementById("reset-modal-pin-display");
+  const copyBtnText = document.getElementById("copy-btn-text");
+
+  if (pinDisplay) pinDisplay.textContent = tempPin;
+  if (copyBtnText) copyBtnText.textContent = "Copy PIN";
+
+  if (modal) modal.classList.remove("hidden");
+}
+
+function closeResetPinModal() {
+  const modal = document.getElementById("reset-pin-modal");
+  if (modal) modal.classList.add("hidden");
+}
+
+async function copyResetPinToClipboard() {
+  const pinText = document.getElementById(
+    "reset-modal-pin-display",
+  )?.textContent;
+  const copyBtnText = document.getElementById("copy-btn-text");
+
+  if (!pinText) return;
+
+  try {
+    await navigator.clipboard.writeText(pinText);
+    if (copyBtnText) copyBtnText.textContent = "Copied! ✓";
+
+    // Reset button label back to 'Copy PIN' after 2.5 seconds
+    setTimeout(() => {
+      if (copyBtnText) copyBtnText.textContent = "Copy PIN";
+    }, 2500);
+  } catch (err) {
+    console.error("Clipboard copy failed:", err);
+  }
+}
+// =========================================================================
+// 📊 FINANCIAL & OPERATIONAL REPORT GENERATOR (CSV EXPORT)
+// =========================================================================
+
+document.addEventListener("DOMContentLoaded", () => {
+  const exportBtn = document.getElementById("export-report-btn");
+  if (exportBtn) {
+    exportBtn.addEventListener("click", generateClinicReportCSV);
+  }
+});
+
+function generateClinicReportCSV() {
+  if (!globalAppointmentsData || globalAppointmentsData.length === 0) {
+    alert("No appointment data available to generate a report.");
+    return;
+  }
+
+  let totalRealizedRevenue = 0;
+  let totalLostRevenue = 0;
+  let totalPendingRevenue = 0;
+
+  let confirmedCount = 0;
+  let missedCount = 0;
+  let pendingCount = 0;
+
+  // 1. Calculate Metrics & Prepare Flat Data
+  const rowData = globalAppointmentsData.map((appt) => {
+    const currentStatus = appt.status ? appt.status.toLowerCase() : "pending";
+
+    // Calculate Patient Name
+    let patientName = "Walk-In Patient";
+    if (appt.patientName) patientName = appt.patientName;
+    else if (appt.patientId && typeof appt.patientId === "object") {
+      patientName =
+        `${appt.patientId.firstName || ""} ${appt.patientId.lastName || ""}`.trim();
+    } else if (appt.userId && typeof appt.userId === "object") {
+      patientName =
+        `${appt.userId.firstName || ""} ${appt.userId.lastName || ""}`.trim();
+    }
+
+    const serviceName = appt.service || appt.reason || "General Consultation";
+
+    // Calculate Fee based on globalTreatmentsData
+    const matchedTreatment = globalTreatmentsData.find((t) => {
+      if (!t.name) return false;
+      const dbName = t.name.toLowerCase().trim();
+      return dbName.includes(serviceName.toLowerCase().trim());
+    });
+
+    const rawFee =
+      matchedTreatment && matchedTreatment.basePricePhp
+        ? Number(matchedTreatment.basePricePhp)
+        : 0;
+
+    // Accumulate Financial & Ops Totals
+    if (["confirmed", "approved"].includes(currentStatus)) {
+      totalRealizedRevenue += rawFee;
+      confirmedCount++;
+    } else if (
+      ["cancelled", "rejected", "declined", "missed", "no-show"].includes(
+        currentStatus,
+      )
+    ) {
+      totalLostRevenue += rawFee;
+      if (["missed", "no-show"].includes(currentStatus)) missedCount++;
+    } else if (currentStatus === "pending") {
+      totalPendingRevenue += rawFee;
+      pendingCount++;
+    }
+
+    return [
+      `"${patientName}"`,
+      `"${appt.date || "N/A"}"`,
+      `"${appt.time || "N/A"}"`,
+      `"${serviceName}"`,
+      `"PHP ${rawFee.toFixed(2)}"`,
+      `"${appt.status || "Pending"}"`,
+    ].join(",");
+  });
+
+  // 2. Format the CSV Document
+  const dateStr = new Date().toISOString().split("T")[0];
+  let csvContent = "data:text/csv;charset=utf-8,";
+
+  // --- SECTION: Financial & Operations Summary ---
+  csvContent += "CLINIC FINANCIAL & OPERATIONS SUMMARY\n";
+  csvContent += `Report Generated On:,${dateStr}\n\n`;
+
+  csvContent += "FINANCIAL DASHBOARD\n";
+  csvContent += `Realized Revenue (Approved/Confirmed):,PHP ${totalRealizedRevenue.toFixed(2)}\n`;
+  csvContent += `Pending Pipeline (Waiting Approval):,PHP ${totalPendingRevenue.toFixed(2)}\n`;
+  csvContent += `Lost Revenue (Missed/Cancelled):,PHP ${totalLostRevenue.toFixed(2)}\n\n`;
+
+  csvContent += "OPERATIONS & ATTENDANCE\n";
+  csvContent += `Total Processed Appointments:,${globalAppointmentsData.length}\n`;
+  csvContent += `Completed / Approved:,${confirmedCount}\n`;
+  csvContent += `No-Shows / Missed:,${missedCount}\n`;
+  csvContent += `Pending Actions Needed:,${pendingCount}\n\n`;
+
+  // --- SECTION: Raw Operations Data (The Itinerary) ---
+  csvContent += "RAW APPOINTMENT LOG\n";
+  csvContent +=
+    "Patient Name,Date,Time,Service Requested,Expected Fee,Status\n";
+  csvContent += rowData.join("\n");
+
+  // 3. Trigger the Browser Download
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `Clinic_Report_${dateStr}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// Attach helpers to global window object
+window.openResetPinModal = openResetPinModal;
+window.closeResetPinModal = closeResetPinModal;
+window.copyResetPinToClipboard = copyResetPinToClipboard;
+window.handleResetStaffPassword = handleResetStaffPassword;
+>>>>>>> Test
 socket.on("pipeline-update", async () => {
   if (typeof fetchDashboardData === "function") {
     await fetchDashboardData();

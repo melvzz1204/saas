@@ -20,6 +20,14 @@ document.addEventListener("DOMContentLoaded", () => {
     "panel-reports": {
       title: "System Analytics",
       sub: "Review clinical conversion pipelines, operations summaries, and resource performance logs",
+
+      // ... your other panels ...
+
+      // Add your new panel ID here! (Example below)
+      "panel-clinic-hours": {
+        title: "Clinic Operating Hours",
+        sub: "Manage open slots and appointment durations",
+      },
     },
   };
   navItems.forEach((item) => {
@@ -32,13 +40,27 @@ document.addEventListener("DOMContentLoaded", () => {
           "nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all";
         nav.querySelector(".active-dot").classList.add("hidden");
       });
+
       item.className =
         "nav-item group flex items-center justify-between bg-slate-100 text-slate-900 px-3 py-2 rounded-lg text-xs font-semibold border border-slate-200/50 cursor-pointer transition-all";
       item.querySelector(".active-dot").classList.remove("hidden");
+
       panels.forEach((panel) => panel.classList.add("hidden"));
-      document.getElementById(targetPanelId).classList.remove("hidden");
-      title.textContent = metaMap[targetPanelId].title;
-      subtitle.textContent = metaMap[targetPanelId].sub;
+
+      const targetPanel = document.getElementById(targetPanelId);
+      if (targetPanel) {
+        targetPanel.classList.remove("hidden");
+      }
+
+      // 🛡️ SAFETY CHECK: Only update titles if the map exists, otherwise use fallback
+      const meta = metaMap[targetPanelId];
+      if (meta) {
+        title.textContent = meta.title;
+        subtitle.textContent = meta.sub;
+      } else {
+        title.textContent = "Dashboard Overview";
+        subtitle.textContent = "Viewing system configurations";
+      }
     });
   });
   const addStaffForm = document.getElementById("add-staff-form");

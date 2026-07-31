@@ -368,6 +368,7 @@ if (bookingForm) {
   });
 }
 
+<<<<<<< HEAD
 // Enforce calendar constraint dates
 function initializeBookingCalendar() {
   const dateInput = document.getElementById("booking-date");
@@ -381,13 +382,168 @@ function initializeBookingCalendar() {
   const minDate = `${year}-${month}-${day}`;
   dateInput.setAttribute("min", minDate);
   if (!dateInput.value) dateInput.value = minDate;
+=======
+// =========================================================================
+// 📅 DYNAMIC TIME SLOT ENGINE (With Same-Day Time Filtering)
+// =========================================================================
+
+let slotFetchController = null;
+
+function setupDynamicTimeSlots() {
+  const dateInput = document.getElementById("booking-date");
+  const timeSelect = document.getElementById("booking-time");
+  const submitBtn = document.getElementById("book-btn");
+
+  if (!dateInput || !timeSelect) return;
+
+  // 1. Get exact local date for 'today' in YYYY-MM-DD
+  const localToday = new Date();
+  const year = localToday.getFullYear();
+  const month = String(localToday.getMonth() + 1).padStart(2, "0");
+  const day = String(localToday.getDate()).padStart(2, "0");
+  const todayStr = `${year}-${month}-${day}`;
+
+  // Block past dates in the calendar input
+  dateInput.setAttribute("min", todayStr);
+  if (!dateInput.value) dateInput.value = todayStr;
+
+  dateInput.addEventListener("change", async (e) => {
+    const selectedDate = e.target.value;
+
+    if (
+      !selectedDate ||
+      !DYNAMIC_CLINIC_ID ||
+      DYNAMIC_CLINIC_ID === "undefined"
+    )
+      return;
+
+    if (slotFetchController) {
+      slotFetchController.abort();
+    }
+    slotFetchController = new AbortController();
+    const { signal } = slotFetchController;
+
+    try {
+      timeSelect.classList.remove(
+        "border-rose-500",
+        "text-rose-600",
+        "bg-rose-50",
+      );
+      timeSelect.innerHTML = `<option value="">Loading available times... ⏳</option>`;
+      timeSelect.disabled = true;
+      if (submitBtn) submitBtn.disabled = true;
+
+      const safeToken = token ? token.replace(/['"]+/g, "") : "";
+
+      const response = await fetch(
+        `http://localhost:5000/api/v1/appointments/available-slots?date=${selectedDate}&clinicId=${DYNAMIC_CLINIC_ID}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${safeToken}`,
+            "x-clinic-id": DYNAMIC_CLINIC_ID,
+          },
+          signal,
+        },
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to fetch slots");
+      }
+
+      const data = await response.json();
+      let slots = data.slots || [];
+      const totalOriginalSlots = slots.length;
+
+      // 🛡️ THE FIX: Same-Day Time Filter
+      if (selectedDate === todayStr) {
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+
+        // Keep only slots that are in the future
+        slots = slots.filter((time24) => {
+          const [slotHour, slotMinute] = time24.split(":").map(Number);
+          if (currentHour < slotHour) return true;
+          if (currentHour === slotHour && currentMinute < slotMinute)
+            return true;
+          return false;
+        });
+      }
+
+      timeSelect.innerHTML = "";
+
+      // 🎯 UX: Check if slots were removed because time passed
+      if (totalOriginalSlots > 0 && slots.length === 0) {
+        timeSelect.innerHTML = `<option value="">Time slots for today have passed.</option>`;
+        timeSelect.disabled = true;
+      }
+      // Normal closed or fully booked state
+      else if (slots.length === 0) {
+        timeSelect.innerHTML = `<option value="">❌ Fully booked or closed on this date</option>`;
+        timeSelect.disabled = true;
+      }
+      // Render valid slots
+      else {
+        timeSelect.innerHTML = `<option value="" disabled selected>-- Choose an Available Time --</option>`;
+
+        slots.forEach((time24) => {
+          const option = document.createElement("option");
+          option.value = time24;
+          option.textContent = format12HourTime(time24);
+          timeSelect.appendChild(option);
+        });
+
+        timeSelect.disabled = false;
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    } catch (err) {
+      if (err.name === "AbortError") return;
+
+      console.error("Error loading dynamic slots:", err);
+      timeSelect.classList.add(
+        "border-rose-500",
+        "text-rose-600",
+        "bg-rose-50",
+      );
+      timeSelect.innerHTML = `<option value="">⚠️ Network error. Please click the date again.</option>`;
+      timeSelect.disabled = true;
+      if (submitBtn) submitBtn.disabled = true;
+
+      setTimeout(() => {
+        timeSelect.classList.remove(
+          "border-rose-500",
+          "text-rose-600",
+          "bg-rose-50",
+        );
+      }, 3000);
+    }
+  });
+}
+
+// Quick helper to format times beautifully for patients
+function format12HourTime(time24) {
+  let [hours, minutes] = time24.split(":").map(Number);
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+  return `${hours}:${minutes.toString().padStart(2, "0")} ${ampm}`;
+>>>>>>> Test
 }
 
 // 🚀 Unified Sequential App Initialization Lifecycle
 async function initializeDashboard() {
   renderGreeting();
   setupAuthButton();
+<<<<<<< HEAD
   initializeBookingCalendar();
+=======
+
+  // Replaced the old initializeBookingCalendar() with the new dynamic engine
+  setupDynamicTimeSlots();
+
+>>>>>>> Test
   await fetchClinicName();
   await syncDynamicPricingElements();
   await loadPatientBookings();

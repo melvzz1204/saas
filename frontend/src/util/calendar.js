@@ -15,8 +15,16 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
   let currentNavDate = new Date();
   const immutableToday = new Date();
+  immutableToday.setHours(0, 0, 0, 0);
 
-  // Assign interactive navigational track direction controllers
+  let chosenDateStr = "";
+  let dynamicClosedDays = []; // 🎯 NEW: Will hold the closed days from the database
+
+  const monthYearLabel = document.getElementById("calendar-month-year");
+  const daysGrid = document.getElementById("calendar-days-grid");
+  const hiddenDateInput = document.getElementById("booking-date");
+
+  // Navigational track direction controllers
   document.getElementById("prev-month-btn").addEventListener("click", () => {
     currentNavDate.setMonth(currentNavDate.getMonth() - 1);
     renderCalendarGrid();
@@ -26,14 +34,46 @@ document.addEventListener("DOMContentLoaded", () => {
     renderCalendarGrid();
   });
 
-  // Strip hours/minutes from today's reference for pure date cell comparison
-  immutableToday.setHours(0, 0, 0, 0);
+  // 🎯 NEW: Fetch operating hours from backend to determine closed days
+  async function fetchClinicClosedDays() {
+    const userData = JSON.parse(localStorage.getItem("user") || "{}");
+    const clinicId =
+      localStorage.getItem("clinicId") || userData.clinicId || "";
+    if (!clinicId) return;
 
-  let chosenDateStr = "";
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/v1/tenants/${clinicId}`,
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const clinic = data.clinic || data.data || data;
 
-  const monthYearLabel = document.getElementById("calendar-month-year");
-  const daysGrid = document.getElementById("calendar-days-grid");
-  const hiddenDateInput = document.getElementById("booking-date");
+        if (clinic.operatingHours) {
+          // Map string days to JavaScript Date integer equivalents
+          const dayMap = {
+            sunday: 0,
+            monday: 1,
+            tuesday: 2,
+            wednesday: 3,
+            thursday: 4,
+            friday: 5,
+            saturday: 6,
+          };
+
+          dynamicClosedDays = clinic.operatingHours
+            .filter((oh) => oh.isClosed)
+            .map((oh) => dayMap[oh.day.toLowerCase()])
+            .filter((val) => val !== undefined);
+
+          // Refresh the calendar visually now that we know the closed days
+          renderCalendarGrid();
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch clinic hours for calendar", e);
+    }
+  }
 
   function renderCalendarGrid() {
     daysGrid.innerHTML = "";
@@ -46,36 +86,35 @@ document.addEventListener("DOMContentLoaded", () => {
     const firstDayIndex = new Date(year, month, 1).getDay();
     const totalDays = new Date(year, month + 1, 0).getDate();
 
-    // 1. Render blank space padding nodes for empty offsetting alignments
     for (let i = 0; i < firstDayIndex; i++) {
       const blankNode = document.createElement("div");
       daysGrid.appendChild(blankNode);
     }
 
-    // 2. Generate interactive date grid selection cells
     for (let day = 1; day <= totalDays; day++) {
       const dateCell = document.createElement("button");
       dateCell.type = "button";
       dateCell.textContent = day;
 
-      // Generate comparison strings in YYYY-MM-DD
       const paddedMonth = String(month + 1).padStart(2, "0");
       const paddedDay = String(day).padStart(2, "0");
       const iterationDateStr = `${year}-${paddedMonth}-${paddedDay}`;
-
-      // Create date object for mathematical before/after validation checks
       const iterationDate = new Date(year, month, day);
 
-      // Base Tailwind cell layout parameters
+      // 🎯 FIXED: Uses the dynamic list of closed days fetched from the database
+      const isClosedDay = dynamicClosedDays.includes(iterationDate.getDay());
+
       dateCell.className =
         "py-1.5 font-bold rounded-lg transition-all text-center cursor-pointer select-none focus:outline-none ";
 
-      // 🛡️ Past Date Disabling Logic (Compares day milestones accurately)
       if (iterationDate < immutableToday) {
         dateCell.className +=
           "text-slate-200 cursor-not-allowed pointer-events-none";
+      } else if (isClosedDay) {
+        dateCell.className +=
+          "bg-red-50 text-red-400 cursor-not-allowed pointer-events-none opacity-60";
+        dateCell.title = "Clinic is closed on this day";
       } else {
-        // Formulate standard string conversions for active date highlights
         const todayYear = immutableToday.getFullYear();
         const todayMonth = String(immutableToday.getMonth() + 1).padStart(
           2,
@@ -84,7 +123,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const todayDay = String(immutableToday.getDate()).padStart(2, "0");
         const todayStr = `${todayYear}-${todayMonth}-${todayDay}`;
 
-        // Formatting for current active/selected date variants
         if (iterationDateStr === chosenDateStr) {
           dateCell.className += "bg-teal-600 text-white shadow-xs scale-105";
         } else if (iterationDateStr === todayStr) {
@@ -94,12 +132,15 @@ document.addEventListener("DOMContentLoaded", () => {
           dateCell.className += "text-slate-700 hover:bg-slate-200/70";
         }
 
-        // Interactive Click Event Handler
         dateCell.addEventListener("click", () => {
+          // 🎯 FIXED SPAM CLICK: Ignore click if booking.js is currently fetching slots!
+          if (window.isFetchingSlots) return;
+          window.isFetchingSlots = true; // Lock immediately
+
           chosenDateStr = iterationDateStr;
           hiddenDateInput.value = iterationDateStr;
-          filterTimeSlots(iterationDateStr);
-          renderCalendarGrid(); // Refresh layout to sync state highlighting classes
+          hiddenDateInput.dispatchEvent(new Event("change"));
+          renderCalendarGrid();
         });
       }
 
@@ -107,96 +148,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Fire up initialization build process loops
+  // Build the initial blank calendar
   renderCalendarGrid();
 
-  // 🆕 Prefilter time slots for today on initialization mount
+  // Trigger the background fetch for closed days
+  fetchClinicClosedDays();
+
+  // Prefetch time slots for today
   const initialYear = immutableToday.getFullYear();
   const initialMonth = String(immutableToday.getMonth() + 1).padStart(2, "0");
   const initialDay = String(immutableToday.getDate()).padStart(2, "0");
-  filterTimeSlots(`${initialYear}-${initialMonth}-${initialDay}`);
+  const initialDateStr = `${initialYear}-${initialMonth}-${initialDay}`;
+
+  chosenDateStr = initialDateStr;
+  hiddenDateInput.value = initialDateStr;
+  hiddenDateInput.dispatchEvent(new Event("change"));
 });
-
-function filterTimeSlots(selectedDateStr) {
-  const timeSelect = document.getElementById("booking-time");
-  const timeContainer = document.getElementById("time-select-container");
-  const afterHoursNotice = document.getElementById("after-hours-notice");
-  const submitBtn = document.getElementById("book-btn");
-
-  if (!timeSelect || !timeContainer || !afterHoursNotice) return;
-
-  const options = timeSelect.options;
-
-  // 📆 Dynamically calculate today's local date string (YYYY-MM-DD)
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-  const immutableTodayStr = `${year}-${month}-${day}`;
-
-  const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
-
-  let validSlotsAvailable = false;
-
-  // 1. Loop through options to flag validity if date is today
-  for (let i = 0; i < options.length; i++) {
-    const option = options[i];
-    const dataTime = option.getAttribute("data-time");
-    if (!dataTime) continue;
-
-    const [slotHour, slotMinute] = dataTime.split(":").map(Number);
-
-    if (selectedDateStr === immutableTodayStr) {
-      if (
-        currentHour > slotHour ||
-        (currentHour === slotHour && currentMinute >= slotMinute)
-      ) {
-        option.style.display = "none";
-        option.disabled = true;
-      } else {
-        option.style.display = "block";
-        option.disabled = false;
-        validSlotsAvailable = true;
-      }
-    } else {
-      option.style.display = "block";
-      option.disabled = false;
-      validSlotsAvailable = true;
-    }
-  }
-
-  // 2. 🛡️ AFTER-HOURS SWITCH NODE
-  if (
-    selectedDateStr === immutableTodayStr &&
-    (currentHour >= 17 || !validSlotsAvailable)
-  ) {
-    timeContainer.classList.add("hidden");
-    afterHoursNotice.classList.remove("hidden");
-
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Please Select a Valid Date";
-      submitBtn.className =
-        "w-full bg-slate-200 text-slate-400 text-xs font-bold py-3.5 rounded-xl cursor-not-allowed uppercase tracking-wider mt-2 transition-all";
-    }
-  } else {
-    timeContainer.classList.remove("hidden");
-    afterHoursNotice.classList.add("hidden");
-
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Submit Booking Request";
-      submitBtn.className =
-        "w-full bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold py-3.5 rounded-xl shadow-lg shadow-teal-900/10 transition-all uppercase tracking-wider mt-2 cursor-pointer active:scale-[0.99]";
-    }
-
-    for (let i = 0; i < options.length; i++) {
-      if (!options[i].disabled && options[i].value !== "") {
-        timeSelect.selectedIndex = i;
-        break;
-      }
-    }
-  }
-}

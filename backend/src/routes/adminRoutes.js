@@ -5,7 +5,14 @@ import {
   getClinicStaff,
   loginAdmin,
 } from "../controllers/adminController.js"; //[cite: 18]
+<<<<<<< HEAD
 import { registerClinicalStaff } from "../controllers/staffController.js"; //[cite: 18]
+=======
+import {
+  registerClinicalStaff,
+  resetStaffPin,
+} from "../controllers/staffController.js"; //[cite: 18]
+>>>>>>> Test
 import {
   getAdminAppointments,
   modifyAppointmentStatus,
@@ -33,5 +40,9 @@ router.patch(
 router.post("/staff", protectAdminRoute, addStaffMember); //[cite: 18]
 router.get("/staff", protectAdminRoute, getClinicStaff); //[cite: 18]
 router.post("/staff/register", protectAdminRoute, registerClinicalStaff); //[cite: 18]
+<<<<<<< HEAD
+=======
+router.post("/staff/reset-pin", resetStaffPin);
+>>>>>>> Test
 
 export default router;

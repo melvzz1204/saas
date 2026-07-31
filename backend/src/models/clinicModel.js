@@ -33,6 +33,28 @@ const clinicSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+<<<<<<< HEAD
+=======
+    operatingHours: [
+      {
+        day: {
+          type: String,
+          enum: [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+          ],
+        },
+        openTime: { type: String, default: "09:00" },
+        closeTime: { type: String, default: "17:00" },
+        isClosed: { type: Boolean, default: false },
+      },
+    ],
+>>>>>>> Test
   },
   { timestamps: true },
 );
