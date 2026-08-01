@@ -10,7 +10,16 @@ const MANDIBULAR_ARCH = [
 
 // 2. Active Application State Map
 let activeArchData = MAXILLARY_ARCH;
-let activeSelectedTooth = null;
+
+// UPDATED: Use an array to store multiple teeth across both arches
+let activeSelectedTeeth = [];
+
+// NEW: Expose getters/setters globally so your form script can access them easily
+window.getSelectedTeeth = () => activeSelectedTeeth;
+window.clearSelectedTeeth = () => {
+  activeSelectedTeeth = [];
+  renderArcMap();
+};
 
 // 3. Declare DOM variable placeholders globally
 let container;
@@ -23,9 +32,11 @@ function renderArcMap() {
   container.innerHTML = "";
 
   activeArchData.forEach((toothNum) => {
-    const isSelected = activeSelectedTooth === toothNum;
+    // UPDATED: Check if the tooth is currently in the selected array
+    const isSelected = activeSelectedTeeth.includes(toothNum);
+
     const button = document.createElement("button");
-    button.type = "button";
+    button.type = "button"; // Crucial: prevents accidentally submitting the form!
 
     button.className = `w-8 h-10 border rounded-md flex flex-col items-center justify-between py-1 transition-all shadow-2xs cursor-pointer group
             ${
@@ -43,7 +54,14 @@ function renderArcMap() {
         `;
 
     button.addEventListener("click", () => {
-      activeSelectedTooth = isSelected ? null : toothNum;
+      // UPDATED: Toggle selection logic for multiple teeth
+      if (isSelected) {
+        // Remove from array if already selected
+        activeSelectedTeeth = activeSelectedTeeth.filter((t) => t !== toothNum);
+      } else {
+        // Add to array if not selected
+        activeSelectedTeeth.push(toothNum);
+      }
       renderArcMap();
     });
 
@@ -53,7 +71,6 @@ function renderArcMap() {
 
 // 5. Wire Up Toggle Button Matrix State Change Rules
 function initToggleMatrix() {
-  // If buttons don't exist on the current page, exit cleanly without crashing
   if (!btnMaxillary || !btnMandibular) return;
 
   const setActiveTabClasses = (activeBtn, inactiveBtn) => {
@@ -66,7 +83,7 @@ function initToggleMatrix() {
   btnMaxillary.addEventListener("click", () => {
     if (activeArchData !== MAXILLARY_ARCH) {
       activeArchData = MAXILLARY_ARCH;
-      activeSelectedTooth = null;
+      // REMOVED: State wipe (Selections now persist between tabs)
       setActiveTabClasses(btnMaxillary, btnMandibular);
       renderArcMap();
     }
@@ -75,14 +92,14 @@ function initToggleMatrix() {
   btnMandibular.addEventListener("click", () => {
     if (activeArchData !== MANDIBULAR_ARCH) {
       activeArchData = MANDIBULAR_ARCH;
-      activeSelectedTooth = null;
+      // REMOVED: State wipe (Selections now persist between tabs)
       setActiveTabClasses(btnMandibular, btnMaxillary);
       renderArcMap();
     }
   });
 }
 
-// 6. Runtime Pipeline Instantiation (Safely assigns DOM nodes after load)
+// 6. Runtime Pipeline Instantiation
 document.addEventListener("DOMContentLoaded", () => {
   container = document.getElementById("odontogram-container");
   btnMaxillary = document.getElementById("toggle-maxillary");

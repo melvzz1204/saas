@@ -1,3 +1,7 @@
+import {
+  fetchPatientHistory,
+  renderPatientHistoryUI,
+} from "../util/clinicalNote.js";
 const API_PRICING_URL = "http://localhost:5000/api/v1/dental-price/services";
 const API_BASE_URL = "http://localhost:5000";
 const token = localStorage.getItem("token");
@@ -258,7 +262,7 @@ function renderBookingsList(appointmentsList) {
   if (statNextVisit) statNextVisit.textContent = nextConfirmedVisit;
 }
 
-// 4. Load Isolated Tenant Bookings (Fixed & Restored)
+// 4. Load Isolated Tenant Bookings
 async function loadPatientBookings() {
   if (!bookingsTableBody) return;
 
@@ -307,7 +311,183 @@ async function loadPatientBookings() {
   }
 }
 
-// 5. Submit New Appointment Action
+// 5. Render Full Patient Clinical History Cards (Matches Database Model Schema)
+function renderPatientDashboardNotes(notes) {
+  const container = document.getElementById("my-history-container");
+  if (!container) return;
+
+  if (!Array.isArray(notes) || notes.length === 0) {
+    container.innerHTML = `
+      <div class="flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white space-y-2">
+        <span class="text-3xl">🗂️</span>
+        <h3 class="text-xs font-bold text-slate-600 uppercase tracking-wider">No Clinical Records Found</h3>
+        <p class="text-xs text-slate-400">You do not have any past clinical notes or treatments on file yet.</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = notes
+    .map((note) => {
+      // 1. Entry Date
+      const dateObj = new Date(note.createdAt);
+      const formattedDate = !isNaN(dateObj.getTime())
+        ? dateObj.toLocaleDateString("en-US", {
+            weekday: "short",
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })
+        : "N/A";
+
+      // 2. Doctor Info
+      const dentistObj =
+        typeof note.dentistId === "object" && note.dentistId !== null
+          ? note.dentistId
+          : null;
+      const dentistName = dentistObj
+        ? `Dr. ${dentistObj.firstName || ""} ${dentistObj.lastName || ""}`.trim()
+        : "Clinical Provider";
+      const specialization = dentistObj?.specialization || "General Dentistry";
+
+      // 3. Next Visit Date (Checks `nextVisitDate`, `nextVisit`, or `followUpDate`)
+      const rawNextVisit =
+        note.nextVisitDate || note.nextVisit || note.followUpDate;
+      let formattedNextVisit = null;
+
+      if (rawNextVisit) {
+        const nextDate = new Date(rawNextVisit);
+        if (!isNaN(nextDate.getTime())) {
+          formattedNextVisit = nextDate.toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            timeZone: "UTC",
+          });
+        }
+      }
+
+      // 4. Treated Teeth Array (`treatedTeeth` or fallback `teeth`)
+      const rawTeeth = note.treatedTeeth || note.teeth || [];
+      const teethList =
+        Array.isArray(rawTeeth) && rawTeeth.length > 0
+          ? rawTeeth
+              .map((t) => {
+                const toothNum =
+                  typeof t === "object" ? t.toothNumber || t.id : t;
+                return `<span class="inline-flex items-center gap-1 bg-teal-50 border border-teal-200 text-teal-700 text-[11px] font-bold px-2.5 py-1 rounded-md shadow-xs">🦷 Tooth ${toothNum}</span>`;
+              })
+              .join(" ")
+          : null;
+
+      return `
+      <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4 mb-4">
+
+        <!-- Header -->
+        <div class="flex justify-between items-start border-b border-slate-100 pb-3">
+          <div>
+            <span class="text-[10px] font-black text-teal-600 bg-teal-50 border border-teal-200/60 px-2.5 py-1 rounded-md uppercase tracking-wider">
+              ${formattedDate}
+            </span>
+            <h4 class="text-sm font-black text-slate-800 mt-2">Clinical Treatment Entry</h4>
+          </div>
+          <div class="text-right">
+            <p class="text-xs font-bold text-slate-800">${dentistName}</p>
+            <p class="text-[10px] font-semibold text-slate-400">${specialization}</p>
+          </div>
+        </div>
+
+        <!-- Treated Teeth Badges -->
+        ${
+          teethList
+            ? `
+        <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-100">
+          <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">Treated Teeth</span>
+          <div class="flex flex-wrap gap-1.5">${teethList}</div>
+        </div>`
+            : ""
+        }
+
+        <!-- Main Details Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+          <div class="bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
+            <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Chief Complaint</span>
+            <p class="text-xs font-medium text-slate-700">${note.chiefComplaint || "N/A"}</p>
+          </div>
+
+          <div class="bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
+            <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Treatment Rendered</span>
+            <p class="text-xs font-medium text-slate-700">${note.treatmentRendered || "N/A"}</p>
+          </div>
+
+          ${
+            note.assessment
+              ? `
+            <div class="bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
+              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Assessment / Diagnosis</span>
+              <p class="text-xs font-medium text-slate-700">${note.assessment}</p>
+            </div>
+          `
+              : ""
+          }
+
+          ${
+            note.progressNotes
+              ? `
+           <div class="bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
+              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Progress Notes</span>
+              <p class="text-xs font-medium text-slate-700">${note.progressNotes}</p>
+            </div>
+          `
+              : ""
+          }
+
+        </div>
+
+        <!-- Doctor's Recommendations -->
+        ${
+          note.recommendations
+            ? `
+          <div class="bg-sky-50/70 p-3.5 rounded-xl border border-sky-100/80">
+            <span class="block text-[10px] font-black text-sky-600 uppercase tracking-wider mb-1">Doctor's Recommendations</span>
+            <p class="text-xs font-medium text-sky-900 italic">${note.recommendations}</p>
+          </div>
+        `
+            : ""
+        }
+
+        <!-- Follow-up Visit Banner -->
+        ${
+          formattedNextVisit
+            ? `
+          <div class="flex items-center gap-2 text-xs font-bold text-teal-800 bg-teal-50/90 border border-teal-200/70 p-3 rounded-xl shadow-xs">
+            <span>📅</span>
+            <span>Recommended Follow-up Visit: <strong>${formattedNextVisit}</strong></span>
+          </div>
+        `
+            : ""
+        }
+
+      </div>
+    `;
+    })
+    .join("");
+}
+
+// 6. Load Clinical History Data
+async function loadPatientClinicalHistory() {
+  if (!verifiedPatientId) return;
+
+  try {
+    const historyData = await fetchPatientHistory(verifiedPatientId);
+    renderPatientDashboardNotes(historyData);
+  } catch (error) {
+    console.error("❌ Error loading clinical history:", error);
+  }
+}
+
+// 7. Submit New Appointment Action
 if (bookingForm) {
   bookingForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -370,9 +550,8 @@ if (bookingForm) {
 }
 
 // =========================================================================
-// 📅 DYNAMIC TIME SLOT ENGINE (With Same-Day Time Filtering)
+// 📅 DYNAMIC TIME SLOT ENGINE
 // =========================================================================
-
 let slotFetchController = null;
 
 function setupDynamicTimeSlots() {
@@ -382,14 +561,12 @@ function setupDynamicTimeSlots() {
 
   if (!dateInput || !timeSelect) return;
 
-  // 1. Get exact local date for 'today' in YYYY-MM-DD
   const localToday = new Date();
   const year = localToday.getFullYear();
   const month = String(localToday.getMonth() + 1).padStart(2, "0");
   const day = String(localToday.getDate()).padStart(2, "0");
   const todayStr = `${year}-${month}-${day}`;
 
-  // Block past dates in the calendar input
   dateInput.setAttribute("min", todayStr);
   if (!dateInput.value) dateInput.value = todayStr;
 
@@ -443,13 +620,11 @@ function setupDynamicTimeSlots() {
       let slots = data.slots || [];
       const totalOriginalSlots = slots.length;
 
-      // 🛡️ THE FIX: Same-Day Time Filter
       if (selectedDate === todayStr) {
         const now = new Date();
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
 
-        // Keep only slots that are in the future
         slots = slots.filter((time24) => {
           const [slotHour, slotMinute] = time24.split(":").map(Number);
           if (currentHour < slotHour) return true;
@@ -461,18 +636,13 @@ function setupDynamicTimeSlots() {
 
       timeSelect.innerHTML = "";
 
-      // 🎯 UX: Check if slots were removed because time passed
       if (totalOriginalSlots > 0 && slots.length === 0) {
         timeSelect.innerHTML = `<option value="">Time slots for today have passed.</option>`;
         timeSelect.disabled = true;
-      }
-      // Normal closed or fully booked state
-      else if (slots.length === 0) {
+      } else if (slots.length === 0) {
         timeSelect.innerHTML = `<option value="">❌ Fully booked or closed on this date</option>`;
         timeSelect.disabled = true;
-      }
-      // Render valid slots
-      else {
+      } else {
         timeSelect.innerHTML = `<option value="" disabled selected>-- Choose an Available Time --</option>`;
 
         slots.forEach((time24) => {
@@ -509,7 +679,6 @@ function setupDynamicTimeSlots() {
   });
 }
 
-// Quick helper to format times beautifully for patients
 function format12HourTime(time24) {
   let [hours, minutes] = time24.split(":").map(Number);
   const ampm = hours >= 12 ? "PM" : "AM";
@@ -521,20 +690,17 @@ function format12HourTime(time24) {
 async function initializeDashboard() {
   renderGreeting();
   setupAuthButton();
-
-  // Replaced the old initializeBookingCalendar() with the new dynamic engine
   setupDynamicTimeSlots();
 
   await fetchClinicName();
   await syncDynamicPricingElements();
   await loadPatientBookings();
+  await loadPatientClinicalHistory();
 }
 
 initializeDashboard();
 
-// =========================================================================
 // ⚡ REAL-TIME PATIENT PIPELINE REACTION ENGINE
-// =========================================================================
 const socket = io("http://localhost:5000", {
   transports: ["websocket"],
   upgrade: false,
@@ -542,175 +708,5 @@ const socket = io("http://localhost:5000", {
 
 socket.on("pipeline-update", async () => {
   await loadPatientBookings();
-});
-async function fetchMyClinicalNotes() {
-  const rawToken = localStorage.getItem("token");
-  const token = rawToken ? rawToken.replace(/['"]+/g, "") : "";
-  const userData = JSON.parse(localStorage.getItem("user") || "{}");
-  const clinicId = localStorage.getItem("clinicId") || userData.clinicId || "";
-
-  try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/clinical-notes/my-notes`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          "x-clinic-id": clinicId,
-        },
-      },
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch your clinical records.");
-    }
-
-    return data.data || [];
-  } catch (error) {
-    console.error("❌ Error fetching my notes:", error);
-    return [];
-  }
-}
-
-function renderPatientDashboardNotes(notes) {
-  const container = document.getElementById("my-clinical-records-container");
-  if (!container) return;
-
-  if (!notes || notes.length === 0) {
-    container.innerHTML = `
-      <div class="flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white">
-        <span class="text-3xl mb-3">🗂️</span>
-        <h3 class="text-sm font-bold text-slate-600 uppercase tracking-wider">No Records Found</h3>
-        <p class="text-xs text-slate-400 mt-1">You do not have any past clinical notes or treatments on file yet.</p>
-      </div>`;
-    return;
-  }
-
-  container.innerHTML = notes
-    .map((note) => {
-      // Format creation date
-      const dateObj = new Date(note.createdAt);
-      const formattedDate = dateObj.toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-
-      // Safely check if dentistId is a populated object or plain string ID
-      const dentistObj =
-        typeof note.dentistId === "object" && note.dentistId !== null
-          ? note.dentistId
-          : null;
-      const dentistName = dentistObj
-        ? `Dr. ${dentistObj.lastName || dentistObj.firstName}`
-        : "Clinical Provider";
-      const specialization = dentistObj?.specialization || "General Dentistry";
-
-      // Format next visit date if present
-      const formattedNextVisit = note.nextVisitDate
-        ? new Date(note.nextVisitDate).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })
-        : null;
-
-      return `
-      <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs hover:shadow-md transition-shadow">
-
-        <!-- Header -->
-        <div class="flex justify-between items-start border-b border-slate-100 pb-3 mb-4">
-          <div>
-            <span class="text-[10px] font-black text-teal-600 bg-teal-50 border border-teal-200/60 px-2.5 py-1 rounded-md uppercase tracking-wider">
-              ${formattedDate}
-            </span>
-            <h4 class="text-sm font-black text-slate-800 mt-2">Treatment Record</h4>
-          </div>
-          <div class="text-right">
-            <p class="text-xs font-bold text-slate-800">${dentistName}</p>
-            <p class="text-[10px] font-semibold text-slate-400">${specialization}</p>
-          </div>
-        </div>
-
-        <!-- Main Content Matrix -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-
-   <div class="bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
-            <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Complaint</span>
-            <p class="text-xs font-medium text-slate-700">${note.chiefComplaint || "N/A"}</p>
-          </div>
-
-          <div class="bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
-            <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Treatment Rendered</span>
-            <p class="text-xs font-medium text-slate-700">${note.treatmentRendered || "N/A"}</p>
-          </div>
-
-
-          ${
-            note.assessment
-              ? `
-            <div class="bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
-              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Assessment</span>
-              <p class="text-xs font-medium text-slate-700">${note.assessment}</p>
-            </div>
-          `
-              : ""
-          }
-
-          ${
-            note.progressNotes
-              ? `
-           <div class="bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
-              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Progress Notes</span>
-              <p class="text-xs font-medium text-slate-700">${note.progressNotes}</p>
-            </div>
-          `
-              : ""
-          }
-
-        </div>
-
-        <!-- Recommendations Block -->
-        ${
-          note.recommendations
-            ? `
-          <div class="bg-sky-50/70 p-3.5 rounded-xl border border-sky-100/80 mt-3">
-            <span class="block text-[10px] font-black text-sky-600 uppercase tracking-wider mb-1">Doctor's Recommendations</span>
-            <p class="text-xs font-medium text-sky-900 italic">${note.recommendations}</p>
-          </div>
-        `
-            : ""
-        }
-
-        <!-- Follow-up Date Banner -->
-        ${
-          formattedNextVisit
-            ? `
-          <div class="mt-3 flex items-center gap-2 text-xs font-bold text-teal-800 bg-teal-50 border border-teal-100 p-3 rounded-xl">
-            <span>📅</span>
-            <span>Recommended Follow-up Visit: ${formattedNextVisit}</span>
-          </div>
-        `
-            : ""
-        }
-
-      </div>
-    `;
-    })
-    .join("");
-}
-document.addEventListener("DOMContentLoaded", async () => {
-  // Show loading state first
-  const container = document.getElementById("my-clinical-records-container");
-  if (container) {
-    container.innerHTML = `<p class="text-xs text-slate-400 text-center py-10 font-bold animate-pulse">Syncing your clinical records...</p>`;
-  }
-
-  // Fetch and render
-  const myNotes = await fetchMyClinicalNotes();
-  renderPatientDashboardNotes(myNotes);
+  await loadPatientClinicalHistory();
 });

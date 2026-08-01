@@ -362,15 +362,9 @@
 
                 <!-- TAB 4: CLINICAL RECORDS -->
                 <section id="tab-history" class="tab-content hidden space-y-4">
-                    <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
-                        <h2
-                            class="text-sm font-black text-slate-900 tracking-wider uppercase mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
-                            <span
-                                class="w-2.5 h-2.5 rounded-full bg-teal-500 shadow-[0_0_8px_rgba(20,184,166,0.5)]"></span>
-                            My Clinical Records & History
-                        </h2>
-                        <!-- Records Container -->
-                        <div id="my-clinical-records-container" class="space-y-4"></div>
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h2 class="text-lg font-bold mb-4">My Clinical History</h2>
+                        <div id="my-history-container" class="space-y-4"></div>
                     </div>
                 </section>
 
@@ -449,6 +443,7 @@
     </script>
 
     <script type="module" src="/src/pages/patientDashboard.js"></script>
+    <script type="module" src="/src/util/clinicalNote.js"></script>
     <script type="module" src="/src/util/calendar.js"></script>
     <script type="module" src="/src/util/dentistCardInfo.js"></script>
     <script type="module" src="/src/pages/booking.js"></script>

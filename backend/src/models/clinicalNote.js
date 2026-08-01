@@ -24,6 +24,10 @@ const clinicalNoteSchema = new mongoose.Schema(
       ref: "Appointment",
       default: null,
     },
+    treatedTeeth: {
+      type: [Number],
+      default: [],
+    },
     chiefComplaint: {
       type: String,
       required: [true, "Chief complaint is required"],
