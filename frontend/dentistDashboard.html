@@ -115,18 +115,28 @@
                         </h3>
                     </div>
 
-                    <!-- 1. Chief Complaint -->
+                    <!-- Target Teeth Display -->
+                    <div class="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                            Targeted Teeth
+                        </label>
+                        <div id="selected-teeth-display" class="flex flex-wrap gap-2 text-sm text-slate-400 italic">
+                            No teeth selected yet. Click the Odontogram to assign teeth to this record.
+                        </div>
+                    </div>
+
+                    <!-- 1. Chief Complaint (FIXED ID: chiefComplaint) -->
                     <div>
-                        <label for="chief-complaint"
+                        <label for="chiefComplaint"
                             class="block text-[10px] font-extrabold uppercase text-slate-500 tracking-wider mb-1.5">
                             Chief Complaint <span class="text-rose-500">*</span>
                         </label>
-                        <input type="text" id="chief-complaint" name="chiefComplaint" required
+                        <input type="text" id="chiefComplaint" name="chiefComplaint" required
                             placeholder="e.g. Patient scheduled for Implant / Tooth sensitivity on upper molar"
                             class="w-full text-xs px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 bg-slate-50/50 font-medium text-slate-800 placeholder:text-slate-400 transition-all" />
                     </div>
 
-                    <!-- 2. Assessment & 3. Treatment Rendered -->
+                    <!-- 2. Assessment & 3. Treatment Rendered (FIXED ID: treatmentRendered) -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="assessment"
@@ -139,24 +149,24 @@
                         </div>
 
                         <div>
-                            <label for="treatment-rendered"
+                            <label for="treatmentRendered"
                                 class="block text-[10px] font-extrabold uppercase text-slate-500 tracking-wider mb-1.5">
                                 Treatment Rendered <span class="text-rose-500">*</span>
                             </label>
-                            <textarea id="treatment-rendered" name="treatmentRendered" rows="3" required
+                            <textarea id="treatmentRendered" name="treatmentRendered" rows="3" required
                                 placeholder="e.g. Performed Implant placement, prophylaxis, extraction..."
                                 class="w-full text-xs px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 bg-slate-50/50 font-medium text-slate-800 placeholder:text-slate-400 transition-all resize-none"></textarea>
                         </div>
                     </div>
 
-                    <!-- 4. Progress Notes & 5. Doctor Recommendations -->
+                    <!-- 4. Progress Notes (FIXED ID: progressNotes) & 5. Doctor Recommendations -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="progress-notes"
+                            <label for="progressNotes"
                                 class="block text-[10px] font-extrabold uppercase text-slate-500 tracking-wider mb-1.5">
                                 Progress Notes
                             </label>
-                            <textarea id="progress-notes" name="progressNotes" rows="2"
+                            <textarea id="progressNotes" name="progressNotes" rows="2"
                                 placeholder="Anesthesia metrics, operative progress, patient responses..."
                                 class="w-full text-xs px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 bg-slate-50/50 font-medium text-slate-800 placeholder:text-slate-400 transition-all resize-none"></textarea>
                         </div>
@@ -180,7 +190,7 @@
                                 class="block text-[10px] font-extrabold uppercase text-slate-500 tracking-wider mb-1.5">
                                 Next Recommended Visit
                             </label>
-                            <input type="date" id="next-visit-date" name="nextVisitDate"
+                            <input type="date" id="nextVisitDate" name="nextVisitDate"
                                 class="w-full text-xs px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 bg-slate-50/50 font-medium text-slate-800 transition-all" />
                         </div>
 
@@ -191,7 +201,8 @@
                             </button>
 
                             <button type="submit"
-                                class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-sky-600 hover:bg-sky-500 active:scale-[0.99] text-white text-xs font-bold px-6 py-3 rounded-xl transition-all cursor-pointer shadow-md shadow-sky-600/15">
+                                class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-sky-600 hover:bg-sky-500 active:scale-[0.99] text-white text-xs font-bold px-6 py-3 rounded-xl transition-all cursor-pointer shadow-md shadow-sky-600/15"
+                                id="your-submit-button-id">
                                 Complete Procedure & Release Patient ✅
                             </button>
                         </div>
@@ -235,7 +246,7 @@
     <!-- Main Clinical Orchestration Engine Modules -->
     <script type="module" src="/src/util/teeth.js"></script>
     <script type="module" src="/src/util/clinicalNote.js"></script>
-    <script type="module" src="./src/pages/dentistDashboard.js"></script>
+    <script type="module" src="/src/pages/dentistDashboard.js"></script>
 </body>
 
 </html>

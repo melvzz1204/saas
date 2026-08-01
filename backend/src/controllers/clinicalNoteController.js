@@ -15,6 +15,7 @@ export const createClinicalNote = async (req, res) => {
     const {
       patientId,
       appointmentId,
+      treatedTeeth,
       chiefComplaint,
       assessment,
       treatmentRendered,
@@ -47,6 +48,7 @@ export const createClinicalNote = async (req, res) => {
       patientId,
       dentistId,
       appointmentId: appointmentId || null,
+      treatedTeeth: treatedTeeth || [],
       chiefComplaint,
       assessment,
       treatmentRendered,

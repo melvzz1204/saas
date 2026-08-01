@@ -1,6 +1,7 @@
 import {
   fetchPatientHistory,
   renderPatientHistoryUI,
+  saveNewClinicalNote,
 } from "../util/clinicalNote.js"; // Adjust path to clinicalNote.js if needed
 
 let activeSessionId = null;
@@ -38,9 +39,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // 4. Form Action Processing Submission Bind
   bindProcedureSubmission();
-
-  // Kick off background operations session clock
-  startSessionClock();
 });
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -193,7 +191,26 @@ async function hydrateActiveChairView(patient) {
     renderPatientHistoryUI(historyData, "patient-history-container");
   }
 }
+// Maps a tooth number to its anatomical name
+function getToothDescription(toothId) {
+  const toothNum = parseInt(toothId);
+  if (isNaN(toothNum)) return "Unknown Tooth";
 
+  // Quadrant 1: Maxillary Right (Upper Right)
+  if (toothNum >= 11 && toothNum <= 18)
+    return `Maxillary Right (Upper) - Tooth ${toothNum}`;
+  // Quadrant 2: Maxillary Left (Upper Left)
+  if (toothNum >= 21 && toothNum <= 28)
+    return `Maxillary Left (Upper) - Tooth ${toothNum}`;
+  // Quadrant 3: Mandibular Left (Lower Left)
+  if (toothNum >= 31 && toothNum <= 38)
+    return `Mandibular Left (Lower) - Tooth ${toothNum}`;
+  // Quadrant 4: Mandibular Right (Lower Right)
+  if (toothNum >= 41 && toothNum <= 48)
+    return `Mandibular Right (Lower) - Tooth ${toothNum}`;
+
+  return `Tooth ${toothNum}`;
+}
 function clearActiveChairView() {
   activeSessionId = null;
   activePatientId = null;
@@ -236,51 +253,49 @@ function bindProcedureSubmission() {
     const userData = JSON.parse(localStorage.getItem("user") || "{}");
     const clinicId =
       localStorage.getItem("clinicId") || userData.clinicId || "";
-
     const submitBtn = form.querySelector('button[type="submit"]');
-    const noteText = form.querySelector("textarea").value;
-    const selectedTooth = window.activeSelectedTooth || null;
 
     try {
       submitBtn.disabled = true;
       submitBtn.textContent = "Sealing Clinical Records... ⏳";
 
-      // --- STEP A: POST TO CLINICAL NOTES ---
-      const notePayload = {
-        patientId: activePatientId,
-        appointmentId: activeSessionId,
-        chiefComplaint: `Patient scheduled for ${activeProcedureName}`,
-        assessment: noteText,
-        treatmentRendered: `Performed ${activeProcedureName}${
-          selectedTooth ? ` on Tooth #${selectedTooth}` : ""
-        }`,
-        progressNotes: noteText,
-        recommendations:
-          "Maintain routine oral hygiene and follow-up as needed.",
-      };
+      // --- NEW STEP A: AUTO-INJECT TEETH DATA ---
+      const selectedTeeth = window.getSelectedTeeth
+        ? window.getSelectedTeeth()
+        : [];
+      if (selectedTeeth.length > 0) {
+        // Map the IDs to their anatomical names using the function we made
+        const teethDescriptions = selectedTeeth
+          .map((id) => {
+            return typeof getToothDescription === "function"
+              ? getToothDescription(id)
+              : `Tooth ${id}`;
+          })
+          .join(", ");
 
-      const noteResponse = await fetch(
-        `${API_BASE_URL}/api/v1/clinical-notes`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            "x-clinic-id": clinicId,
-          },
-          body: JSON.stringify(notePayload),
-        },
+        // Grab the treatment text box
+        const treatmentInput = document.getElementById("treatmentRendered");
+        if (treatmentInput) {
+          const originalText = treatmentInput.value.trim();
+          // Inject the beautiful tooth string at the top of the text!
+          treatmentInput.value = `[Targeted Areas: ${teethDescriptions}]\n${originalText}`;
+        }
+      }
+      // ------------------------------------------
+
+      // --- STEP B: POST TO CLINICAL NOTES USING SHARED MODULE ---
+      const savedNote = await saveNewClinicalNote(
+        activePatientId,
+        activeSessionId,
       );
 
-      const noteData = await noteResponse.json();
-
-      if (!noteResponse.ok) {
-        throw new Error(
-          noteData.message || "Failed to save clinical note to record history.",
-        );
+      if (!savedNote) {
+        throw new Error("Failed to save clinical note to record history.");
       }
 
-      // --- STEP B: UPDATE APPOINTMENT STATUS ---
+      // --- STEP C: UPDATE APPOINTMENT STATUS ---
+      const noteText = document.getElementById("assessment").value;
+
       const statusResponse = await fetch(
         `${API_BASE_URL}/api/v1/appointments/${activeSessionId}/status`,
         {
@@ -293,24 +308,30 @@ function bindProcedureSubmission() {
           body: JSON.stringify({
             status: "COMPLETED_PENDING_BILL",
             clinicalNotes: noteText,
-            treatedTooth: selectedTooth,
+            treatedTooth: selectedTeeth.length > 0 ? selectedTeeth[0] : null,
             billingAmount: 250.0,
           }),
         },
       );
 
       const statusData = await statusResponse.json();
-
-      if (!statusResponse.ok) {
+      if (!statusResponse.ok)
         throw new Error(
           statusData.message || "Failed to finalize appointment status.",
         );
-      }
 
       alert("🎉 Procedure completed! Clinical note saved to medical history.");
 
-      form.reset();
-      if (window.clearToothSelection) window.clearToothSelection();
+      // ✅ ADDED THIS HERE: Instantly clear all input fields in the form!
+      if (typeof clearClinicalNoteForm === "function") {
+        clearClinicalNoteForm();
+      }
+
+      // Clear the badges from the UI after successful save
+      const badgeContainer = document.getElementById("selected-teeth-display");
+      if (badgeContainer)
+        badgeContainer.innerHTML =
+          "No teeth selected yet. Click the Odontogram to assign teeth to this record.";
 
       await fetchClinicalQueue();
     } catch (err) {
@@ -320,19 +341,6 @@ function bindProcedureSubmission() {
       submitBtn.innerHTML = "Complete Procedure & Release Patient ✅";
     }
   });
-}
-
-function startSessionClock() {
-  const timerDisplay = document.getElementById("session-timer");
-  if (!timerDisplay) return;
-
-  let totalSeconds = 1455;
-  setInterval(() => {
-    totalSeconds++;
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    timerDisplay.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  }, 1000);
 }
 
 const socketToken = localStorage.getItem("token");
@@ -420,3 +428,96 @@ window.renderDentistQueue = function (queue) {
     queueContainer.appendChild(card);
   });
 };
+window.updateSelectedTeethUI = function () {
+  const container = document.getElementById("selected-teeth-display");
+  if (!container) return;
+
+  // Grab the selected array (e.g., ["11", "12"])
+  const selectedTeeth = window.getSelectedTeeth
+    ? window.getSelectedTeeth()
+    : [];
+
+  if (selectedTeeth.length === 0) {
+    container.innerHTML =
+      "No teeth selected yet. Click the Odontogram to assign teeth to this record.";
+    return;
+  }
+
+  // Generate HTML badges for each selected tooth
+  container.innerHTML = selectedTeeth
+    .map((toothId) => {
+      const description = getToothDescription(toothId);
+      return `
+      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 text-teal-800 border border-teal-200 rounded-lg text-xs font-bold shadow-sm">
+        🦷 ${description}
+      </span>
+    `;
+    })
+    .join("");
+};
+// Watch for clicks on the page (specifically targeting the Odontogram)
+document.addEventListener("click", (e) => {
+  // Use a tiny 50ms delay to let teeth.js finish selecting the tooth first
+  setTimeout(() => {
+    if (typeof window.updateSelectedTeethUI === "function") {
+      window.updateSelectedTeethUI();
+    }
+
+    if (typeof autoFillTreatmentRendered === "function") {
+      autoFillTreatmentRendered();
+    }
+  }, 50);
+});
+// 🦷 Update Treatment Rendered Field
+function autoFillTreatmentRendered() {
+  const treatmentInput = document.getElementById("treatmentRendered");
+  if (!treatmentInput) return;
+
+  // Assuming you still have this function from your clinicalNote.js setup
+  const selectedTeeth = window.getSelectedTeeth
+    ? window.getSelectedTeeth()
+    : [];
+
+  if (selectedTeeth.length === 0) {
+    treatmentInput.value = "";
+    return;
+  }
+
+  // Format the teeth into a readable string
+  const teethList = selectedTeeth.join(", ");
+
+  // You can customize this template to match your preferred clinical format
+  treatmentInput.value = `[Targeted Areas: Tooth ${teethList}] - `;
+}
+// 🧹 Clear all form fields
+function clearClinicalNoteForm() {
+  const fields = [
+    "chiefComplaint",
+    "assessment",
+    "treatmentRendered",
+    "progressNotes",
+    "recommendations",
+    "nextVisitDate",
+  ];
+
+  fields.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+
+  if (typeof window.clearSelectedTeeth === "function") {
+    window.clearSelectedTeeth();
+  }
+}
+document.addEventListener("click", (e) => {
+  // Use a tiny 50ms delay to let teeth.js finish selecting the tooth first
+  setTimeout(() => {
+    if (typeof window.updateSelectedTeethUI === "function") {
+      window.updateSelectedTeethUI();
+    }
+
+    if (typeof autoFillTreatmentRendered === "function") {
+      autoFillTreatmentRendered();
+    }
+  }, 50);
+});
