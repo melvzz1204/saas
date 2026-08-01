@@ -1,10 +1,17 @@
 import ClinicalNote from "../models/ClinicalNote.js";
 
-// =========================================================================
-// 📝 1. CREATE CLINICAL NOTE (Dentist / Staff Only)
-// =========================================================================
+// controllers/clinicalNoteController.js
 export const createClinicalNote = async (req, res) => {
   try {
+    // 1. Prevent Patients from saving notes as the dentist
+    if (req.user.role === "PATIENT") {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Forbidden: Only clinical staff and dentists can create notes.",
+      });
+    }
+
     const {
       patientId,
       appointmentId,
@@ -34,6 +41,7 @@ export const createClinicalNote = async (req, res) => {
       });
     }
 
+    // 2. Create the clinical note
     const newNote = await ClinicalNote.create({
       clinicId,
       patientId,
@@ -47,10 +55,10 @@ export const createClinicalNote = async (req, res) => {
       nextVisitDate: nextVisitDate || null,
     });
 
-    // Populate dentist name for immediate UI feedback
+    // 3. Populate dentist & patient details for immediate UI rendering
     const populatedNote = await newNote.populate([
-      { path: "dentistId", select: "firstName lastName fullName email" },
-      { path: "patientId", select: "firstName lastName fullName email" },
+      { path: "dentistId", select: "firstName lastName specialization email" },
+      { path: "patientId", select: "firstName lastName email" },
     ]);
 
     return res.status(201).json({
@@ -134,3 +142,18 @@ export const getMyClinicalNotes = async (req, res) => {
     });
   }
 };
+
+/* export const getMyNotes = async (req, res) => {
+  try {
+    const targetPatientId = req.params.patientId || req.user._id;
+
+    const notes = await ClinicalNote.find({ patientId: targetPatientId })
+      .populate("dentistId", "firstName lastName role specialization")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, data: notes });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+ */

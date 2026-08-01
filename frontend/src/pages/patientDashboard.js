@@ -575,7 +575,6 @@ async function fetchMyClinicalNotes() {
   }
 }
 
-// 2. Render the notes into the Patient Dashboard UI
 function renderPatientDashboardNotes(notes) {
   const container = document.getElementById("my-clinical-records-container");
   if (!container) return;
@@ -592,7 +591,7 @@ function renderPatientDashboardNotes(notes) {
 
   container.innerHTML = notes
     .map((note) => {
-      // Format the date
+      // Format creation date
       const dateObj = new Date(note.createdAt);
       const formattedDate = dateObj.toLocaleDateString("en-US", {
         weekday: "long",
@@ -601,52 +600,104 @@ function renderPatientDashboardNotes(notes) {
         day: "numeric",
       });
 
-      // Safely get the dentist's name
-      const dentistName = note.dentistId
-        ? `Dr. ${note.dentistId.lastName || note.dentistId.firstName}`
+      // Safely check if dentistId is a populated object or plain string ID
+      const dentistObj =
+        typeof note.dentistId === "object" && note.dentistId !== null
+          ? note.dentistId
+          : null;
+      const dentistName = dentistObj
+        ? `Dr. ${dentistObj.lastName || dentistObj.firstName}`
         : "Clinical Provider";
+      const specialization = dentistObj?.specialization || "General Dentistry";
 
-      // Safely get specialization
-      const specialization =
-        note.dentistId?.specialization || "General Dentistry";
+      // Format next visit date if present
+      const formattedNextVisit = note.nextVisitDate
+        ? new Date(note.nextVisitDate).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })
+        : null;
 
       return `
-      <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm mb-4 hover:shadow-md transition-shadow">
-        <div class="flex justify-between items-start border-b border-slate-100 pb-3 mb-3">
+      <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs hover:shadow-md transition-shadow">
+
+        <!-- Header -->
+        <div class="flex justify-between items-start border-b border-slate-100 pb-3 mb-4">
           <div>
-            <span class="text-[10px] font-black text-teal-600 bg-teal-50 border border-teal-200 px-2 py-1 rounded-md uppercase tracking-wider">
+            <span class="text-[10px] font-black text-teal-600 bg-teal-50 border border-teal-200/60 px-2.5 py-1 rounded-md uppercase tracking-wider">
               ${formattedDate}
             </span>
-            <h4 class="text-sm font-bold text-slate-800 mt-2">Treatment Record</h4>
+            <h4 class="text-sm font-black text-slate-800 mt-2">Treatment Record</h4>
           </div>
           <div class="text-right">
-            <p class="text-xs font-bold text-slate-700">${dentistName}</p>
-            <p class="text-[10px] font-medium text-slate-400">${specialization}</p>
+            <p class="text-xs font-bold text-slate-800">${dentistName}</p>
+            <p class="text-[10px] font-semibold text-slate-400">${specialization}</p>
           </div>
         </div>
 
-        <div class="space-y-3">
-          <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-            <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Chief Complaint</span>
+        <!-- Main Content Matrix -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+   <div class="bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
+            <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Complaint</span>
             <p class="text-xs font-medium text-slate-700">${note.chiefComplaint || "N/A"}</p>
           </div>
 
-          <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+          <div class="bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
             <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Treatment Rendered</span>
             <p class="text-xs font-medium text-slate-700">${note.treatmentRendered || "N/A"}</p>
           </div>
 
+
           ${
-            note.recommendations
+            note.assessment
               ? `
-            <div class="bg-sky-50 p-3 rounded-xl border border-sky-100">
-              <span class="block text-[10px] font-black text-sky-600 uppercase tracking-wider mb-1">Doctor's Recommendations</span>
-              <p class="text-xs font-medium text-sky-900 italic">${note.recommendations}</p>
+            <div class="bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
+              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Assessment</span>
+              <p class="text-xs font-medium text-slate-700">${note.assessment}</p>
             </div>
           `
               : ""
           }
+
+          ${
+            note.progressNotes
+              ? `
+           <div class="bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
+              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Progress Notes</span>
+              <p class="text-xs font-medium text-slate-700">${note.progressNotes}</p>
+            </div>
+          `
+              : ""
+          }
+
         </div>
+
+        <!-- Recommendations Block -->
+        ${
+          note.recommendations
+            ? `
+          <div class="bg-sky-50/70 p-3.5 rounded-xl border border-sky-100/80 mt-3">
+            <span class="block text-[10px] font-black text-sky-600 uppercase tracking-wider mb-1">Doctor's Recommendations</span>
+            <p class="text-xs font-medium text-sky-900 italic">${note.recommendations}</p>
+          </div>
+        `
+            : ""
+        }
+
+        <!-- Follow-up Date Banner -->
+        ${
+          formattedNextVisit
+            ? `
+          <div class="mt-3 flex items-center gap-2 text-xs font-bold text-teal-800 bg-teal-50 border border-teal-100 p-3 rounded-xl">
+            <span>📅</span>
+            <span>Recommended Follow-up Visit: ${formattedNextVisit}</span>
+          </div>
+        `
+            : ""
+        }
+
       </div>
     `;
     })

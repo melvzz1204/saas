@@ -35,7 +35,7 @@
                     </div>
                 </div>
 
-                <!-- Nav Menu Links -->
+                <!-- Nav Menu Links (Our Dentists tab removed) -->
                 <nav class="p-4 space-y-1">
                     <button onclick="switchTab('tab-overview')" id="nav-tab-overview"
                         class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold rounded-xl transition-all bg-teal-50 text-teal-700 border border-teal-100 shadow-2xs">
@@ -55,11 +55,6 @@
                     <button onclick="switchTab('tab-history')" id="nav-tab-history"
                         class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
                         <span>📂</span> Clinical Records
-                    </button>
-
-                    <button onclick="switchTab('tab-dentists')" id="nav-tab-dentists"
-                        class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
-                        <span>👨‍⚕️</span> Our Dentists
                     </button>
                 </nav>
             </div>
@@ -171,6 +166,20 @@
                             Book Session Now ✨
                         </button>
                     </div>
+
+                    <!-- AVAILABLE DENTISTS SECTION IN OVERVIEW -->
+                    <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h2
+                                class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                                <span class="text-teal-600">👨‍⚕️</span>
+                                <span>Available Dental Providers</span>
+                            </h2>
+                        </div>
+                        <div id="dentist-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Cards populate automatically via /src/util/dentistCardInfo.js -->
+                        </div>
+                    </div>
                 </section>
 
                 <!-- TAB 2: BOOK APPOINTMENT -->
@@ -209,7 +218,7 @@
                                 <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
                                     <div class="flex justify-between items-center px-1">
                                         <span id="calendar-month-year"
-                                            class="text-xs font-black text-slate-800 uppercase tracking-wide">June
+                                            class="text-xs font-black text-slate-800 uppercase tracking-wide">August
                                             2026</span>
                                         <div class="flex space-x-1">
                                             <button type="button" id="prev-month-btn"
@@ -365,12 +374,6 @@
                     </div>
                 </section>
 
-                <!-- TAB 5: OUR DENTISTS -->
-                <section id="tab-dentists" class="tab-content hidden space-y-6">
-                    <div id="dentist-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    </div>
-                </section>
-
             </main>
         </div>
 
@@ -402,8 +405,7 @@
                 'tab-overview': 'Dashboard Overview',
                 'tab-book': 'Request Session Entry',
                 'tab-appointments': 'My Scheduled Sessions',
-                'tab-history': 'Clinical History Records',
-                'tab-dentists': 'Clinical Care Providers'
+                'tab-history': 'Clinical History Records'
             };
             document.getElementById('active-tab-title').textContent = titleMap[tabId] || 'Dashboard';
 
