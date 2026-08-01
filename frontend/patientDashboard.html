@@ -9,323 +9,440 @@
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 </head>
 
-<body
-    class="bg-slate-50 text-slate-800 font-sans min-h-screen antialiased selection:bg-teal-500/10 selection:text-teal-700">
+<body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-teal-500/10 selection:text-teal-700">
 
-    <nav class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-50 shadow-xs">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center space-x-3 group">
-                    <div
-                        class="flex items-center justify-center w-10 h-10 bg-teal-50 border border-teal-100 rounded-xl text-xl shadow-xs transform group-hover:scale-105 transition-all">
-                        🦷
-                    </div>
-                    <div class="flex flex-col">
-                        <span id="clinic-name-heading"
-                            class="font-black text-base tracking-tight text-slate-900 uppercase">Loading
-                            Clinic...</span>
-                        <span class="text-[10px] capitalize text-teal-600 text-xs italic tracking-widest -mt-0.5">dental
-                            Clinic</span>
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- ========================================== -->
+        <!-- 1. LEFT SIDENAV NAVIGATION                -->
+        <!-- ========================================== -->
+        <aside id="sidebar"
+            class="w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between fixed lg:relative inset-y-0 left-0 z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out">
+            <div>
+                <!-- Clinic Logo Header -->
+                <div class="h-16 px-6 flex items-center border-b border-slate-100">
+                    <div class="flex items-center space-x-3 group">
+                        <div
+                            class="flex items-center justify-center w-9 h-9 bg-teal-50 border border-teal-100 rounded-xl text-lg shadow-xs">
+                            🦷
+                        </div>
+                        <div class="flex flex-col">
+                            <span id="clinic-name-heading"
+                                class="font-black text-sm tracking-tight text-slate-900 uppercase truncate max-w-[140px]">Loading...</span>
+                            <span class="text-[9px] capitalize text-teal-600 font-bold tracking-widest -mt-0.5">Dental
+                                Clinic</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="flex items-center space-x-4">
-                    <div class="hidden sm:flex flex-col text-right">
-                        <span id="user-greeting" class="text-xs font-bold text-slate-900">Loading user...</span>
+                <!-- Nav Menu Links (Our Dentists tab removed) -->
+                <nav class="p-4 space-y-1">
+                    <button onclick="switchTab('tab-overview')" id="nav-tab-overview"
+                        class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold rounded-xl transition-all bg-teal-50 text-teal-700 border border-teal-100 shadow-2xs">
+                        <span>📊</span> Overview
+                    </button>
+
+                    <button onclick="switchTab('tab-book')" id="nav-tab-book"
+                        class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
+                        <span>✨</span> Book Appointment
+                    </button>
+
+                    <button onclick="switchTab('tab-appointments')" id="nav-tab-appointments"
+                        class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
+                        <span>📋</span> My Appointments
+                    </button>
+
+                    <button onclick="switchTab('tab-history')" id="nav-tab-history"
+                        class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
+                        <span>📂</span> Clinical Records
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Sidebar Footer / Profile Completion Callout -->
+            <div class="p-4 border-t border-slate-100">
+                <a href="patientFullInfo.html"
+                    class="block bg-amber-50/80 hover:bg-amber-100/80 border border-amber-200/70 rounded-xl p-3 transition-all group">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-base">📋</span>
+                        <div>
+                            <p class="text-[10px] font-black uppercase text-amber-900 tracking-wide">Complete Profile
+                            </p>
+                            <p class="text-[9px] font-medium text-amber-700">Update personal info & history →</p>
+                        </div>
                     </div>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Sidebar Overlay for Mobile -->
+        <div id="sidebar-overlay" onclick="toggleMobileSidebar()"
+            class="fixed inset-0 bg-slate-900/20 backdrop-blur-xs z-40 hidden lg:hidden"></div>
+
+        <!-- ========================================== -->
+        <!-- 2. MAIN CONTENT AREA                       -->
+        <!-- ========================================== -->
+        <div class="flex-1 flex flex-col overflow-y-auto">
+
+            <!-- Top Header -->
+            <header
+                class="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-4 sm:px-8 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleMobileSidebar()"
+                        class="lg:hidden text-slate-500 hover:text-slate-800 p-2 rounded-lg border border-slate-200">
+                        ☰
+                    </button>
+                    <h1 id="active-tab-title" class="text-xs font-black text-slate-800 uppercase tracking-wider">
+                        Dashboard Overview</h1>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <span id="user-greeting" class="text-xs font-bold text-slate-800 hidden sm:inline">Loading
+                        user...</span>
                     <button id="auth-btn"
                         class="inline-flex items-center justify-center px-4 py-2 text-xs font-bold rounded-xl tracking-wide transition-all uppercase cursor-pointer shadow-xs active:scale-[0.98]">
                     </button>
                 </div>
-            </div>
-        </div>
-    </nav>
+            </header>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 -mb-4">
-        <a href="patientFullInfo.html"
-            class="block bg-amber-50/80 hover:bg-amber-100/60 border border-amber-200/60 rounded-2xl p-4 transition-all group shadow-xs">
-            <div class="flex justify-between items-center flex-wrap gap-3">
-                <div class="flex items-center space-x-3">
-                    <div
-                        class="flex items-center justify-center w-8 h-8 bg-amber-100 rounded-xl text-sm transform group-hover:scale-105 transition-all">
-                        📋
-                    </div>
-                    <span class="text-xs font-bold text-amber-900 tracking-wide uppercase">
-                        Please complete your full information
-                    </span>
-                </div>
-                <div
-                    class="flex items-center text-xs font-black text-amber-700 uppercase tracking-wider space-x-1 bg-white border border-amber-200 px-3 py-1.5 rounded-xl group-hover:border-amber-300 transition-colors shadow-2xs">
-                    <span>Click Here</span>
-                    <svg class="w-3.5 h-3.5 transform group-hover:translate-x-0.5 transition-transform" fill="none"
-                        stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                    </svg>
-                </div>
-            </div>
-        </a>
-    </div>
-    <!-- Patient Dashboard: Dentist Section -->
-    <section class="p-8 font-sans">
-        <div id="dentist-cards-container"
-            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-        </div>
-    </section>
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+            <main class="p-4 sm:p-8 max-w-7xl w-full mx-auto space-y-6">
 
-
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div
-                class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-slate-300 transition-colors">
-                <div class="space-y-2">
-                    <div class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Next Confirmed Visit
-                    </div>
-                    <div id="stat-next-visit" class="text-base font-black text-slate-800">None Scheduled</div>
-                </div>
-                <div
-                    class="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-lg text-slate-400">
-                    📅</div>
-            </div>
-
-            <div
-                class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-slate-300 transition-colors">
-                <div class="space-y-1">
-                    <div class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Pending Approvals</div>
-                    <div id="stat-pending" class="text-3xl font-black text-amber-500 tracking-tight">0</div>
-                </div>
-                <div
-                    class="w-10 h-10 bg-amber-50 border border-amber-100 rounded-xl flex items-center justify-center text-lg text-amber-500 animate-pulse">
-                    ⏳</div>
-            </div>
-
-            <div
-                class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-slate-300 transition-colors">
-                <div class="space-y-2">
-                    <div class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Account Diagnostics</div>
-                    <div
-                        class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/50 text-[11px] font-bold uppercase tracking-wide">
-                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                        <span>Active Patient</span>
-                    </div>
-                </div>
-                <div
-                    class="w-10 h-10 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-center text-lg text-emerald-600">
-                    🛡️</div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-
-            <div class="lg:col-span-4 space-y-6 sticky top-24">
-
-                <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
-                    <div class="p-5 border-b border-slate-100 bg-linear-to-b from-slate-50/50 to-white">
-                        <h2
-                            class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-                            <span class="text-teal-600">✨</span>
-                            <span>Request Session Entry</span>
-                        </h2>
-                    </div>
-
-                    <form id="booking-form" class="p-6 space-y-4">
-                        <div>
-                            <label
-                                class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Select
-                                Service</label>
-                            <select id="booking-service" required onchange="updateFormPriceIndicator(this)"
-                                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-1 focus:ring-teal-500/20 transition-all cursor-pointer">
-                                <option value="" disabled selected>Retrieving treatments...</option>
-                            </select>
+                <!-- TAB 1: OVERVIEW -->
+                <section id="tab-overview" class="tab-content space-y-6">
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div
+                            class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-slate-300 transition-colors">
+                            <div class="space-y-2">
+                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Next
+                                    Confirmed Visit</div>
+                                <div id="stat-next-visit" class="text-base font-black text-slate-800">None Scheduled
+                                </div>
+                            </div>
+                            <div
+                                class="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-lg text-slate-400">
+                                📅</div>
                         </div>
 
                         <div
-                            class="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3 flex justify-between items-center text-xs">
-                            <span class="font-bold text-indigo-900/60 uppercase text-[10px] tracking-wide">Price:</span>
-                            <span id="form-price-indicator" class="font-black text-indigo-600 text-sm">₱0.00</span>
+                            class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-slate-300 transition-colors">
+                            <div class="space-y-1">
+                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Pending
+                                    Approvals</div>
+                                <div id="stat-pending" class="text-3xl font-black text-amber-500 tracking-tight">0</div>
+                            </div>
+                            <div
+                                class="w-10 h-10 bg-amber-50 border border-amber-100 rounded-xl flex items-center justify-center text-lg text-amber-500 animate-pulse">
+                                ⏳</div>
                         </div>
 
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                                Preferred Target Date
-                            </label>
-
-                            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
-                                <div class="flex justify-between items-center px-1">
-                                    <span id="calendar-month-year"
-                                        class="text-xs font-black text-slate-800 uppercase tracking-wide">June
-                                        2026</span>
-                                    <div class="flex space-x-1">
-                                        <button type="button" id="prev-month-btn"
-                                            class="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M15.75 19.5L8.25 12l7.5-7.5" />
-                                            </svg>
-                                        </button>
-                                        <button type="button" id="next-month-btn"
-                                            class="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-
+                        <div
+                            class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-slate-300 transition-colors">
+                            <div class="space-y-2">
+                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Account
+                                    Diagnostics</div>
                                 <div
-                                    class="grid grid-cols-7 gap-1 text-center text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">
-                                    <div>Su</div>
-                                    <div>Mo</div>
-                                    <div>Tu</div>
-                                    <div>We</div>
-                                    <div>Th</div>
-                                    <div>Fr</div>
-                                    <div>Sa</div>
+                                    class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/50 text-[11px] font-bold uppercase tracking-wide">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                                    <span>Active Patient</span>
                                 </div>
+                            </div>
+                            <div
+                                class="w-10 h-10 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-center text-lg text-emerald-600">
+                                🛡️</div>
+                        </div>
+                    </div>
 
-                                <div id="calendar-days-grid" class="grid grid-cols-7 gap-1 text-center text-xs">
-                                </div>
-                            </div>
-                            <div>
-                                <input type="date" id="booking-date" required class="hidden" />
-                            </div>
+                    <!-- Quick Call to Action Banner -->
+                    <div
+                        class="bg-linear-to-r from-teal-600 to-sky-600 rounded-2xl p-6 text-white shadow-md flex justify-between items-center flex-wrap gap-4">
+                        <div>
+                            <h3 class="text-base font-black uppercase tracking-tight">Need Dental Care?</h3>
+                            <p class="text-xs text-teal-100 mt-1">Book an appointment online with our verified dental
+                                providers.</p>
+                        </div>
+                        <button onclick="switchTab('tab-book')"
+                            class="bg-white text-teal-800 text-xs font-bold px-5 py-2.5 rounded-xl uppercase tracking-wider hover:bg-teal-50 transition-colors cursor-pointer shadow-xs">
+                            Book Session Now ✨
+                        </button>
+                    </div>
+
+                    <!-- AVAILABLE DENTISTS SECTION IN OVERVIEW -->
+                    <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h2
+                                class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                                <span class="text-teal-600">👨‍⚕️</span>
+                                <span>Available Dental Providers</span>
+                            </h2>
+                        </div>
+                        <div id="dentist-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Cards populate automatically via /src/util/dentistCardInfo.js -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 2: BOOK APPOINTMENT -->
+                <section id="tab-book" class="tab-content hidden space-y-6 max-w-2xl mx-auto">
+                    <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+                        <div class="p-5 border-b border-slate-100 bg-linear-to-b from-slate-50/50 to-white">
+                            <h2
+                                class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                                <span class="text-teal-600">✨</span>
+                                <span>Request Session Entry</span>
+                            </h2>
+                        </div>
+
+                        <form id="booking-form" class="p-6 space-y-4">
                             <div>
                                 <label
-                                    class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                                    Preferred Time
-                                </label>
+                                    class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Select
+                                    Service</label>
+                                <select id="booking-service" required onchange="updateFormPriceIndicator(this)"
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-1 focus:ring-teal-500/20 transition-all cursor-pointer">
+                                    <option value="" disabled selected>Retrieving treatments...</option>
+                                </select>
+                            </div>
 
-                                <div id="time-select-container" class="block">
-                                    <!-- Added "disabled" and removed hardcoded times -->
-                                    <select id="booking-time" required disabled
-                                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-1 focus:ring-teal-500/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                                        <option value="" disabled selected>Please select a date first...</option>
-                                    </select>
+                            <div
+                                class="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3 flex justify-between items-center text-xs">
+                                <span
+                                    class="font-bold text-indigo-900/60 uppercase text-[10px] tracking-wide">Price:</span>
+                                <span id="form-price-indicator" class="font-black text-indigo-600 text-sm">₱0.00</span>
+                            </div>
+
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Preferred
+                                    Target Date</label>
+                                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                                    <div class="flex justify-between items-center px-1">
+                                        <span id="calendar-month-year"
+                                            class="text-xs font-black text-slate-800 uppercase tracking-wide">August
+                                            2026</span>
+                                        <div class="flex space-x-1">
+                                            <button type="button" id="prev-month-btn"
+                                                class="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                    stroke-width="2.5" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M15.75 19.5L8.25 12l7.5-7.5" />
+                                                </svg>
+                                            </button>
+                                            <button type="button" id="next-month-btn"
+                                                class="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                    stroke-width="2.5" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        class="grid grid-cols-7 gap-1 text-center text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">
+                                        <div>Su</div>
+                                        <div>Mo</div>
+                                        <div>Tu</div>
+                                        <div>We</div>
+                                        <div>Th</div>
+                                        <div>Fr</div>
+                                        <div>Sa</div>
+                                    </div>
+                                    <div id="calendar-days-grid" class="grid grid-cols-7 gap-1 text-center text-xs">
+                                    </div>
                                 </div>
 
-                                <!-- Keep your after-hours notice layout -->
-                                <div id="after-hours-notice"
-                                    class="hidden bg-amber-50/80 border border-amber-200/70 rounded-xl p-3.5 text-amber-900 space-y-1 text-xs">
-                                    <div class="flex items-center space-x-1.5 font-bold">
-                                        <span>⏰</span>
-                                        <span>Clinic Hours Concluded or Unavailable</span>
+                                <input type="date" id="booking-date" required class="hidden" />
+
+                                <div class="mt-4">
+                                    <label
+                                        class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Preferred
+                                        Time</label>
+                                    <div id="time-select-container" class="block">
+                                        <select id="booking-time" required disabled
+                                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-1 focus:ring-teal-500/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <option value="" disabled selected>Please select a date first...</option>
+                                        </select>
                                     </div>
-                                    <p class="text-amber-700 text-[11px] leading-relaxed">
-                                        There are no available time slots for this date. Please select a different
-                                        future date on the calendar
-                                        matrix grid above.
-                                    </p>
+
+                                    <div id="after-hours-notice"
+                                        class="hidden bg-amber-50/80 border border-amber-200/70 rounded-xl p-3.5 text-amber-900 space-y-1 text-xs mt-2">
+                                        <div class="flex items-center space-x-1.5 font-bold">
+                                            <span>⏰</span>
+                                            <span>Clinic Hours Concluded or Unavailable</span>
+                                        </div>
+                                        <p class="text-amber-700 text-[11px] leading-relaxed">
+                                            There are no available time slots for this date. Please select a different
+                                            future date on the calendar matrix grid above.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
+
+                            <button type="submit" id="book-btn"
+                                class="w-full bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold py-3.5 rounded-xl shadow-lg shadow-teal-900/10 transition-all uppercase tracking-wider mt-2 cursor-pointer active:scale-[0.99]">
+                                Submit Booking Request
+                            </button>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- TAB 3: APPOINTMENTS & PRICING -->
+                <section id="tab-appointments" class="tab-content hidden space-y-8">
+                    <!-- Scheduled Sessions -->
+                    <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+                        <div
+                            class="p-5 border-b border-slate-100 bg-linear-to-b from-slate-50/50 to-white flex justify-between items-center">
+                            <h2
+                                class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                                <span class="text-indigo-500">📋</span>
+                                <span>Scheduled Sessions</span>
+                            </h2>
                         </div>
-                        <button type="submit" id="book-btn"
-                            class="w-full bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold py-3.5 rounded-xl shadow-lg shadow-teal-900/10 transition-all uppercase tracking-wider mt-2 cursor-pointer active:scale-[0.99]">
-                            Submit Booking Request
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <div class="lg:col-span-8 space-y-8">
-
-                <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr
-                                    class="border-b border-slate-100 bg-slate-50/70 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                                    <th class="py-3 px-5">Service Type</th>
-                                    <th class="py-3 px-5">Clinical Treatment</th>
-                                    <th class="py-3 px-5 text-right">Price</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pricing-ledger-body"
-                                class="divide-y divide-slate-100 text-xs font-medium text-slate-700">
-                                <tr>
-                                    <td colspan="3" class="py-8 text-center text-slate-400 italic">
-                                        Syncing live treatment catalogue matrix...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
-                    <div
-                        class="p-5 border-b border-slate-100 bg-linear-to-b from-slate-50/50 to-white flex justify-between items-center">
-                        <h2
-                            class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-                            <span class="text-indigo-500">📋</span>
-                            <span>Scheduled Sessions</span>
-                        </h2>
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr
-                                    class="border-b border-slate-100 bg-slate-50/70 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                                    <th class="py-3.5 px-6">Service Category</th>
-                                    <th class="py-3.5 px-6">Allocated Schedule</th>
-                                    <th class="py-3.5 px-6 text-right">Verification Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="bookings-table-body"
-                                class="divide-y divide-slate-100 text-xs font-medium text-slate-700">
-                                <tr class="hover:bg-slate-50/50 transition-colors">
-                                    <td colspan="3" class="py-12 text-center text-slate-400 italic">
-                                        <div class="flex flex-col items-center justify-center space-y-2">
-                                            <div
-                                                class="w-5 h-5 border-2 border-teal-500/30 border-t-teal-600 rounded-full animate-spin">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr
+                                        class="border-b border-slate-100 bg-slate-50/70 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                                        <th class="py-3.5 px-6">Service Category</th>
+                                        <th class="py-3.5 px-6">Allocated Schedule</th>
+                                        <th class="py-3.5 px-6 text-right">Verification Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bookings-table-body"
+                                    class="divide-y divide-slate-100 text-xs font-medium text-slate-700">
+                                    <tr class="hover:bg-slate-50/50 transition-colors">
+                                        <td colspan="3" class="py-12 text-center text-slate-400 italic">
+                                            <div class="flex flex-col items-center justify-center space-y-2">
+                                                <div
+                                                    class="w-5 h-5 border-2 border-teal-500/30 border-t-teal-600 rounded-full animate-spin">
+                                                </div>
+                                                <span class="text-xs font-medium text-slate-400 mt-2">Assembling clinic
+                                                    care matrix tables...</span>
                                             </div>
-                                            <span class="text-xs font-medium text-slate-400 mt-2">Assembling clinic care
-                                                matrix tables...</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
 
-            </div>
+                    <!-- Pricing Catalogue -->
+                    <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+                        <div class="p-5 border-b border-slate-100 bg-linear-to-b from-slate-50/50 to-white">
+                            <h2
+                                class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                                <span class="text-teal-600">🏷️</span>
+                                <span>Treatment Pricing Ledger</span>
+                            </h2>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr
+                                        class="border-b border-slate-100 bg-slate-50/70 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                                        <th class="py-3 px-5">Service Type</th>
+                                        <th class="py-3 px-5">Clinical Treatment</th>
+                                        <th class="py-3 px-5 text-right">Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pricing-ledger-body"
+                                    class="divide-y divide-slate-100 text-xs font-medium text-slate-700">
+                                    <tr>
+                                        <td colspan="3" class="py-8 text-center text-slate-400 italic">Syncing live
+                                            treatment catalogue matrix...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
 
+                <!-- TAB 4: CLINICAL RECORDS -->
+                <section id="tab-history" class="tab-content hidden space-y-4">
+                    <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
+                        <h2
+                            class="text-sm font-black text-slate-900 tracking-wider uppercase mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+                            <span
+                                class="w-2.5 h-2.5 rounded-full bg-teal-500 shadow-[0_0_8px_rgba(20,184,166,0.5)]"></span>
+                            My Clinical Records & History
+                        </h2>
+                        <!-- Records Container -->
+                        <div id="my-clinical-records-container" class="space-y-4"></div>
+                    </div>
+                </section>
+
+            </main>
         </div>
-    </main>
 
+    </div>
+
+    <!-- Tab Switcher Script -->
     <script>
+        function switchTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+
+            // Show target tab
+            const target = document.getElementById(tabId);
+            if (target) target.classList.remove('hidden');
+
+            // Reset navigation styles
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.className = "nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all";
+            });
+
+            // Highlight active button
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            if (activeBtn) {
+                activeBtn.className = "nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold rounded-xl transition-all bg-teal-50 text-teal-700 border border-teal-100 shadow-2xs";
+            }
+
+            // Update top bar heading text
+            const titleMap = {
+                'tab-overview': 'Dashboard Overview',
+                'tab-book': 'Request Session Entry',
+                'tab-appointments': 'My Scheduled Sessions',
+                'tab-history': 'Clinical History Records'
+            };
+            document.getElementById('active-tab-title').textContent = titleMap[tabId] || 'Dashboard';
+
+            // Close mobile sidebar if open
+            if (window.innerWidth < 1024) toggleMobileSidebar();
+        }
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
         (function () {
             const token = localStorage.getItem("token");
             const user = localStorage.getItem("user");
             if (!token || !user) {
                 console.warn("⚠️ Unauthorized state caught. Evicting worker session.");
-
             }
         })();
+
         function updateFormPriceIndicator(selectElement) {
             const selectedOption = selectElement.options[selectElement.selectedIndex];
-            const price = selectedOption.getAttribute('data-price');
+            const price = selectedOption.getAttribute('data-price') || "₱0.00";
             document.getElementById('form-price-indicator').textContent = price;
         }
+
         (function () {
             const dateInput = document.getElementById("booking-date");
             if (dateInput) {
-                // 📆 Generate current target date vector localized to server bounds
                 const today = new Date();
                 const year = today.getFullYear();
                 const month = String(today.getMonth() + 1).padStart(2, '0');
                 const day = String(today.getDate()).padStart(2, '0');
-
                 const minDateString = `${year}-${month}-${day}`;
-
-                // Enforce the baseline calendar constraint on the element node
                 dateInput.setAttribute("min", minDateString);
-
-                // Optional: Prefill the field with today's date automatically as a guideline
                 dateInput.value = minDateString;
             }
         })();

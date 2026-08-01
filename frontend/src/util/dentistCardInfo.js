@@ -58,12 +58,14 @@ async function loadDentistProfiles() {
           <!-- Compact Footer Stats -->
           <div class="flex justify-between items-center border-t border-gray-50 pt-3 mt-auto px-2">
             <div class="text-center w-1/2 border-r border-gray-50">
-              <span class="block font-semibold text-gray-700 text-sm">${dentist.experienceYears || 0}+</span>
-              <span class="block text-[10px] uppercase text-gray-400 tracking-wider">Years</span>
+              <span class="block font-semibold text-gray-700 text-sm">${dentist.experienceYears || 0}+ years</span>
+              <span class="block text-[10px] uppercase text-gray-400 tracking-wider">experience</span>
             </div>
             <div class="text-center w-1/2">
-              <span class="block font-semibold text-gray-700 text-sm">#${dentist.licenseNumber ? dentist.licenseNumber.slice(-4) : "N/A"}</span>
-              <span class="block text-[10px] uppercase text-gray-400 tracking-wider">License</span>
+               <span class="block font-bold text-slate-800 text-xs truncate max-w-full" title="${dentist.licenseNumber || "N/A"}">
+  ${dentist.licenseNumber || "N/A"}
+</span>
+              <span class="block text-[10px] uppercase text-gray-400 tracking-wider">License #</span>
             </div>
           </div>
 
