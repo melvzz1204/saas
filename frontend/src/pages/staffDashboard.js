@@ -41,64 +41,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // --- 3. Core Functions ---
-  /*  async function fetchAvailableDentists() {
-    const dentistDropdown = document.getElementById("modal-dentist-dropdown");
-    if (!dentistDropdown) return;
-
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/v1/staff?role=dentist`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
-
-      if (!response.ok)
-        throw new Error("Failed to populate operator roster records.");
-
-      const data = await response.json();
-      const dentists = data.staff || data.data || data || [];
-
-      dentistDropdown.innerHTML = `<option value="">-- Choose Operator --</option>`;
-
-      dentists.forEach((doc) => {
-        const option = document.createElement("option");
-        option.value = doc._id || doc.id;
-
-        let rawName = "Unknown Operator";
-        if (doc.fullName) rawName = doc.fullName;
-        else if (doc.name) rawName = doc.name;
-        else if (doc.firstName || doc.lastName)
-          rawName = `${doc.firstName || ""} ${doc.lastName || ""}`.trim();
-
-        option.textContent = rawName.startsWith("Dr.")
-          ? rawName
-          : `Dr. ${rawName}`;
-        dentistDropdown.appendChild(option);
-      });
-      console.log(
-        `🍏 Successfully mapped ${dentists.length} operators to cache dropdown container.`,
-      );
-    } catch (err) {
-      console.error("⚠️ Dynamic dentist sync failed:", err);
-    }
-  }
- */
-
   async function fetchAvailableDentists() {
     const dentistDropdown = document.getElementById("modal-dentist-dropdown");
-    if (!dentistDropdown) return;
+    const filterDropdown = document.getElementById("kanban-dentist-filter"); // 🆕 Target Kanban Filter
+    const walkinDropdown = document.getElementById("walkin-dentist"); // 🆕 Target Walk-in Dropdown
 
     const clinicName = localStorage.getItem("clinicName");
     const clinicId = localStorage.getItem("clinicId");
     const rawToken = localStorage.getItem("token");
 
-    // 1. Clean the token of any accidental stringified quotes
+    // Clean the token of any accidental stringified quotes
     const token = rawToken ? rawToken.replace(/['"]+/g, "") : "";
 
     try {
@@ -114,11 +66,10 @@ document.addEventListener("DOMContentLoaded", () => {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
-          "x-clinic-id": clinicId || "", // 👈 CRITICAL: Backend middleware likely requires this!
+          "x-clinic-id": clinicId || "",
         },
       });
 
-      // 2. If the backend rejects the request, parse the exact error message
       if (!response.ok) {
         let serverError = "Unknown backend error";
         try {
@@ -139,12 +90,16 @@ document.addEventListener("DOMContentLoaded", () => {
         data.data ||
         (Array.isArray(data) ? data : []);
 
-      dentistDropdown.innerHTML = `<option value="">-- Choose Operator --</option>`;
+      // Reset all three dropdowns
+      if (dentistDropdown)
+        dentistDropdown.innerHTML = `<option value="">-- Choose Operator --</option>`;
+      if (filterDropdown)
+        filterDropdown.innerHTML = `<option value="all">All Doctors</option>`;
+      if (walkinDropdown)
+        walkinDropdown.innerHTML = `<option value="">-- Unassigned / Decide Later --</option>`;
 
+      // Populate all three dropdowns
       dentists.forEach((doc) => {
-        const option = document.createElement("option");
-        option.value = doc._id || doc.id;
-
         let rawName = "";
         if (doc.fullName) rawName = doc.fullName;
         else if (doc.name) rawName = doc.name;
@@ -153,11 +108,33 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         rawName = rawName.trim() || "Unknown Operator";
-
-        option.textContent = rawName.startsWith("Dr.")
+        const displayName = rawName.startsWith("Dr.")
           ? rawName
           : `Dr. ${rawName}`;
-        dentistDropdown.appendChild(option);
+
+        // 1. Assign to Chair Modal
+        if (dentistDropdown) {
+          const option1 = document.createElement("option");
+          option1.value = doc._id || doc.id;
+          option1.textContent = displayName;
+          dentistDropdown.appendChild(option1);
+        }
+
+        // 2. Kanban Navigation Filter
+        if (filterDropdown) {
+          const option2 = document.createElement("option");
+          option2.value = doc._id || doc.id;
+          option2.textContent = displayName;
+          filterDropdown.appendChild(option2);
+        }
+
+        // 3. Walk-In Registration Modal
+        if (walkinDropdown) {
+          const option3 = document.createElement("option");
+          option3.value = doc._id || doc.id;
+          option3.textContent = displayName;
+          walkinDropdown.appendChild(option3);
+        }
       });
     } catch (err) {
       console.error("⚠️ Error rendering dynamic operator lists:", err);
@@ -359,6 +336,22 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderKanbanBoard() {
     if (!colWaiting || !colTreatment || !colCompleted) return;
 
+    // 1. Get the current selected filter
+    const filterDropdown = document.getElementById("kanban-dentist-filter");
+    const selectedDentistId = filterDropdown ? filterDropdown.value : "all";
+
+    // 2. Filter the global array FIRST based on the selected doctor
+    let displayQueue = globalAppointmentsArray;
+    if (selectedDentistId !== "all") {
+      displayQueue = displayQueue.filter((a) => {
+        const docId =
+          a.dentistId && typeof a.dentistId === "object"
+            ? a.dentistId._id
+            : a.dentistId;
+        return docId === selectedDentistId;
+      });
+    }
+
     colWaiting.innerHTML = "";
     colTreatment.innerHTML = "";
     colCompleted.innerHTML = "";
@@ -367,7 +360,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const pad = (n) => String(n).padStart(2, "0");
     const todayString = `${localDate.getFullYear()}-${pad(localDate.getMonth() + 1)}-${pad(localDate.getDate())}`;
 
-    const todayAppointments = globalAppointmentsArray.filter(
+    // 3. Filter for TODAY using the filtered displayQueue
+    const todayAppointments = displayQueue.filter(
       (a) =>
         a.date === todayString ||
         (!a.date &&
@@ -376,10 +370,12 @@ document.addEventListener("DOMContentLoaded", () => {
             a.status === "COMPLETED_PENDING_BILL")),
     );
 
+    // Keep upcoming appointments unfiltered by the daily board filter
     cachedUpcomingAppointments = globalAppointmentsArray.filter(
       (a) => a.date > todayString,
     );
 
+    // 4. Create the column lists
     const waitingList = todayAppointments.filter(
       (a) => a.status === "checked-in" || a.status === "waiting",
     );
@@ -390,6 +386,7 @@ document.addEventListener("DOMContentLoaded", () => {
       (a) => a.status === "completed" || a.status === "COMPLETED_PENDING_BILL",
     );
 
+    // 5. Update counts
     if (countWaiting) countWaiting.textContent = waitingList.length;
     if (countTreatment) countTreatment.textContent = treatmentList.length;
     if (countCompleted) countCompleted.textContent = completedList.length;
@@ -401,6 +398,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (statCompleted)
       statCompleted.textContent = `${completedList.length} Sessions`;
 
+    // 6. Render the cards
     renderDynamicCards(waitingList, colWaiting, "waiting");
     renderDynamicCards(treatmentList, colTreatment, "treatment");
     renderDynamicCards(completedList, colCompleted, "completed");
@@ -461,9 +459,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (type === "waiting") {
-        card.className =
-          "bg-slate-50 border border-slate-200/80 p-4 rounded-xl space-y-3 hover:border-slate-300 transition-all shadow-xs flex flex-col";
-        card.innerHTML = `
+        if (type === "waiting") {
+          card.className =
+            "bg-slate-50 border border-slate-200/80 p-4 rounded-xl space-y-3 hover:border-slate-300 transition-all shadow-xs flex flex-col";
+          card.innerHTML = `
         <div class="flex justify-between items-start">
           <div>
             <span class="text-[9px] font-mono font-black text-slate-400 uppercase tracking-wider block">ID: #PT-${shortId}</span>
@@ -473,10 +472,15 @@ document.addEventListener("DOMContentLoaded", () => {
             ⏱️ ${app.waitTime || "Live Queue"}
           </span>
         </div>
-        <p class="text-[11px] text-slate-500 leading-normal font-medium">Primary Issue: ${procedure}</p>
+        <!-- 🆕 UPDATED: Now shows both Issue and Doctor Name -->
+        <div class="text-[11px] text-slate-500 font-medium space-y-0.5">
+          <p>Issue: <span class="text-slate-700">${procedure}</span></p>
+          <p>Doctor: <span class="text-sky-700 font-bold">${doctorName}</span></p>
+        </div>
         <button data-id="${currentAppointmentId}" data-action="chair" class="action-btn w-full mt-2 bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-200 text-sky-600 font-bold text-[10px] py-2 rounded-lg uppercase tracking-wider transition-all cursor-pointer shadow-2xs">
           Seat Patient ➡️
         </button>`;
+        }
       } else if (type === "treatment") {
         card.className =
           "bg-white border border-slate-200 p-4 rounded-xl space-y-3 shadow-xs flex flex-col";
@@ -557,15 +561,44 @@ document.addEventListener("DOMContentLoaded", () => {
         const appointmentId = btn.getAttribute("data-id");
         const actionType = btn.getAttribute("data-action");
         if (!appointmentId) return;
+
         if (actionType === "chair") {
           window.activeTargetAppointmentId = appointmentId;
+
+          const targetApp = globalAppointmentsArray.find(
+            (a) => (a._id || a.id) === appointmentId,
+          );
+          const dentistDropdown = document.getElementById(
+            "modal-dentist-dropdown",
+          );
+
+          let existingDocId = null;
+          if (targetApp) {
+            existingDocId =
+              targetApp.dentistId && typeof targetApp.dentistId === "object"
+                ? targetApp.dentistId._id
+                : targetApp.dentistId;
+          }
+
+          // 🚀 FAST-TRACK LOGIC: If a doctor is already assigned, seat them instantly!
+          if (existingDocId) {
+            // 🆕 CHANGED: We use your existing helper function instead of a manual fetch!
+            await window.executeStatusTransition(
+              appointmentId,
+              "in-treatment",
+              existingDocId,
+            );
+            return; // 🛑 Stop execution here so the modal DOES NOT open
+          }
+
+          // ⚠️ ONLY open the modal if NO doctor is assigned
+          if (dentistDropdown) {
+            dentistDropdown.value = ""; // Ensure it's blank so staff has to pick one
+          }
+
           const targetModal = document.getElementById("dentist-assign-modal");
           if (targetModal) {
             targetModal.classList.remove("hidden");
-          } else {
-            console.error(
-              "❌ ERROR: '#dentist-assign-modal' could not be found in the DOM.",
-            );
           }
           return;
         } else if (actionType === "complete") {
@@ -581,9 +614,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       };
     });
+
     const btnConfirm = document.getElementById("btn-confirm-assign");
     const btnCancel = document.getElementById("btn-cancel-assign");
     const dentistDropdown = document.getElementById("modal-dentist-dropdown");
+
     if (btnConfirm) {
       btnConfirm.onclick = async (e) => {
         e.preventDefault();
@@ -600,11 +635,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         btnConfirm.innerText = "Syncing...";
         btnConfirm.disabled = true;
+
         await window.executeStatusTransition(
           window.activeTargetAppointmentId,
           "in-treatment",
           chosenDentistId,
         );
+
         btnConfirm.innerText = "Confirm & Seat ➡️";
         btnConfirm.disabled = false;
         document.getElementById("dentist-assign-modal").classList.add("hidden");
@@ -612,6 +649,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.activeTargetAppointmentId = null;
       };
     }
+
     if (btnCancel) {
       btnCancel.onclick = (e) => {
         e.preventDefault();
@@ -871,11 +909,13 @@ document.addEventListener("DOMContentLoaded", () => {
       alert(`Check-in pipeline failure: ${err.message}`);
     }
   };
+
   if (typeof formWalkIn !== "undefined" && formWalkIn) {
     formWalkIn.addEventListener("submit", async (e) => {
       e.preventDefault();
       const patientName = document.getElementById("walkin-name").value.trim();
       const reason = document.getElementById("walkin-reason").value.trim();
+      const dentistId = document.getElementById("walkin-dentist")?.value || "";
       const submitBtn = e.target.querySelector("button[type='submit']");
 
       submitBtn.innerText = "Processing...";
@@ -889,37 +929,70 @@ document.addEventListener("DOMContentLoaded", () => {
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${localStorage.getItem("token")}`,
+              "x-clinic-id": localStorage.getItem("clinicId") || "", // 🆕 ADDED: Missing Tenant Header!
             },
             body: JSON.stringify({
               patientName,
               treatmentName: reason,
               clinicId: localStorage.getItem("clinicId"),
+              dentistId: dentistId,
             }),
           },
         );
 
-        if (!response.ok) throw new Error("Failed to register walk-in");
+        // 🆕 IMPROVED: Better error reading so we know exactly what the server complains about
+        if (!response.ok) {
+          let errorMsg = "Failed to register walk-in";
+          try {
+            const errData = await response.json();
+            errorMsg = errData.message || errorMsg;
+          } catch (parseError) {
+            errorMsg = `Server returned an error: ${await response.text()}`;
+          }
+          throw new Error(errorMsg);
+        }
+
         formWalkIn.reset();
         if (modalWalkIn) modalWalkIn.classList.add("hidden");
-        await fetchDailyQueue();
+
+        // Refresh the board to show the new patient!
+        if (typeof fetchDailyQueue === "function") await fetchDailyQueue();
       } catch (err) {
         alert(`Error: ${err.message}`);
       } finally {
-        submitBtn.innerText = "Seat in Lobby";
+        submitBtn.innerText = "Seat in Lobby 🛋️";
         submitBtn.disabled = false;
       }
     });
   }
+  // 🆕 NEW: Define the logout logic
+  function handleShiftExit() {
+    const confirmLogout = confirm("Are you sure you want to log out?");
+    if (confirmLogout) {
+      // Wipe the sensitive data from the browser
+      localStorage.removeItem("token");
+      localStorage.removeItem("clinicId");
+      localStorage.removeItem("clinicName");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("staffName");
+
+      // Redirect to your login page (Update the path if your login file is named differently)
+      window.location.href = "/staffLogin.html";
+    }
+  }
+
   function initializeDashboard() {
     const upcomingModal = document.getElementById("upcoming-modal");
     const btnToggleUpcoming = document.getElementById("btn-toggle-upcoming");
     const btnCloseUpcoming = document.getElementById("btn-close-upcoming");
     const filterRange = document.getElementById("filter-upcoming-range");
 
-    if (filterRange) {
-      filterRange.addEventListener("change", (e) => {
-        renderUpcomingTable(cachedUpcomingAppointments, e.target.value);
-      });
+    // 🆕 Target the logout button from the HTML
+    const logoutBtn = document.getElementById("btn-logout");
+
+    const filterDropdown = document.getElementById("kanban-dentist-filter");
+    if (filterDropdown) {
+      filterDropdown.addEventListener("change", renderKanbanBoard);
     }
 
     if (btnToggleUpcoming && upcomingModal)
@@ -942,7 +1015,9 @@ document.addEventListener("DOMContentLoaded", () => {
       staffBadge.textContent =
         localStorage.getItem("staffName") || "Active Staff Duty";
 
+    // 🆕 Attaches the function we defined above
     if (logoutBtn) logoutBtn.addEventListener("click", handleShiftExit);
+
     if (btnOpenWalkIn)
       btnOpenWalkIn.addEventListener("click", () =>
         modalWalkIn.classList.remove("hidden"),

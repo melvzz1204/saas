@@ -7,7 +7,8 @@ import Clinic from "../models/clinicModel.js";
 // 1. Book Appointment
 export const bookAppointment = async (req, res) => {
   try {
-    const { patientId, service, date, time } = req.body;
+    // 🆕 ADDED: Extract dentistId from req.body
+    const { patientId, service, date, time, dentistId } = req.body;
 
     let rawClinicId =
       req.body.clinicId || req.headers["x-clinic-id"] || req.clinicId;
@@ -36,9 +37,16 @@ export const bookAppointment = async (req, res) => {
       });
     }
 
+    // 🆕 ADDED: Validate dentistId before saving
+    let validDentistId = null;
+    if (dentistId && mongoose.Types.ObjectId.isValid(dentistId)) {
+      validDentistId = new mongoose.Types.ObjectId(dentistId);
+    }
+
     const newAppointment = await Appointment.create({
       clinicId: new mongoose.Types.ObjectId(clinicId),
       patientId: new mongoose.Types.ObjectId(cleanPatientId),
+      dentistId: validDentistId, // 🆕 ADDED: Save it to the database!
       service,
       date,
       time,
@@ -222,14 +230,22 @@ export const getTodayAppointments = async (req, res) => {
 // 6. Create Walk-In Appointment
 export const createWalkInAppointment = async (req, res) => {
   try {
-    const { patientName, treatmentName, clinicId } = req.body;
+    // 🆕 ADDED: Extract dentistId from the incoming request
+    const { patientName, treatmentName, clinicId, dentistId } = req.body;
+
+    // 🆕 ADDED: Validate dentistId if provided
+    let validDentistId = null;
+    if (dentistId && mongoose.Types.ObjectId.isValid(dentistId)) {
+      validDentistId = new mongoose.Types.ObjectId(dentistId);
+    }
 
     const newWalkIn = await Appointment.create({
       patientName,
       treatmentName: treatmentName || "Walk-In Consult",
       clinicId,
+      dentistId: validDentistId, // 🆕 ADDED: Save to DB
       isWalkIn: true,
-      status: "checked-in",
+      status: "checked-in", // Stays in the lobby
       time: "WALK-IN",
       service: "Walk-In Consult",
     });
@@ -531,12 +547,10 @@ export const getAvailableSlots = async (req, res) => {
       status: { $nin: ["cancelled", "Declined"] },
     };
 
+    // 🚀 STRICT FILTER: Only block times specifically assigned to this doctor.
+    // (We removed the old logic that allowed null/unassigned appointments to block everyone)
     if (dentistId && mongoose.Types.ObjectId.isValid(dentistId)) {
-      query.$or = [
-        { dentistId: new mongoose.Types.ObjectId(dentistId) },
-        { dentistId: null },
-        { dentistId: { $exists: false } },
-      ];
+      query.dentistId = new mongoose.Types.ObjectId(dentistId);
     }
 
     const existingAppointments = await Appointment.find(query);
