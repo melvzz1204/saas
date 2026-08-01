@@ -137,6 +137,10 @@ document.addEventListener("DOMContentLoaded", () => {
           if (window.isFetchingSlots) return;
           window.isFetchingSlots = true; // Lock immediately
 
+          setTimeout(() => {
+            window.isFetchingSlots = false;
+          }, 3000);
+
           chosenDateStr = iterationDateStr;
           hiddenDateInput.value = iterationDateStr;
           hiddenDateInput.dispatchEvent(new Event("change"));

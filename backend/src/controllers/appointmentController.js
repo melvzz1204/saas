@@ -4,7 +4,6 @@ import Appointment from "../models/appointmentModel.js";
 import Treatment from "../models/treatmentModel.js";
 import DentalService from "../models/dentalServicePrice.js";
 import Clinic from "../models/clinicModel.js";
-
 // 1. Book Appointment
 export const bookAppointment = async (req, res) => {
   try {
@@ -443,27 +442,50 @@ export const settlePayment = async (req, res) => {
     });
   }
 };
+
+function generateDynamicTimeSlots(startTimeStr, endTimeStr, intervalMinutes) {
+  if (!startTimeStr || !endTimeStr || !intervalMinutes) return [];
+  const slots = [];
+
+  const [startHour, startMin] = startTimeStr.split(":").map(Number);
+  const [endHour, endMin] = endTimeStr.split(":").map(Number);
+
+  let currentMinutes = startHour * 60 + startMin;
+  const endMinutes = endHour * 60 + endMin;
+
+  while (currentMinutes + intervalMinutes <= endMinutes) {
+    const hh = String(Math.floor(currentMinutes / 60)).padStart(2, "0");
+    const mm = String(currentMinutes % 60).padStart(2, "0");
+
+    slots.push(`${hh}:${mm}`);
+    currentMinutes += intervalMinutes;
+  }
+
+  return slots;
+}
+
 export const getAvailableSlots = async (req, res) => {
   try {
-    const { date, clinicId } = req.query;
+    const { date, clinicId, dentistId } = req.query;
 
     if (!date || !clinicId) {
-      return res
-        .status(400)
-        .json({ message: "Date and clinicId are required fields." });
+      return res.status(400).json({
+        success: false,
+        message: "Missing date or clinicId query parameter.",
+      });
     }
 
-    // 1. Fetch the clinic configuration
+    // 1. Fetch clinic configuration from DB
     const clinic = await Clinic.findById(clinicId);
     if (!clinic) {
       return res
         .status(404)
-        .json({ message: "Clinic not found in the system." });
+        .json({ success: false, message: "Clinic not found." });
     }
 
-    // 2. Figure out what day of the week the requested date is
-    // Assuming date format is "YYYY-MM-DD"
-    const dateObj = new Date(date);
+    // 2. Timezone-safe day of the week calculation
+    const [year, month, day] = date.split("-").map(Number);
+    const dateObj = new Date(year, month - 1, day); // Local midnight parsing
     const daysOfWeek = [
       "Sunday",
       "Monday",
@@ -475,67 +497,59 @@ export const getAvailableSlots = async (req, res) => {
     ];
     const dayName = daysOfWeek[dateObj.getDay()];
 
-    // 3. Find the operating hours for that specific day
-    const todayHours = clinic.operatingHours.find((h) => h.day === dayName);
+    // 3. Find day-specific operating hours
+    const daySchedule = clinic.operatingHours?.find(
+      (h) => h.day.toLowerCase() === dayName.toLowerCase(),
+    );
 
-    // If there are no hours defined for this day, or it's marked as closed, return empty array
-    if (!todayHours || todayHours.isClosed) {
-      return res.status(200).json({ slots: [] });
+    // If day is closed or missing operating hours
+    if (!daySchedule || daySchedule.isClosed) {
+      return res.status(200).json({
+        success: true,
+        slots: [],
+        bookedSlots: [],
+        message: `Clinic is closed on ${dayName}s.`,
+      });
     }
 
-    const { openTime, closeTime } = todayHours;
-    const slotDuration = clinic.slotDurationMinutes || 30; // Fallback to 30 mins if not set
+    // 4. Extract schedule params with fallback defaults
+    const openTime = daySchedule.openTime || "09:00";
+    const closeTime = daySchedule.closeTime || "17:00";
+    const slotInterval = clinic.slotDurationMinutes || 30;
 
-    // 4. Fetch all active appointments for this exact date and clinic
-    const bookedAppointments = await Appointment.find({
-      clinicId: clinicId,
-      date: date,
-      status: { $nin: ["Cancelled", "Rejected"] }, // Don't block slots if the appointment was cancelled
+    // 5. Generate dynamic slots
+    const generatedSlots = generateDynamicTimeSlots(
+      openTime,
+      closeTime,
+      slotInterval,
+    );
+
+    // 6. Fetch booked appointments
+    const query = {
+      clinicId: new mongoose.Types.ObjectId(clinicId),
+      date: { $regex: date, $options: "i" },
+      status: { $nin: ["cancelled", "Declined"] },
+    };
+
+    if (dentistId && mongoose.Types.ObjectId.isValid(dentistId)) {
+      query.$or = [
+        { dentistId: new mongoose.Types.ObjectId(dentistId) },
+        { dentistId: null },
+        { dentistId: { $exists: false } },
+      ];
+    }
+
+    const existingAppointments = await Appointment.find(query);
+    const bookedTimes = existingAppointments.map((appt) => appt.time);
+
+    // 7. Return configured slots and booked times
+    return res.status(200).json({
+      success: true,
+      slots: generatedSlots,
+      bookedSlots: bookedTimes,
     });
-
-    // Create an array of just the taken time strings (e.g., ["09:00", "10:30"])
-    const bookedTimes = bookedAppointments.map((app) => app.time);
-
-    // 5. Pure JavaScript Time Math Helpers
-    // Converts "09:30" into total minutes (570)
-    const timeToMins = (timeString) => {
-      const [h, m] = timeString.split(":").map(Number);
-      return h * 60 + m;
-    };
-
-    // Converts total minutes (570) back into "09:30"
-    const minsToTime = (mins) => {
-      const h = Math.floor(mins / 60)
-        .toString()
-        .padStart(2, "0");
-      const m = (mins % 60).toString().padStart(2, "0");
-      return `${h}:${m}`;
-    };
-
-    let currentMins = timeToMins(openTime);
-    const closeMins = timeToMins(closeTime);
-    const availableSlots = [];
-
-    // 6. Generate slots until we hit the close time
-    while (currentMins + slotDuration <= closeMins) {
-      const timeString = minsToTime(currentMins);
-
-      // Only push the slot if it is NOT in the bookedTimes array
-      if (!bookedTimes.includes(timeString)) {
-        availableSlots.push(timeString);
-      }
-
-      // Jump forward by the slot duration
-      currentMins += slotDuration;
-    }
-
-    // 7. Send the available slots to the frontend
-    res.status(200).json({ slots: availableSlots });
   } catch (error) {
-    console.error("Error generating time slots:", error);
-    res.status(500).json({
-      message: "Server error while generating available slots.",
-      error: error.message,
-    });
+    console.error("❌ Error generating slots:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
