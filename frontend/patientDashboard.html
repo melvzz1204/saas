@@ -188,12 +188,22 @@
                         <div class="p-5 border-b border-slate-100 bg-linear-to-b from-slate-50/50 to-white">
                             <h2
                                 class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-                                <span class="text-teal-600">✨</span>
-                                <span>Request Session Entry</span>
+                                <span>Request Booking</span>
                             </h2>
                         </div>
 
                         <form id="booking-form" class="p-6 space-y-4">
+                            <!-- DENTIST SELECTION -->
+                            <div class="mb-4">
+                                <label
+                                    class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Select
+                                    Dental
+                                    Provider</label>
+                                <select id="booking-dentist" required
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-1 focus:ring-teal-500/20 transition-all cursor-pointer">
+                                    <option value="" disabled selected>Loading providers...</option>
+                                </select>
+                            </div>
                             <div>
                                 <label
                                     class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Select

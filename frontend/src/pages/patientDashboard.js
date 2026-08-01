@@ -1,7 +1,5 @@
-import {
-  fetchPatientHistory,
-  renderPatientHistoryUI,
-} from "../util/clinicalNote.js";
+import { fetchPatientHistory } from "../util/clinicalNote.js";
+
 const API_PRICING_URL = "http://localhost:5000/api/v1/dental-price/services";
 const API_BASE_URL = "http://localhost:5000";
 const token = localStorage.getItem("token");
@@ -512,6 +510,7 @@ if (bookingForm) {
 
     const payload = {
       patientId: verifiedPatientId,
+      dentistId: document.getElementById("booking-dentist").value,
       service: document.getElementById("booking-service").value,
       date: selectedDateStr,
       time: selectedTimeStr,
@@ -550,13 +549,14 @@ if (bookingForm) {
 }
 
 // =========================================================================
-// 📅 DYNAMIC TIME SLOT ENGINE
+// 📅 DYNAMIC TIME SLOT ENGINE (UPDATED FOR DENTIST SELECTION)
 // =========================================================================
 let slotFetchController = null;
 
 function setupDynamicTimeSlots() {
   const dateInput = document.getElementById("booking-date");
   const timeSelect = document.getElementById("booking-time");
+  const dentistSelect = document.getElementById("booking-dentist"); // ✅ NEW
   const submitBtn = document.getElementById("book-btn");
 
   if (!dateInput || !timeSelect) return;
@@ -570,19 +570,24 @@ function setupDynamicTimeSlots() {
   dateInput.setAttribute("min", todayStr);
   if (!dateInput.value) dateInput.value = todayStr;
 
-  dateInput.addEventListener("change", async (e) => {
-    const selectedDate = e.target.value;
+  // ✅ Cleaned up: Completely hides past hours for today
+  const fetchAvailableSlots = async () => {
+    const selectedDate = dateInput.value;
+    const selectedDentistId = dentistSelect ? dentistSelect.value : null;
 
     if (
       !selectedDate ||
+      !selectedDentistId ||
       !DYNAMIC_CLINIC_ID ||
       DYNAMIC_CLINIC_ID === "undefined"
-    )
+    ) {
+      timeSelect.innerHTML = `<option value="" disabled selected>Please select a dentist and date...</option>`;
+      timeSelect.disabled = true;
+      if (submitBtn) submitBtn.disabled = true;
       return;
-
-    if (slotFetchController) {
-      slotFetchController.abort();
     }
+
+    if (slotFetchController) slotFetchController.abort();
     slotFetchController = new AbortController();
     const { signal } = slotFetchController;
 
@@ -599,7 +604,7 @@ function setupDynamicTimeSlots() {
       const safeToken = token ? token.replace(/['"]+/g, "") : "";
 
       const response = await fetch(
-        `http://localhost:5000/api/v1/appointments/available-slots?date=${selectedDate}&clinicId=${DYNAMIC_CLINIC_ID}`,
+        `http://localhost:5000/api/v1/appointments/available-slots?date=${selectedDate}&clinicId=${DYNAMIC_CLINIC_ID}&dentistId=${selectedDentistId}`,
         {
           method: "GET",
           headers: {
@@ -611,44 +616,50 @@ function setupDynamicTimeSlots() {
         },
       );
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to fetch slots");
-      }
+      if (!response.ok) throw new Error("Failed to fetch slots");
 
       const data = await response.json();
       let slots = data.slots || [];
-      const totalOriginalSlots = slots.length;
+      const bookedSlots = data.bookedSlots || [];
 
-      if (selectedDate === todayStr) {
+      // 🎯 1. FILTER OUT PAST HOURS (If the user selected today's date)
+      const isToday = selectedDate === todayStr;
+      if (isToday) {
         const now = new Date();
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
 
         slots = slots.filter((time24) => {
           const [slotHour, slotMinute] = time24.split(":").map(Number);
+          // Keep only future times
           if (currentHour < slotHour) return true;
           if (currentHour === slotHour && currentMinute < slotMinute)
             return true;
-          return false;
+          return false; // Drops passed times completely!
         });
       }
 
-      timeSelect.innerHTML = "";
-
-      if (totalOriginalSlots > 0 && slots.length === 0) {
-        timeSelect.innerHTML = `<option value="">Time slots for today have passed.</option>`;
-        timeSelect.disabled = true;
-      } else if (slots.length === 0) {
-        timeSelect.innerHTML = `<option value="">❌ Fully booked or closed on this date</option>`;
-        timeSelect.disabled = true;
+      // 🎯 2. RENDER REMAINING SLOTS
+      if (slots.length === 0) {
+        timeSelect.innerHTML = isToday
+          ? `<option value="">❌ All remaining times for today have passed or are full.</option>`
+          : `<option value="">❌ Clinic is closed or fully booked on this date.</option>`;
       } else {
         timeSelect.innerHTML = `<option value="" disabled selected>-- Choose an Available Time --</option>`;
 
         slots.forEach((time24) => {
           const option = document.createElement("option");
           option.value = time24;
-          option.textContent = format12HourTime(time24);
+
+          const isBooked = bookedSlots.includes(time24);
+
+          if (isBooked) {
+            option.textContent = `${format12HourTime(time24)} (Booked)`;
+            option.disabled = true;
+          } else {
+            option.textContent = format12HourTime(time24);
+          }
+
           timeSelect.appendChild(option);
         });
 
@@ -657,26 +668,15 @@ function setupDynamicTimeSlots() {
       }
     } catch (err) {
       if (err.name === "AbortError") return;
-
       console.error("Error loading dynamic slots:", err);
-      timeSelect.classList.add(
-        "border-rose-500",
-        "text-rose-600",
-        "bg-rose-50",
-      );
-      timeSelect.innerHTML = `<option value="">⚠️ Network error. Please click the date again.</option>`;
-      timeSelect.disabled = true;
-      if (submitBtn) submitBtn.disabled = true;
-
-      setTimeout(() => {
-        timeSelect.classList.remove(
-          "border-rose-500",
-          "text-rose-600",
-          "bg-rose-50",
-        );
-      }, 3000);
+      timeSelect.innerHTML = `<option value="">⚠️ Network error.</option>`;
     }
-  });
+  };
+  // ✅ Trigger fetch when EITHER the date OR the dentist changes
+  dateInput.addEventListener("change", fetchAvailableSlots);
+  if (dentistSelect) {
+    dentistSelect.addEventListener("change", fetchAvailableSlots);
+  }
 }
 
 function format12HourTime(time24) {
@@ -684,6 +684,67 @@ function format12HourTime(time24) {
   const ampm = hours >= 12 ? "PM" : "AM";
   hours = hours % 12 || 12;
   return `${hours}:${minutes.toString().padStart(2, "0")} ${ampm}`;
+}
+
+// 🎯 NEW: Fetch Dentists for the Clinic
+async function populateDentistDropdown() {
+  const dentistSelect = document.getElementById("booking-dentist");
+  if (!dentistSelect || !DYNAMIC_CLINIC_ID) return;
+
+  try {
+    // ✅ Pointing to your public route! No token needed since it is public.
+    const response = await fetch(
+      `http://localhost:5000/api/v1/staff/public/dentists?clinicId=${DYNAMIC_CLINIC_ID}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "x-clinic-id": DYNAMIC_CLINIC_ID,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("Backend Error Details:", errorData);
+      throw new Error(
+        errorData.message || `Server returned ${response.status}`,
+      );
+    }
+
+    const result = await response.json();
+    // ✅ Adjust result mapping depending on how your backend sends the data back
+    const dentists = result.data || result.dentists || result.staff || [];
+
+    if (dentists.length === 0) {
+      dentistSelect.innerHTML =
+        '<option value="" disabled>No dentists available</option>';
+      return;
+    }
+
+    dentistSelect.innerHTML =
+      '<option value="" disabled selected>-- Choose your Dentist --</option>' +
+      dentists
+        .map((dentist) => {
+          // Grab the correct ID
+          const actualId =
+            dentist._id ||
+            dentist.id ||
+            dentist.userId ||
+            dentist.staffId ||
+            "";
+
+          // ✅ Use fullName exactly as it appears in your database!
+          const displayName = dentist.fullName || "Unknown Name";
+
+          return `<option value="${actualId}">Dr. ${displayName}</option>`;
+        })
+        .join("");
+  } catch (error) {
+    console.error("Error loading dentists:", error);
+    dentistSelect.innerHTML =
+      '<option value="" disabled>Error loading providers</option>';
+  }
 }
 
 // 🚀 Unified Sequential App Initialization Lifecycle
@@ -696,6 +757,7 @@ async function initializeDashboard() {
   await syncDynamicPricingElements();
   await loadPatientBookings();
   await loadPatientClinicalHistory();
+  await populateDentistDropdown();
 }
 
 initializeDashboard();
