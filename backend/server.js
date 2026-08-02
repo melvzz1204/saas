@@ -32,11 +32,18 @@ io.on("connection", (socket) => {
     `🔌 New client connected to pipeline socket session: ${socket.id}`,
   );
 
+  // 🎯 THE MISSING LINK: Listen for the frontend joining the room
+  socket.on("join_patient_room", (patientId) => {
+    socket.join(patientId);
+    console.log(
+      `👤 Patient successfully joined live tracking room: ${patientId}`,
+    );
+  });
+
   socket.on("disconnect", () => {
     console.log("❌ Client disconnected from server socket instance.");
   });
 });
-
 // 🎯 THE FIX: Listen using httpServer, NOT app.listen!
 const server = httpServer.listen(PORT, () => {
   console.log(

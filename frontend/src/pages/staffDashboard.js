@@ -150,10 +150,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const pad = (n) => String(n).padStart(2, "0");
     const todayString = `${localDate.getFullYear()}-${pad(localDate.getMonth() + 1)}-${pad(localDate.getDate())}`;
 
+    // 🎯 FIX: Case-insensitive check for "approved" and "pending" statuses
     const expectedPatients = appointments.filter((app) => {
+      const status = (app.status || "").toLowerCase();
+      const appDate = app.date ? app.date.split("T")[0] : "";
       return (
-        app.date === todayString &&
-        (app.status === "Approved" || app.status === "pending")
+        appDate === todayString &&
+        (status === "approved" || status === "pending" || status === "expected")
       );
     });
 
@@ -162,32 +165,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (expectedPatients.length === 0) {
       colUpcoming.innerHTML = `
-      <div class="flex flex-col items-center justify-center text-center p-6 border border-dashed border-slate-200 rounded-xl bg-slate-50/50 mt-2">
-        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">No remaining arrivals</span>
-      </div>`;
+    <div class="flex flex-col items-center justify-center text-center p-6 border border-dashed border-slate-200 rounded-xl bg-slate-50/50 mt-2">
+      <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">No remaining arrivals</span>
+    </div>`;
       return;
     }
 
     expectedPatients.forEach((app) => {
-      const patientName = app.patientId
-        ? `${app.patientId.firstName || ""} ${app.patientId.lastName || ""}`.trim()
-        : app.patientName || "Walk-In Patient";
+      const patientName =
+        app.patientId && typeof app.patientId === "object"
+          ? `${app.patientId.firstName || ""} ${app.patientId.lastName || ""}`.trim()
+          : app.patientName || "Walk-In Patient";
 
       const card = document.createElement("div");
       card.className =
         "bg-white border border-slate-200/80 rounded-xl p-3.5 flex flex-col gap-3 transition-all hover:border-slate-300 hover:shadow-sm animate-in fade-in zoom-in-95 duration-150";
       card.innerHTML = `
-      <div class="flex flex-col">
-        <span class="text-xs font-bold text-slate-800">${patientName}</span>
-        <div class="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-          <span class="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">${app.time || "No Time Set"}</span>
-          <span class="truncate">${app.service || "General Consult"}</span>
-        </div>
+    <div class="flex flex-col">
+      <span class="text-xs font-bold text-slate-800">${patientName}</span>
+      <div class="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+        <span class="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">${app.time || "No Time Set"}</span>
+        <span class="truncate">${app.service || "General Consult"}</span>
       </div>
-      <button onclick="executeLobbyCheckIn('${app._id || app.id}')"
-              class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold text-[10px] py-1.5 px-3 rounded-md shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-1">
-        📥 Check In
-      </button>`;
+    </div>
+    <button onclick="executeLobbyCheckIn('${app._id || app.id}')"
+            class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold text-[10px] py-1.5 px-3 rounded-md shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-1">
+      📥 Check In
+    </button>`;
       colUpcoming.appendChild(card);
     });
   }
@@ -195,9 +199,9 @@ document.addEventListener("DOMContentLoaded", () => {
   async function fetchDailyQueue() {
     try {
       const clinicId = localStorage.getItem("clinicId");
-      let url = `${API_BASE_URL}/api/v1/appointments/today`;
 
-      // Append clinicId as a query parameter if it exists
+      // 🎯 FIX: Fetch both today's active roster AND approved appointments
+      let url = `${API_BASE_URL}/api/v1/appointments/today`;
       if (clinicId) {
         url += `?clinicId=${clinicId}`;
       }
@@ -207,7 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
           "Content-Type": "application/json",
-          "x-clinic-id": clinicId || "", // Also send it as a header just in case!
+          "x-clinic-id": clinicId || "",
         },
       });
 
@@ -217,6 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await response.json();
       globalAppointmentsArray = data.appointments || [];
 
+      // Re-render both sidebar and board automatically without refreshing
       renderUpcomingSidebar(globalAppointmentsArray);
       renderKanbanBoard();
     } catch (err) {

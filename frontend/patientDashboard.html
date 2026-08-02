@@ -14,6 +14,7 @@
     <div class="flex h-screen overflow-hidden">
 
         <!-- ========================================== -->
+        <!-- ========================================== -->
         <!-- 1. LEFT SIDENAV NAVIGATION                -->
         <!-- ========================================== -->
         <aside id="sidebar"
@@ -109,6 +110,46 @@
 
                 <!-- TAB 1: OVERVIEW -->
                 <section id="tab-overview" class="tab-content space-y-6">
+                    <!-- ========================================== -->
+                    <!-- 🎉 PAYMENT SUCCESSFUL BANNER              -->
+                    <!-- ========================================== -->
+                    <div id="live-status-tracker"
+                        class="hidden transition-all duration-300 ease-out opacity-0 transform -translate-y-2 relative overflow-hidden bg-gradient-to-r from-emerald-50 via-white to-teal-50 border border-emerald-200/80 rounded-2xl p-4 sm:p-5 shadow-sm shadow-emerald-900/5 mb-6">
+
+                        <div class="flex items-center justify-between gap-4 relative z-10">
+                            <!-- Left: Status Indicator & Text -->
+                            <div class="flex items-center gap-3.5">
+                                <!-- Pulsing Green Dot -->
+                                <span class="relative flex h-3 w-3 shrink-0">
+                                    <span
+                                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span
+                                        class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 shadow-xs shadow-emerald-500/50"></span>
+                                </span>
+
+                                <div class="space-y-0.5">
+                                    <span
+                                        class="inline-flex items-center gap-1 text-emerald-800 text-[10px] font-black uppercase tracking-wider">
+                                        ✨ Payment Confirmed
+                                    </span>
+                                    <p id="live-status-message"
+                                        class="text-xs sm:text-sm font-medium text-slate-800 leading-relaxed">
+                                        Payment successful! Thank you for visiting us today. Have a great day! 🎉
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Right: Close (X) Button -->
+                            <button onclick="dismissLiveTracker()"
+                                class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer shrink-0"
+                                title="Dismiss notice">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                     <!-- Stats Grid -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div
@@ -455,6 +496,7 @@
     <script type="module" src="/src/pages/patientDashboard.js"></script>
     <script type="module" src="/src/util/clinicalNote.js"></script>
     <script type="module" src="/src/util/calendar.js"></script>
+    <script type="module" src="/src/util/patientTracker.js"></script>
     <script type="module" src="/src/util/dentistCardInfo.js"></script>
     <script type="module" src="/src/pages/booking.js"></script>
 </body>
