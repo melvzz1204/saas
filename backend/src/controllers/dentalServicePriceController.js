@@ -4,7 +4,7 @@ export const getServices = async (req, res) => {
   try {
     const services = await DentalService.find(
       {},
-      "slug name description basePricePhp",
+      "slug name description basePricePhp isAvailable",
     );
     return res.status(200).json({ success: true, data: services });
   } catch (error) {
@@ -16,12 +16,24 @@ export const getServices = async (req, res) => {
 };
 
 export const updateServicePrice = async (req, res) => {
-  const { slug, newPrice, adminId } = req.body;
+  // 🎯 Accept both 'newPrice' or 'basePricePhp' from req.body
+  const { slug, newPrice, basePricePhp, adminId } = req.body;
 
-  if (!slug || newPrice === undefined || newPrice < 0) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid schema parameters payload." });
+  // Fallback: Use newPrice if provided, otherwise basePricePhp
+  const targetPrice = newPrice !== undefined ? newPrice : basePricePhp;
+
+  // Validation against schema constraints (min: 0) [source: 8]
+  if (
+    !slug ||
+    targetPrice === undefined ||
+    targetPrice === null ||
+    Number(targetPrice) < 0
+  ) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Invalid schema parameters payload. 'slug' and a valid price (>= 0) are required.",
+    });
   }
 
   try {
@@ -29,11 +41,11 @@ export const updateServicePrice = async (req, res) => {
       { slug: slug.toLowerCase().trim() },
       {
         $set: {
-          basePricePhp: Number(newPrice),
+          basePricePhp: Number(targetPrice), // Aligns with schema field basePricePhp [source: 8]
           updatedBy: adminId || "Clinic Admin",
         },
       },
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }, // Enforces schema validation [source: 8]
     );
 
     if (!updatedService) {
@@ -44,19 +56,56 @@ export const updateServicePrice = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `Successfully altered fixed pricing to ₱${newPrice} for ${updatedService.name}`,
+      message: `Successfully altered fixed pricing to ₱${targetPrice} for ${updatedService.name}`,
       data: updatedService,
     });
   } catch (error) {
     console.error("❌ Mongoose PATCH Error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Database update transaction failed." });
+    return res.status(500).json({
+      success: false,
+      message: "Database update transaction failed.",
+      error: error.message,
+    });
+  }
+};
+
+// 🎛️ NEW: Toggle Service Availability by MongoDB _id
+export const toggleServiceAvailability = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isAvailable } = req.body;
+
+    const updatedService = await DentalService.findByIdAndUpdate(
+      id,
+      { isAvailable },
+      { new: true, runValidators: true },
+    );
+
+    if (!updatedService) {
+      return res.status(404).json({
+        success: false,
+        message: "Dental service item not found.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Dental service '${updatedService.name}' availability updated successfully.`,
+      data: updatedService,
+    });
+  } catch (error) {
+    console.error("❌ Mongoose Toggle Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error updating service state.",
+      error: error.message,
+    });
   }
 };
 
 export const addServicePrice = async (req, res) => {
-  const { slug, name, description, basePricePhp, adminId } = req.body;
+  const { slug, name, description, basePricePhp, isAvailable, adminId } =
+    req.body;
 
   if (!slug || !name || basePricePhp === undefined || basePricePhp < 0) {
     return res.status(400).json({
@@ -81,6 +130,7 @@ export const addServicePrice = async (req, res) => {
       name,
       description,
       basePricePhp: Number(basePricePhp),
+      isAvailable: isAvailable ?? true,
       updatedBy: adminId || "Clinic Admin",
     });
 

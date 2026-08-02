@@ -19,9 +19,7 @@ export const completeProcedure = async (req, res) => {
       });
     }
 
-    // Dynamic price fallback: Query basePricePhp from service catalog if billingAmount is omitted
     let finalBillingAmount = billingAmount;
-
     if (finalBillingAmount === undefined || finalBillingAmount === null) {
       const existingSession = await Treatment.findById(treatmentId);
       if (existingSession?.procedureName) {
@@ -55,14 +53,18 @@ export const completeProcedure = async (req, res) => {
       });
     }
 
-    // Cross-sync parent appointment collection status
+    let updatedAppointment = null;
     if (activeSession.appointmentId) {
       try {
-        await mongoose
+        updatedAppointment = await mongoose
           .model("Appointment")
-          .findByIdAndUpdate(activeSession.appointmentId, {
-            $set: { status: "COMPLETED_PENDING_BILL" },
-          });
+          .findByIdAndUpdate(
+            activeSession.appointmentId,
+            { $set: { status: "COMPLETED_PENDING_BILL" } },
+            { new: true },
+          )
+          .populate("patientId")
+          .populate("dentistId");
       } catch (dbError) {
         console.error("⚠️ Mongoose cross-sync warning:", dbError.message);
       }
@@ -75,6 +77,26 @@ export const completeProcedure = async (req, res) => {
         message: "Patient procedure finalized by clinical operator.",
         appointmentId: activeSession.appointmentId,
       });
+
+      // 👇 NEW: Notify the patient directly!
+      if (updatedAppointment && updatedAppointment.patientId) {
+        const patientRoomId = String(
+          updatedAppointment.patientId._id || updatedAppointment.patientId,
+        );
+
+        let doctorName = "Your doctor";
+        if (updatedAppointment.dentistId) {
+          doctorName =
+            updatedAppointment.dentistId.fullName ||
+            `Dr. ${updatedAppointment.dentistId.firstName || ""} ${updatedAppointment.dentistId.lastName || ""}`.trim();
+        }
+
+        ioInstance.to(patientRoomId).emit("status_updated", {
+          appointmentId: updatedAppointment._id,
+          status: "COMPLETED_PENDING_BILL",
+          dentistName: doctorName,
+        });
+      }
     }
 
     return res.status(200).json({

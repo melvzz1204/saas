@@ -156,30 +156,45 @@ async function syncDynamicPricingElements() {
     if (!resData.success)
       throw new Error(resData.message || "Database structural error.");
 
-    const services = resData.data;
+    const rawServices = resData.data || [];
+
+    // 🎯 FILTER: Keep only available/active services
+    const services = rawServices.filter(
+      (s) =>
+        s.isAvailable !== false &&
+        s.status !== "Inactive" &&
+        s.status !== "Disabled",
+    );
 
     if (!services || services.length === 0) {
       if (serviceSelect)
         serviceSelect.innerHTML =
-          '<option value="" disabled>No services available</option>';
+          '<option value="" disabled selected>No active services available for booking</option>';
       if (pricingLedgerBody) {
-        pricingLedgerBody.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-slate-400 italic">No treatment paths defined.</td></tr>`;
+        pricingLedgerBody.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-slate-400 italic">No treatment paths currently available.</td></tr>`;
       }
       return;
     }
 
     if (serviceSelect) {
-      serviceSelect.innerHTML = services
-        .map((service, index) => {
-          const formattedPrice = `₱${Number(service.basePricePhp).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-          return `<option value="${service.name}" data-price="${formattedPrice}" ${index === 0 ? "selected" : ""}>${service.name}</option>`;
-        })
-        .join("");
+      serviceSelect.innerHTML =
+        '<option value="" disabled selected>-- Select an available service --</option>' +
+        services
+          .map((service) => {
+            const formattedPrice = `₱${Number(service.basePricePhp).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            return `<option value="${service.name}" data-price="${formattedPrice}">${service.name}</option>`;
+          })
+          .join("");
 
-      if (services[0] && formPriceIndicator) {
-        const firstPriceFormatted = `₱${Number(services[0].basePricePhp).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        formPriceIndicator.textContent = firstPriceFormatted;
-      }
+      // Update price indicator when selection changes
+      serviceSelect.addEventListener("change", (e) => {
+        const selectedOption =
+          serviceSelect.options[serviceSelect.selectedIndex];
+        if (selectedOption && formPriceIndicator) {
+          formPriceIndicator.textContent =
+            selectedOption.getAttribute("data-price") || "₱0.00";
+        }
+      });
     }
 
     if (pricingLedgerBody) {
@@ -762,13 +777,226 @@ async function initializeDashboard() {
 
 initializeDashboard();
 
-// ⚡ REAL-TIME PATIENT PIPELINE REACTION ENGINE
+// 2. Helper to display the Live Approval Banner on the Dashboard
+function displayLiveApprovalBanner(appointmentData) {
+  const statusTracker = document.getElementById("live-status-tracker");
+  const statusMessage = document.getElementById("live-status-message");
+
+  if (!statusTracker || !statusMessage) return;
+
+  const apptDate = appointmentData.date || "today";
+  const apptTime = appointmentData.time
+    ? format12HourTime(appointmentData.time)
+    : "";
+
+  // Format live status message
+  statusMessage.innerHTML = `🎉 Your appointment for <strong>${apptDate}${apptTime ? " at " + apptTime : ""}</strong> is officially <strong>approved</strong>!`;
+
+  // Highlight steps in the UI tracker
+  const stepExpected = document.getElementById("step-expected");
+  if (stepExpected) {
+    stepExpected.classList.add("text-teal-600", "font-black");
+    stepExpected.classList.remove("text-slate-400");
+  }
+
+  // Show the tracker container
+  statusTracker.classList.remove("hidden");
+  statusTracker.classList.add("block");
+}
+
+function formatDoctorName(doctorName) {
+  let docString = "the doctor";
+  if (doctorName && !doctorName.toLowerCase().includes("your doctor")) {
+    docString = `<b>Dr. ${doctorName.replace(/^Dr\.\s*/i, "")}</b>`;
+  }
+  return docString;
+}
+
+function triggerLiveStatusBanner(statusType, payload = {}) {
+  const tracker = document.getElementById("live-status-tracker");
+  const messageEl = document.getElementById("live-status-message");
+
+  if (!tracker || !messageEl) return;
+
+  const rawStatus = (statusType || "").toLowerCase();
+  const docString = formatDoctorName(
+    payload.doctorName || payload.dentistName || payload.doctor,
+  );
+
+  // 🎯 Dynamic Banner Content & Styling
+  if (["in-treatment", "in-chair", "ready"].includes(rawStatus)) {
+    messageEl.innerHTML = `You may now proceed to the dental chair. ${docString} is ready to see you! 🩺`;
+  } else if (["completed", "paid", "payment-successful"].includes(rawStatus)) {
+    messageEl.innerHTML = `Payment successful! Thank you for visiting us today. Have a great day! 🎉`;
+  } else if (["in-lobby", "checked-in"].includes(rawStatus)) {
+    messageEl.innerHTML = `You are checked in! Please have a seat in our lobby. ${docString} will call you shortly. 🕒`;
+  } else {
+    // Default / fallback approval notice
+    messageEl.innerHTML = `Your appointment status has been updated.`;
+  }
+
+  // Clear existing timer if another event fires quickly
+  if (trackerDismissTimer) clearTimeout(trackerDismissTimer);
+
+  // Reveal banner with smooth slide-down animation
+  tracker.classList.remove("hidden");
+  setTimeout(() => {
+    tracker.classList.remove("opacity-0", "-translate-y-2");
+    tracker.classList.add("opacity-100", "translate-y-0");
+  }, 20);
+
+  // Auto-dismiss after 6 seconds
+  trackerDismissTimer = setTimeout(() => {
+    window.dismissLiveTracker();
+  }, 6000);
+}
+// =========================================================================
+// ⚡ REAL-TIME PATIENT PIPELINE & LIVE STATUS ENGINE
+// =========================================================================
 const socket = io("http://localhost:5000", {
   transports: ["websocket"],
   upgrade: false,
 });
 
-socket.on("pipeline-update", async () => {
+let trackerDismissTimer = null;
+
+/**
+ * 1. Smoothly Dismiss Tracker Banner
+ */
+window.dismissLiveTracker = function () {
+  const tracker = document.getElementById("live-status-tracker");
+  if (!tracker) return;
+
+  if (trackerDismissTimer) {
+    clearTimeout(trackerDismissTimer);
+    trackerDismissTimer = null;
+  }
+
+  // Fade out and slide up
+  tracker.classList.remove("opacity-100", "translate-y-0");
+  tracker.classList.add("opacity-0", "-translate-y-2");
+
+  setTimeout(() => {
+    tracker.classList.add("hidden");
+  }, 300);
+};
+
+/**
+ * 2. Master Dynamic Live Status Banner Engine
+ */
+function handleLiveStatusUpdate(data) {
+  const tracker = document.getElementById("live-status-tracker");
+  const messageEl = document.getElementById("live-status-message");
+  if (!tracker || !messageEl) return;
+
+  // Extract status and appointment object securely
+  const appt = data.appointment || data;
+  const status = (
+    data.status ||
+    data.stage ||
+    appt.status ||
+    appt.stage ||
+    ""
+  ).toLowerCase();
+
+  // Extract and format Doctor Name dynamically
+  const doctorName =
+    appt.doctorName || appt.dentistName || appt.doctor || data.doctorName || "";
+  let docString = "the doctor";
+  if (doctorName && !doctorName.toLowerCase().includes("your doctor")) {
+    docString = `<b>Dr. ${doctorName.replace(/^Dr\.\s*/i, "")}</b>`;
+  }
+
+  let customMessage = "";
+  let shouldShowBanner = false;
+
+  // 🎯 Map Statuses to Dynamic Banner Messages
+  if (
+    ["in-treatment", "in-chair", "in_treatment", "ready", "called"].includes(
+      status,
+    )
+  ) {
+    customMessage = `You may now proceed to the dental chair. ${docString} is ready to see you! 🩺`;
+    shouldShowBanner = true;
+  } else if (
+    ["completed", "paid", "payment-successful", "payment_received"].includes(
+      status,
+    )
+  ) {
+    customMessage = `Payment successful! Thank you for visiting us today. Have a great day! 🎉`;
+    shouldShowBanner = true;
+  } else if (["approved", "confirmed", "accepted"].includes(status)) {
+    const apptDate = appt.date || "today";
+    const apptTime = appt.time ? format12HourTime(appt.time) : "";
+    customMessage = `🎉 Your appointment for <strong>${apptDate}${apptTime ? " at " + apptTime : ""}</strong> is officially <strong>approved</strong>!`;
+    shouldShowBanner = true;
+  } else if (["in-lobby", "checked-in", "in_lobby"].includes(status)) {
+    customMessage = `You are checked in! Please have a seat in our lobby. ${docString} will call you shortly. 🕒`;
+    shouldShowBanner = true;
+  }
+
+  // If status is irrelevant or not mapped, skip banner
+  if (!shouldShowBanner) return;
+
+  // Update UI Message Text
+  messageEl.innerHTML = customMessage;
+
+  // Reset timer if another update arrives fast
+  if (trackerDismissTimer) {
+    clearTimeout(trackerDismissTimer);
+  }
+
+  // Show banner with smooth CSS slide-down
+  tracker.classList.remove("hidden");
+  setTimeout(() => {
+    tracker.classList.remove("opacity-0", "-translate-y-2");
+    tracker.classList.add("opacity-100", "translate-y-0");
+  }, 20);
+
+  // Auto-dismiss automatically after 6 seconds
+  trackerDismissTimer = setTimeout(() => {
+    window.dismissLiveTracker();
+  }, 6000);
+}
+
+// =========================================================================
+// 🔌 SOCKET CONNECT & LISTENERS
+// =========================================================================
+
+// Join patient & clinic rooms upon connection
+socket.on("connect", () => {
+  console.log("🔌 Connected to Socket server:", socket.id);
+
+  if (verifiedPatientId && verifiedPatientId !== "undefined") {
+    socket.emit("join-room", verifiedPatientId);
+    socket.emit("join-patient-room", verifiedPatientId);
+  }
+
+  if (DYNAMIC_CLINIC_ID && DYNAMIC_CLINIC_ID !== "undefined") {
+    socket.emit("join-clinic", DYNAMIC_CLINIC_ID);
+  }
+});
+
+// Listen for targeted appointment status updates
+socket.on("status_updated", async (data) => {
+  console.log("⚡ Live appointment status update received:", data);
+
+  // Reload appointments list & clinical history automatically
   await loadPatientBookings();
   await loadPatientClinicalHistory();
+
+  // Process live banner update
+  handleLiveStatusUpdate(data);
+});
+
+// Listen for general pipeline updates from clinic admin actions
+socket.on("pipeline-update", async (data) => {
+  console.log("⚡ Pipeline update triggered:", data);
+
+  // Reload appointments list & clinical history automatically
+  await loadPatientBookings();
+  await loadPatientClinicalHistory();
+
+  // Process live banner update
+  handleLiveStatusUpdate(data);
 });

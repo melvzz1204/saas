@@ -7,7 +7,8 @@ import Clinic from "../models/clinicModel.js";
 // 1. Book Appointment
 export const bookAppointment = async (req, res) => {
   try {
-    const { patientId, service, date, time } = req.body;
+    // 🆕 ADDED: Extract dentistId from req.body
+    const { patientId, service, date, time, dentistId } = req.body;
 
     let rawClinicId =
       req.body.clinicId || req.headers["x-clinic-id"] || req.clinicId;
@@ -36,9 +37,16 @@ export const bookAppointment = async (req, res) => {
       });
     }
 
+    // 🆕 ADDED: Validate dentistId before saving
+    let validDentistId = null;
+    if (dentistId && mongoose.Types.ObjectId.isValid(dentistId)) {
+      validDentistId = new mongoose.Types.ObjectId(dentistId);
+    }
+
     const newAppointment = await Appointment.create({
       clinicId: new mongoose.Types.ObjectId(clinicId),
       patientId: new mongoose.Types.ObjectId(cleanPatientId),
+      dentistId: validDentistId, // 🆕 ADDED: Save it to the database!
       service,
       date,
       time,
@@ -143,7 +151,9 @@ export const modifyAppointmentStatus = async (req, res) => {
       appointmentId,
       { status: status },
       { new: true, runValidators: true },
-    );
+    )
+      .populate("patientId")
+      .populate("dentistId"); // 👈 Added population
 
     if (!updatedAppointment) {
       return res.status(404).json({
@@ -158,6 +168,26 @@ export const modifyAppointmentStatus = async (req, res) => {
         message: `Appointment status reassigned to ${updatedAppointment.status}.`,
         appointmentId: updatedAppointment._id,
       });
+
+      // 👇 NEW: Send update directly to the patient room without refreshing!
+      if (updatedAppointment.patientId) {
+        const patientRoomId = String(
+          updatedAppointment.patientId._id || updatedAppointment.patientId,
+        );
+
+        let doctorName = "Your doctor";
+        if (updatedAppointment.dentistId) {
+          doctorName =
+            updatedAppointment.dentistId.fullName ||
+            `Dr. ${updatedAppointment.dentistId.firstName || ""} ${updatedAppointment.dentistId.lastName || ""}`.trim();
+        }
+
+        ioInstance.to(patientRoomId).emit("status_updated", {
+          appointmentId: updatedAppointment._id,
+          status: updatedAppointment.status,
+          dentistName: doctorName,
+        });
+      }
     }
 
     return res.status(200).json({ success: true, data: updatedAppointment });
@@ -174,6 +204,8 @@ export const modifyAppointmentStatus = async (req, res) => {
 export const getTodayAppointments = async (req, res) => {
   try {
     const clinicId = req.headers["x-clinic-id"] || req.user?.clinicId;
+    const { patientId } = req.query; // 👈 1. Check if patientId query param was sent
+
     const today = new Date();
     const pad = (num) => String(num).padStart(2, "0");
     const dateString = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
@@ -203,10 +235,54 @@ export const getTodayAppointments = async (req, res) => {
       query.clinicId = new mongoose.Types.ObjectId(String(clinicId));
     }
 
+    // 👈 2. If patientId is provided, filter specifically for this patient
+    if (patientId && mongoose.Types.ObjectId.isValid(String(patientId))) {
+      query.patientId = new mongoose.Types.ObjectId(String(patientId));
+    }
+
     const allAppointments = await Appointment.find(query)
       .populate("patientId", "firstName lastName email phone")
-      .populate("dentistId", "fullName specialization")
+      .populate("dentistId", "fullName specialization firstName lastName name")
       .sort({ date: 1, time: 1 });
+
+    // 👈 3. Return single object if requested for patient tracker
+    if (patientId) {
+      if (!allAppointments.length) return res.status(200).json(null);
+
+      // Define priority so active/new appointments come BEFORE completed ones
+      const statusPriority = {
+        "in-treatment": 1,
+        "checked-in": 2,
+        Approved: 3,
+        pending: 4,
+        COMPLETED_PENDING_BILL: 5,
+        completed: 6,
+      };
+
+      // Sort specifically for the tracker so the active one is always at index 0
+      allAppointments.sort((a, b) => {
+        const prioA = statusPriority[a.status] || 99;
+        const prioB = statusPriority[b.status] || 99;
+        return prioA - prioB;
+      });
+
+      const activeAppt = allAppointments[0];
+
+      let doctorName = "Your Doctor";
+      if (activeAppt.dentistId) {
+        const d = activeAppt.dentistId;
+        doctorName =
+          d.fullName ||
+          `Dr. ${d.firstName || ""} ${d.lastName || ""}`.trim() ||
+          d.name ||
+          doctorName;
+      }
+
+      return res.status(200).json({
+        status: activeAppt.status,
+        dentistName: doctorName,
+      });
+    }
 
     return res
       .status(200)
@@ -222,14 +298,22 @@ export const getTodayAppointments = async (req, res) => {
 // 6. Create Walk-In Appointment
 export const createWalkInAppointment = async (req, res) => {
   try {
-    const { patientName, treatmentName, clinicId } = req.body;
+    // 🆕 ADDED: Extract dentistId from the incoming request
+    const { patientName, treatmentName, clinicId, dentistId } = req.body;
+
+    // 🆕 ADDED: Validate dentistId if provided
+    let validDentistId = null;
+    if (dentistId && mongoose.Types.ObjectId.isValid(dentistId)) {
+      validDentistId = new mongoose.Types.ObjectId(dentistId);
+    }
 
     const newWalkIn = await Appointment.create({
       patientName,
       treatmentName: treatmentName || "Walk-In Consult",
       clinicId,
+      dentistId: validDentistId, // 🆕 ADDED: Save to DB
       isWalkIn: true,
-      status: "checked-in",
+      status: "checked-in", // Stays in the lobby
       time: "WALK-IN",
       service: "Walk-In Consult",
     });
@@ -327,11 +411,38 @@ export const updateAppointmentStatus = async (req, res) => {
 
     const ioInstance = global.io;
     if (ioInstance) {
+      // 1. (Existing) Tell the staff Kanban board to refresh
       ioInstance.emit("pipeline-update", {
         message: `Appointment status updated to ${appointment.status}.`,
         appointmentId: appointment._id,
       });
+
+      if (appointment.patientId) {
+        const patientRoomId = String(
+          appointment.patientId._id || appointment.patientId,
+        );
+
+        let doctorName = "Your doctor";
+        if (appointment.dentistId) {
+          const fName = appointment.dentistId.firstName || "";
+          const lName = appointment.dentistId.lastName || "";
+          if (fName || lName) {
+            doctorName = `Dr. ${fName} ${lName}`.trim();
+          } else if (appointment.dentistId.name) {
+            doctorName = appointment.dentistId.name; // Fallback if your schema uses 'name'
+          }
+        }
+
+        // Send the payload strictly to this patient's device
+        ioInstance.to(patientRoomId).emit("status_updated", {
+          appointmentId: appointment._id,
+          status: appointment.status,
+          dentistName: doctorName,
+        });
+      }
     }
+
+    return res.status(200).json({ success: true, appointment });
 
     return res.status(200).json({ success: true, appointment });
   } catch (error) {
@@ -387,7 +498,9 @@ export const settlePayment = async (req, res) => {
       appointmentId,
       { $set: { status: "completed" } },
       { new: true },
-    );
+    )
+      .populate("patientId")
+      .populate("dentistId"); // 👈 POPULATE so we can emit to the patient!
 
     if (!updatedAppointment) {
       return res.status(404).json({
@@ -422,10 +535,35 @@ export const settlePayment = async (req, res) => {
 
     const ioInstance = global.io;
     if (ioInstance) {
+      // 1. Tell staff board to update
       ioInstance.emit("pipeline-update", {
         message: `Appointment status updated to ${updatedAppointment.status}.`,
         appointmentId: updatedAppointment._id,
       });
+
+      // 👇 2. NEW: Tell the Patient Dashboard to update live without refreshing!
+      if (updatedAppointment.patientId) {
+        const patientRoomId = String(
+          updatedAppointment.patientId._id || updatedAppointment.patientId,
+        );
+
+        let doctorName = "Your doctor";
+        if (updatedAppointment.dentistId) {
+          const fName = updatedAppointment.dentistId.firstName || "";
+          const lName = updatedAppointment.dentistId.lastName || "";
+          if (fName || lName) {
+            doctorName = `Dr. ${fName} ${lName}`.trim();
+          } else if (updatedAppointment.dentistId.fullName) {
+            doctorName = updatedAppointment.dentistId.fullName;
+          }
+        }
+
+        ioInstance.to(patientRoomId).emit("status_updated", {
+          appointmentId: updatedAppointment._id,
+          status: "done", // Triggers "Payment Successful!"
+          dentistName: doctorName,
+        });
+      }
     }
 
     return res.status(200).json({
@@ -442,7 +580,6 @@ export const settlePayment = async (req, res) => {
     });
   }
 };
-
 function generateDynamicTimeSlots(startTimeStr, endTimeStr, intervalMinutes) {
   if (!startTimeStr || !endTimeStr || !intervalMinutes) return [];
   const slots = [];
@@ -531,12 +668,10 @@ export const getAvailableSlots = async (req, res) => {
       status: { $nin: ["cancelled", "Declined"] },
     };
 
+    // 🚀 STRICT FILTER: Only block times specifically assigned to this doctor.
+    // (We removed the old logic that allowed null/unassigned appointments to block everyone)
     if (dentistId && mongoose.Types.ObjectId.isValid(dentistId)) {
-      query.$or = [
-        { dentistId: new mongoose.Types.ObjectId(dentistId) },
-        { dentistId: null },
-        { dentistId: { $exists: false } },
-      ];
+      query.dentistId = new mongoose.Types.ObjectId(dentistId);
     }
 
     const existingAppointments = await Appointment.find(query);
