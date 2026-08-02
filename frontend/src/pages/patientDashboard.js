@@ -156,30 +156,45 @@ async function syncDynamicPricingElements() {
     if (!resData.success)
       throw new Error(resData.message || "Database structural error.");
 
-    const services = resData.data;
+    const rawServices = resData.data || [];
+
+    // 🎯 FILTER: Keep only available/active services
+    const services = rawServices.filter(
+      (s) =>
+        s.isAvailable !== false &&
+        s.status !== "Inactive" &&
+        s.status !== "Disabled",
+    );
 
     if (!services || services.length === 0) {
       if (serviceSelect)
         serviceSelect.innerHTML =
-          '<option value="" disabled>No services available</option>';
+          '<option value="" disabled selected>No active services available for booking</option>';
       if (pricingLedgerBody) {
-        pricingLedgerBody.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-slate-400 italic">No treatment paths defined.</td></tr>`;
+        pricingLedgerBody.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-slate-400 italic">No treatment paths currently available.</td></tr>`;
       }
       return;
     }
 
     if (serviceSelect) {
-      serviceSelect.innerHTML = services
-        .map((service, index) => {
-          const formattedPrice = `₱${Number(service.basePricePhp).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-          return `<option value="${service.name}" data-price="${formattedPrice}" ${index === 0 ? "selected" : ""}>${service.name}</option>`;
-        })
-        .join("");
+      serviceSelect.innerHTML =
+        '<option value="" disabled selected>-- Select an available service --</option>' +
+        services
+          .map((service) => {
+            const formattedPrice = `₱${Number(service.basePricePhp).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            return `<option value="${service.name}" data-price="${formattedPrice}">${service.name}</option>`;
+          })
+          .join("");
 
-      if (services[0] && formPriceIndicator) {
-        const firstPriceFormatted = `₱${Number(services[0].basePricePhp).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        formPriceIndicator.textContent = firstPriceFormatted;
-      }
+      // Update price indicator when selection changes
+      serviceSelect.addEventListener("change", (e) => {
+        const selectedOption =
+          serviceSelect.options[serviceSelect.selectedIndex];
+        if (selectedOption && formPriceIndicator) {
+          formPriceIndicator.textContent =
+            selectedOption.getAttribute("data-price") || "₱0.00";
+        }
+      });
     }
 
     if (pricingLedgerBody) {

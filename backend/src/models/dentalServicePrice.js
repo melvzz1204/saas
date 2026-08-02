@@ -26,6 +26,7 @@ const DentalServiceSchema = new mongoose.Schema(
       type: String,
       default: "System Admin Node",
     },
+    isAvailable: { type: Boolean, default: true },
   },
   {
     timestamps: true,

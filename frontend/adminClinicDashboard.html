@@ -475,12 +475,13 @@
                                         <th class="p-3.5 pl-5">Treatment Service Item</th>
                                         <th class="p-3.5">Reference Code</th>
                                         <th class="p-3.5">Current Rate</th>
+                                        <th class="p-3.5 text-center">Available</th> <!-- 👈 NEW COLUMN -->
                                         <th class="p-3.5 pr-5 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="pricing-table-body" class="text-xs text-slate-700 divide-y divide-slate-100">
                                     <tr>
-                                        <td colspan="4" class="p-8 text-center text-slate-400 italic font-medium">
+                                        <td colspan="5" class="p-8 text-center text-slate-400 italic font-medium">
                                             Syncing live dynamic treatment database tracks...
                                         </td>
                                     </tr>
@@ -491,36 +492,39 @@
                 </div>
 
                 <div class="space-y-6">
-                    <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs space-y-4">
-                        <div>
-                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">
-                                Modify Operational Rates
-                            </h3>
-                            <p class="text-[11px] text-slate-400 font-medium mt-0.5">
-                                Quickly adjust base patient pricing for a service.
-                            </p>
-                        </div>
-                        <form id="edit-price-form" class="space-y-3">
-                            <div>
-                                <label
-                                    class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">reference
-                                    code</label>
-                                <input type="text" id="edit-slug" required placeholder="routine-cleaning"
-                                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all" />
+                    <!-- MODIFY OPERATIONAL RATES CARD -->
+                    <div id="modify-rates-card" class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+                        <h3 class="font-bold text-slate-900 uppercase text-xs tracking-wider mb-1">
+                            Modify Operational Rates
+                        </h3>
+                        <p class="text-xs text-slate-500 mb-4">
+                            Quickly adjust base patient pricing for a service.
+                        </p>
+
+                        <form id="modify-fee-form">
+                            <!-- REFERENCE CODE -->
+                            <div class="mb-4">
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                    Reference Code
+                                </label>
+                                <input type="text" id="service-slug" readonly
+                                    class="w-full px-3 py-2 text-sm font-mono text-slate-500 bg-slate-50 border border-slate-200 rounded-lg cursor-not-allowed focus:outline-none"
+                                    placeholder="routine-cleaning" />
                             </div>
-                            <div>
-                                <label
-                                    class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">New
-                                    Base Fee (PHP)</label>
-                                <div class="relative">
-                                    <span class="absolute left-3 top-2 text-xs font-bold text-slate-400">₱</span>
-                                    <input type="number" step="0.01" id="edit-price" required placeholder="1850.00"
-                                        class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-7 pr-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all" />
-                                </div>
+
+                            <!-- NEW BASE FEE (PHP) -->
+                            <div class="mb-4">
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                    New Base Fee (PHP)
+                                </label>
+                                <input type="number" step="0.01" id="service-price"
+                                    class="w-full px-3 py-2 text-sm font-semibold text-slate-800 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                    placeholder="0.00" />
                             </div>
+
                             <button type="submit"
-                                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold tracking-wide uppercase text-[11px] py-2.5 rounded-lg transition-all shadow-md cursor-pointer">
-                                Modify fee
+                                class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-colors uppercase tracking-wider cursor-pointer">
+                                Modify Fee
                             </button>
                         </form>
                     </div>
@@ -908,6 +912,25 @@
             </button>
         </div>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const roleSelect = document.getElementById("staff-role");
+            const specContainer = document.getElementById("specialization-container");
+            const dentistFields = document.getElementById("dentist-fields-container");
+
+            if (roleSelect) {
+                roleSelect.addEventListener("change", (e) => {
+                    const isDentist = e.target.value === "Dentist";
+
+                    // Show Specialization and Dentist Credentials ONLY for Dentists
+                    if (specContainer) specContainer.classList.toggle("hidden", !isDentist);
+                    if (dentistFields) dentistFields.classList.toggle("hidden", !isDentist);
+                });
+            }
+        });
+
+    </script>
     <script src="/src/util/nav.js"></script>
     <script src="/src/pages/adminClinicDashboard.js"></script>
     <script src="/src/pages/dentalPricing.js"></script>
@@ -915,22 +938,6 @@
     <script src="/src/util/dentistInfo.js"></script>
 </body>
 
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const roleSelect = document.getElementById("staff-role");
-        const specContainer = document.getElementById("specialization-container");
-        const dentistFields = document.getElementById("dentist-fields-container");
 
-        if (roleSelect) {
-            roleSelect.addEventListener("change", (e) => {
-                const isDentist = e.target.value === "Dentist";
-
-                // Show Specialization and Dentist Credentials ONLY for Dentists
-                if (specContainer) specContainer.classList.toggle("hidden", !isDentist);
-                if (dentistFields) dentistFields.classList.toggle("hidden", !isDentist);
-            });
-        }
-    });
-</script>
 
 </html>

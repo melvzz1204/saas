@@ -138,7 +138,6 @@ async function loadClinicDentists(clinicId) {
   }
 }
 
-// =========================================================================
 // 🌐 1. TENANT METADATA
 // =========================================================================
 async function fetchTenantMetadata(slug) {
@@ -194,19 +193,28 @@ async function fetchServicesCatalog() {
     const json = await response.json();
 
     if (json.success && Array.isArray(json.data)) {
+      // 🎯 Store all services, but filter active ones for display
       cachedServices = json.data;
 
-      if (cachedServices.length === 0) {
+      // Filter for services that are explicitly active / available
+      const activeServices = cachedServices.filter(
+        (s) =>
+          s.isAvailable !== false &&
+          s.status !== "Inactive" &&
+          s.status !== "Disabled",
+      );
+
+      if (activeServices.length === 0) {
         updateMatrixStatus(
-          "No service tracks currently registered in practice ledger.",
+          "No service tracks currently available in practice ledger.",
         );
-        updateEstimatorDropdownState("No treatments available");
+        updateEstimatorDropdownState("No treatments currently available");
         return;
       }
 
-      renderTreatmentMatrix(cachedServices);
+      renderTreatmentMatrix(activeServices);
       setupMatrixSearch();
-      populateSessionEstimator(cachedServices);
+      populateSessionEstimator(activeServices);
     } else {
       throw new Error(json.message || "Invalid payload format.");
     }
@@ -225,7 +233,7 @@ function renderTreatmentMatrix(services) {
   if (!tableBody) return;
 
   if (services.length === 0) {
-    updateMatrixStatus("No matching treatments found.");
+    updateMatrixStatus("No matching active treatments found.");
     return;
   }
 
@@ -292,7 +300,7 @@ function populateSessionEstimator(services) {
   `;
 
   selectEl.addEventListener("change", (e) => {
-    const selectedService = cachedServices[e.target.value];
+    const selectedService = services[e.target.value];
     if (!selectedService) return;
 
     const formattedPrice = `₱${Number(
@@ -305,6 +313,95 @@ function populateSessionEstimator(services) {
     updateDOMText("form-price-indicator", formattedPrice);
   });
 }
+
+// -------------------------------------------------------------------------
+// 📊 MATRIX TABLE RENDERER
+// -------------------------------------------------------------------------
+/* function renderTreatmentMatrix(services) {
+  const tableBody = document.getElementById("treatment-matrix-body");
+  if (!tableBody) return;
+
+  if (services.length === 0) {
+    updateMatrixStatus("No matching treatments found.");
+    return;
+  }
+
+  tableBody.innerHTML = services
+    .map((service) => {
+      const formattedPrice = `₱${Number(
+        service.basePricePhp || 0,
+      ).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+
+      const categoryLabel = service.slug
+        ? service.slug.replace(/-/g, " ")
+        : "GENERAL SERVICE";
+
+      return `
+      <tr class="border-b border-slate-100 hover:bg-slate-50/60 transition-colors">
+        <td class="py-4 px-6">
+          <span class="block text-[10px] font-bold uppercase tracking-wider text-indigo-600 mb-0.5">
+            ${categoryLabel}
+          </span>
+          <span class="font-bold text-slate-800 text-sm">
+            ${service.name || "Treatment Track"}
+          </span>
+        </td>
+        <td class="py-4 px-6 text-xs text-slate-600 leading-relaxed max-w-md">
+          ${service.description || "Standard clinical treatment procedure."}
+        </td>
+        <td class="py-4 px-6 text-right whitespace-nowrap">
+          <span class="font-mono font-black text-slate-900 text-sm bg-slate-100/80 px-3 py-1.5 rounded-lg border border-slate-200/60">
+            ${formattedPrice}
+          </span>
+        </td>
+      </tr>`;
+    })
+    .join("");
+} */
+
+// =========================================================================
+// 🧮 SESSION ESTIMATOR DROPDOWN POPULATOR & COST CALCULATOR
+// =========================================================================
+/* function populateSessionEstimator(services) {
+  const selectEl = document.getElementById("booking-service");
+
+  if (!selectEl) return;
+
+  const optionsHtml = services
+    .map((service, index) => {
+      const price = Number(service.basePricePhp || 0).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+
+      return `<option value="${index}">
+        ${service.name} — ₱${price}
+      </option>`;
+    })
+    .join("");
+
+  selectEl.innerHTML = `
+    <option value="" disabled selected>-- Select treatment track --</option>
+    ${optionsHtml}
+  `;
+
+  selectEl.addEventListener("change", (e) => {
+    const selectedService = cachedServices[e.target.value];
+    if (!selectedService) return;
+
+    const formattedPrice = `₱${Number(
+      selectedService.basePricePhp || 0,
+    ).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+
+    updateDOMText("form-price-indicator", formattedPrice);
+  });
+} */
 
 // -------------------------------------------------------------------------
 // 🔎 SEARCH FILTER ENGINE
