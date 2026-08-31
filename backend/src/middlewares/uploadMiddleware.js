@@ -1,9 +1,14 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from "url";
 
-// Create the target folder automatically if it doesn't exist
-const uploadDir = "uploads/documents";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Always resolve uploads from the backend project, not the process working directory.
+// This must match the directory exposed by app.js at /uploads/documents.
+const uploadDir = path.resolve(__dirname, "../../uploads/documents");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
