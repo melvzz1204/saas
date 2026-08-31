@@ -120,18 +120,34 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderPendingCard(clinic) {
     const docs = clinic.submittedDocuments || [];
 
+    // Support both absolute URLs saved by the upload endpoint and relative URLs
+    // from older records or deployments behind a reverse proxy.
+    const getDocumentUrl = (fileUrl) => {
+      if (!fileUrl) return "#";
+
+      try {
+        return new URL(fileUrl, "http://localhost:5000").href;
+      } catch {
+        return "#";
+      }
+    };
+
     const docsListHtml =
       docs.length > 0
         ? docs
-            .map(
-              (doc) => `
-          <a href="${doc.fileUrl}" target="_blank" rel="noopener noreferrer"
-             class="inline-flex items-center space-x-1.5 text-xs text-indigo-400 hover:text-indigo-300 bg-indigo-950/50 border border-indigo-800/40 px-3 py-1.5 rounded-lg transition-all">
-            <span>📄 ${doc.documentName}</span>
-            <span class="text-[10px]">↗</span>
+            .map((doc) => {
+              const documentUrl = getDocumentUrl(doc.fileUrl);
+              const isViewable = documentUrl !== "#";
+
+              return `
+          <a href="${documentUrl}" target="_blank" rel="noopener noreferrer"
+             aria-disabled="${!isViewable}"
+             class="inline-flex items-center space-x-1.5 text-xs text-indigo-400 hover:text-indigo-300 bg-indigo-950/50 border border-indigo-800/40 px-3 py-1.5 rounded-lg transition-all ${!isViewable ? "pointer-events-none opacity-50" : ""}">
+            <span>📄 ${doc.documentName || "View document"}</span>
+            <span class="text-[10px]">${isViewable ? "↗" : "Unavailable"}</span>
           </a>
-        `,
-            )
+        `;
+            })
             .join("")
         : `<span class="text-xs text-slate-500 italic">No verification documents attached.</span>`;
 

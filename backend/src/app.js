@@ -33,6 +33,18 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Verification documents are stored in ../uploads/documents by multer.
+// Mount this directory explicitly so URLs saved as /uploads/documents/... are viewable.
+app.use(
+  "/uploads/documents",
+  (req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
+  },
+  express.static(path.join(__dirname, "../uploads/documents")),
+);
+
 app.use(
   "/uploads",
   (req, res, next) => {
