@@ -42,7 +42,9 @@ const appointmentSchema = new mongoose.Schema(
         "Approved", // Web booking confirmed
         "Declined", // Web booking rejected
         "checked-in", // Patient is in the lobby
+        "waiting", // Legacy lobby state used by the staff board
         "in-treatment", // Patient is in the chair
+        "treatment", // Legacy chair state
         "completed", // Session finished
         "cancelled", //Patient left or cancelled
         "Missed", // Missed

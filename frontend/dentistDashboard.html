@@ -7,241 +7,688 @@
     <title>Dentist Dashboard</title>
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --brand: #0284c7;
+        }
+
+        /* Intake review button: JS toggles the .hidden class only.
+           Keep it an inline-flex pill whenever it is visible. */
+        #nav-intake-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        #nav-intake-btn.hidden {
+            display: none !important;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        [id] {
+            scroll-margin-top: 5.5rem;
+        }
+
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        /* ---------- Utility: thin scrollbars ---------- */
+        .scroll-thin {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+
+        .scroll-thin::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        .scroll-thin::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 999px;
+        }
+
+        .scroll-thin::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        /* ---------- Sidebar navigation ---------- */
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: .7rem;
+            width: 100%;
+            padding: .65rem .85rem;
+            border-radius: .8rem;
+            font-size: .78rem;
+            font-weight: 700;
+            letter-spacing: .01em;
+            color: #475569;
+            background: transparent;
+            border: 1px solid transparent;
+            transition: all .15s ease;
+        }
+
+        .nav-link:hover {
+            background: #f0f9ff;
+            color: #0369a1;
+        }
+
+        .nav-link.nav-active {
+            background: #0284c7;
+            color: #fff;
+            box-shadow: 0 2px 6px -1px rgba(2, 132, 199, .35);
+        }
+
+        .nav-link .nav-ico {
+            flex: none;
+            width: 1.15rem;
+            height: 1.15rem;
+            color: #94a3b8;
+            transition: color .15s ease;
+        }
+
+        .nav-link:hover .nav-ico {
+            color: #0284c7;
+        }
+
+        .nav-link.nav-active .nav-ico {
+            color: #e0f2fe;
+        }
+
+        /* ---------- Form fields ---------- */
+        .field-label {
+            display: block;
+            margin-bottom: .4rem;
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .field-label .req {
+            color: #f43f5e;
+        }
+
+        .field-input,
+        .field-area {
+            width: 100%;
+            border: 1px solid #e2e8f0;
+            border-radius: .75rem;
+            background: #f8fafc;
+            color: #1e293b;
+            font-size: 12px;
+            font-weight: 500;
+            padding: .7rem 1rem;
+            outline: none;
+            transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+        }
+
+        .field-input::placeholder,
+        .field-area::placeholder {
+            color: #94a3b8;
+        }
+
+        .field-input:focus,
+        .field-area:focus {
+            border-color: #0284c7;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, .12);
+            background: #fff;
+        }
+
+        .field-area {
+            resize: none;
+        }
+    </style>
 </head>
 
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col">
 
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
-        <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <!-- Left Side: Logo and Title -->
-            <div class="flex items-center gap-3">
+    <!-- ============================================================
+         HEADER
+    ============================================================= -->
+    <header class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            <!-- Left: Brand identity -->
+            <div class="flex items-center gap-3 min-w-0">
                 <div
-                    class="w-9 h-9 rounded-xl bg-sky-600 flex items-center justify-center text-white font-black text-lg shadow-md shadow-sky-600/20">
+                    class="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 flex items-center justify-center text-white text-lg shadow-md shadow-sky-600/20">
                     🦷
                 </div>
-                <div>
-                    <h1 class="text-sm font-black text-slate-900 tracking-tight uppercase">Dental Clinic Portal</h1>
-                    <p class="text-[10px] text-slate-400 font-bold tracking-wider uppercase">Clinical Provider Deck</p>
+                <div class="min-w-0">
+                    <h1 id="clinic-title" class="text-sm font-black text-slate-900 tracking-tight uppercase truncate">
+                        Dental Clinic Portal</h1>
+                    <p class="text-[10px] text-slate-400 font-bold tracking-wider uppercase flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                        Dentist Workspace
+                    </p>
                 </div>
             </div>
 
-            <!-- Right Side: Logout Button -->
-            <button id="dentist-logout-btn"
-                class="flex items-center px-4 py-2 bg-rose-600 text-white text-sm font-bold rounded-lg hover:bg-rose-700 transition-all cursor-pointer">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-                </svg>
-                Log Out
-            </button>
+            <!-- Right: doctor identity + logout -->
+            <div class="flex items-center gap-3">
+                <div id="dentist-identity"
+                    class="hidden md:flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl pl-1.5 pr-3 py-1.5">
+                    <span id="dentist-avatar"
+                        class="w-8 h-8 rounded-lg bg-sky-600 text-white text-xs font-black flex items-center justify-center shadow-sm">D</span>
+                    <span class="leading-tight">
+                        <span id="dentist-identity-name" class="block text-xs font-black text-slate-800">Dr.
+                            Loading</span>
+                        <span class="block text-[9px] font-black uppercase tracking-wider text-slate-400">Dentist</span>
+                    </span>
+                </div>
+
+                <button id="dentist-logout-btn"
+                    class="flex items-center px-3.5 py-2.5 bg-white border border-slate-200 text-rose-600 text-xs font-bold rounded-xl hover:bg-rose-50 hover:border-rose-200 transition-all cursor-pointer shadow-sm">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                    </svg>
+                    Log out
+                </button>
+            </div>
         </div>
     </header>
 
-    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-8">
+    <!-- ============================================================
+         BODY GRID : nav rail | clinical record | today's queue
+    ============================================================= -->
+    <div class="w-full px-4 sm:px-6 lg:px-8 py-6 lg:py-8 flex-1">
+        <div class="flex flex-col lg:flex-row items-start gap-5 lg:gap-6">
+            <!-- ═══════════ 1. LEFT: Workspace navigation rail ═══════════ -->
+            <aside id="dentist-sidebar"
+                class="w-full xl:w-52 shrink-0 xl:sticky xl:top-20 xl:self-start bg-white border border-slate-200 rounded-2xl shadow-sm p-4 xl:p-5">
+                <p class="hidden xl:block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 px-1">
+                    Workspace</p>
 
-        <!-- 1. Active Treatment & Clinical Form Unit -->
-        <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xs relative overflow-hidden">
-            <!-- Top Visual Accent Bar -->
-            <div class="h-1.5 bg-gradient-to-r from-sky-500 via-teal-500 to-indigo-500"></div>
+                <nav aria-label="Dentist workspace navigation" class="flex flex-wrap xl:flex-col gap-1.5 xl:gap-1.5">
+                    <a href="#clinical-record" data-scroll-target="clinical-record"
+                        class="nav-link nav-active justify-start xl:justify-start flex-1 xl:flex-none">
+                        <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" />
+                        </svg>
+                        <span class="whitespace-nowrap">Clinical Record</span>
+                    </a>
 
-            <div class="p-6 sm:p-8 space-y-6">
+                    <button type="button" id="nav-history-btn"
+                        class="nav-link justify-start xl:justify-start flex-1 xl:flex-none text-left cursor-pointer">
+                        <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 5.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+                        </svg>
+                        <span class="whitespace-nowrap">Patient History</span>
+                    </button>
 
-                <!-- Patient Header -->
-                <div
-                    class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
-                    <div class="space-y-1">
-                        <div class="flex items-center gap-2">
-                            <span
-                                class="inline-flex items-center gap-1.5 text-[10px] font-black text-sky-700 bg-sky-50 border border-sky-200/80 px-2.5 py-0.5 rounded-md uppercase tracking-wider">
-                                <span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>
-                                Active Treatment Chair
-                            </span>
-                        </div>
-                        <h2 id="active-patient-name" class="text-2xl font-black text-slate-900 tracking-tight">
-                            Loading Case...
-                        </h2>
-                        <p id="active-procedure-container" class="text-xs text-slate-500 font-medium">
-                            Syncing treatment data...
+                    <button type="button" id="nav-intake-btn"
+                        class="nav-link justify-start xl:justify-start flex-1 xl:flex-none text-left cursor-pointer hidden">
+                        <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        </svg>
+                        <span class="whitespace-nowrap">Patient Intake</span>
+                    </button>
+                </nav>
+
+                <!-- Helper tip (desktop only) -->
+                <div class="hidden xl:block mt-5 pt-4 border-t border-slate-100">
+                    <div class="rounded-xl bg-sky-50/80 border border-sky-100 p-3.5">
+                        <p class="text-[10px] font-black uppercase tracking-wider text-sky-700 mb-1">💡 Clinical tip</p>
+                        <p class="text-[11px] leading-relaxed text-slate-500 font-medium">
+                            Use <strong class="text-sky-700">Today's Queue</strong> and
+                            <strong class="text-sky-700">Patient History</strong> above to review patients without
+                            leaving your clinical workspace.
                         </p>
                     </div>
-
-                    <div class="flex items-center gap-3 self-start sm:self-center">
-                        <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl text-2xl shadow-2xs">
-                            💺
-                        </div>
-                    </div>
                 </div>
+            </aside>
 
-                <!-- Arc Map Component Block -->
-                <div class="bg-slate-50/70 border border-slate-200/70 rounded-2xl p-4 sm:p-5 space-y-3">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div>
-                            <h3 class="text-[11px] font-black uppercase text-slate-600 tracking-wider">
-                                Interactive 16-Tooth Dental Arc Map
-                            </h3>
-                            <p class="text-[10px] text-slate-400 font-medium">Select target teeth to tag clinical
-                                procedures
-                            </p>
-                        </div>
+            <!-- ═══════════ 2. CENTER: Active treatment & clinical record ═══════════ -->
+            <main class="min-w-0 w-full flex-1">
+                <section id="clinical-record"
+                    class="bg-white border border-slate-200 rounded-2xl shadow-sm relative overflow-hidden">
+                    <!-- Top accent bar -->
+                    <div class="h-1.5 bg-gradient-to-r from-sky-500 via-cyan-500 to-teal-500"></div>
 
-                        <!-- Segmented Toggle Control -->
+                    <div class="p-5 sm:p-7 lg:p-8 space-y-6">
+
+                        <!-- Patient Header -->
                         <div
-                            class="inline-flex rounded-xl bg-slate-200/70 p-1 border border-slate-300/50 self-start sm:self-auto">
-                            <button id="toggle-maxillary" type="button"
-                                class="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg cursor-pointer transition-all bg-white text-slate-800 shadow-2xs">
-                                Maxillary (Upper)
-                            </button>
-                            <button id="toggle-mandibular" type="button"
-                                class="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg cursor-pointer transition-all text-slate-500 hover:text-slate-800">
-                                Mandibular (Lower)
-                            </button>
+                            class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-6">
+                            <div class="space-y-1 min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span
+                                        class="inline-flex items-center gap-1.5 text-[10px] font-black text-sky-700 bg-sky-50 border border-sky-200/80 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>
+                                        Active Treatment Chair
+                                    </span>
+                                </div>
+                                <h2 id="active-patient-name"
+                                    class="text-2xl font-black text-slate-900 tracking-tight truncate">
+                                    Loading Case...
+                                </h2>
+                                <p id="active-procedure-container" class="text-xs text-slate-500 font-medium">
+                                    Syncing treatment data...
+                                </p>
+                            </div>
+
+                            <div class="flex items-center gap-3 self-start lg:self-center shrink-0">
+                                <div
+                                    class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-2xl shadow-inner">
+                                    💺
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Odontogram Dynamic Rendering Field -->
-                    <div id="odontogram-container"
-                        class="border border-slate-200 rounded-xl p-4 bg-white flex flex-wrap justify-center gap-2 min-h-[110px] items-center shadow-2xs">
-                        <!-- Compiled via module -->
-                    </div>
-                </div>
+                        <!-- Arc Map Component Block -->
+                        <div class="bg-slate-50/70 border border-slate-200/70 rounded-2xl p-4 sm:p-5 space-y-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div>
+                                    <h3 class="text-[11px] font-black uppercase text-slate-600 tracking-wider">
+                                        Interactive 16-Tooth Dental Arc Map
+                                    </h3>
+                                    <p class="text-[10px] text-slate-400 font-medium">Select target teeth to tag
+                                        clinical
+                                        procedures
+                                    </p>
+                                </div>
 
-                <!-- Comprehensive Clinical Record Form -->
-                <form id="clinical-notes-form" class="space-y-5 pt-2">
+                                <!-- Segmented Toggle Control -->
+                                <div
+                                    class="inline-flex rounded-xl bg-slate-200/70 p-1 border border-slate-300/50 self-start sm:self-auto">
+                                    <button id="toggle-maxillary" type="button"
+                                        class="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg cursor-pointer transition-all bg-white text-slate-800 shadow-2xs">
+                                        Maxillary (Upper)
+                                    </button>
+                                    <button id="toggle-mandibular" type="button"
+                                        class="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg cursor-pointer transition-all text-slate-500 hover:text-slate-800">
+                                        Mandibular (Lower)
+                                    </button>
+                                </div>
+                            </div>
 
-                    <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
-                        <span class="text-lg">📝</span>
-                        <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider">
-                            Clinical Record Entry
-                        </h3>
-                    </div>
-
-                    <!-- Target Teeth Display -->
-                    <div class="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                            Targeted Teeth
-                        </label>
-                        <div id="selected-teeth-display" class="flex flex-wrap gap-2 text-sm text-slate-400 italic">
-                            No teeth selected yet. Click the Odontogram to assign teeth to this record.
+                            <!-- Odontogram Dynamic Rendering Field -->
+                            <div id="odontogram-container"
+                                class="border border-slate-200 rounded-xl p-4 bg-white flex flex-wrap justify-center gap-2 min-h-[110px] items-center shadow-2xs">
+                                <!-- Compiled via module -->
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- 1. Chief Complaint (FIXED ID: chiefComplaint) -->
+                        <!-- Comprehensive Clinical Record Form -->
+                        <form id="clinical-notes-form" class="space-y-5 pt-2">
+
+                            <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+                                <span class="text-lg">📝</span>
+                                <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider">
+                                    Clinical Record Entry
+                                </h3>
+                            </div>
+
+                            <!-- Target Teeth Display -->
+                            <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                                    Targeted Teeth
+                                </label>
+                                <div id="selected-teeth-display"
+                                    class="flex flex-wrap gap-2 text-sm text-slate-400 italic">
+                                    No teeth selected yet. Click the Odontogram to assign teeth to this record.
+                                </div>
+                            </div>
+
+                            <!-- 1. Chief Complaint -->
+                            <div>
+                                <label for="chiefComplaint" class="field-label">
+                                    Chief Complaint <span class="req">*</span>
+                                </label>
+                                <input type="text" id="chiefComplaint" name="chiefComplaint" required
+                                    placeholder="e.g. Patient scheduled for Implant / Tooth sensitivity on upper molar"
+                                    class="field-input" />
+                            </div>
+
+                            <!-- 2. Assessment & 3. Treatment Rendered -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="assessment" class="field-label">
+                                        Assessment / Diagnosis <span class="req">*</span>
+                                    </label>
+                                    <textarea id="assessment" name="assessment" rows="4" required
+                                        placeholder="Enter clinical evaluation findings, diagnostic assessments..."
+                                        class="field-area"></textarea>
+                                </div>
+
+                                <div>
+                                    <label for="treatmentRendered" class="field-label">
+                                        Treatment Rendered <span class="req">*</span>
+                                    </label>
+                                    <textarea id="treatmentRendered" name="treatmentRendered" rows="4" required
+                                        placeholder="e.g. Performed Implant placement, prophylaxis, extraction..."
+                                        class="field-area"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- 4. Progress Notes & 5. Doctor Recommendations -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="progressNotes" class="field-label">
+                                        Progress Notes
+                                    </label>
+                                    <textarea id="progressNotes" name="progressNotes" rows="3"
+                                        placeholder="Anesthesia metrics, operative progress, patient responses..."
+                                        class="field-area"></textarea>
+                                </div>
+
+                                <div>
+                                    <label for="recommendations" class="field-label">
+                                        Doctor's Recommendations
+                                    </label>
+                                    <textarea id="recommendations" name="recommendations" rows="3"
+                                        placeholder="e.g. Maintain routine oral hygiene and follow-up as needed."
+                                        class="field-area"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- 6. Next Visit Date & Actions -->
+                            <div
+                                class="pt-4 flex flex-col lg:flex-row lg:items-end justify-between gap-4 border-t border-slate-100">
+                                <div class="w-full lg:w-60">
+                                    <label for="nextVisitDate" class="field-label">
+                                        Next Recommended Visit
+                                    </label>
+                                    <input type="date" id="nextVisitDate" name="nextVisitDate" class="field-input" />
+                                </div>
+
+                                <div class="flex items-center gap-3 w-full lg:w-auto">
+                                    <button type="button" id="order-xray-btn"
+                                        class="flex-1 lg:flex-initial inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 active:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold px-4 py-3 rounded-xl transition-all cursor-pointer shadow-2xs">
+                                        <span>🩻</span> Order X-Ray
+                                    </button>
+
+                                    <button type="submit"
+                                        class="flex-1 lg:flex-initial inline-flex items-center justify-center gap-1.5 bg-sky-600 hover:bg-sky-500 active:scale-[0.99] text-white text-xs font-bold px-6 py-3 rounded-xl transition-all cursor-pointer shadow-md shadow-sky-600/15"
+                                        id="your-submit-button-id">
+                                        Complete Procedure & Release Patient ✅
+                                    </button>
+                                </div>
+                            </div>
+
+                        </form>
+                    </div>
+                </section>
+            </main>
+
+            <!-- ═══════════ 3. RIGHT: Today's Queue panel ═══════════ -->
+            <aside id="queue-panel"
+                class="w-full xl:w-80 shrink-0 xl:sticky xl:top-20 xl:self-start bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col max-h-[calc(100vh-6rem)]">
+                <div class="p-4 xl:p-5 border-b border-slate-100 flex items-center justify-between gap-3">
                     <div>
-                        <label for="chiefComplaint"
-                            class="block text-[10px] font-extrabold uppercase text-slate-500 tracking-wider mb-1.5">
-                            Chief Complaint <span class="text-rose-500">*</span>
-                        </label>
-                        <input type="text" id="chiefComplaint" name="chiefComplaint" required
-                            placeholder="e.g. Patient scheduled for Implant / Tooth sensitivity on upper molar"
-                            class="w-full text-xs px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 bg-slate-50/50 font-medium text-slate-800 placeholder:text-slate-400 transition-all" />
+                        <h3 class="text-xs font-black text-slate-900 uppercase tracking-wider">Today's Queue</h3>
+                        <p class="text-[10px] text-slate-400 font-medium mt-0.5">Assigned to you</p>
                     </div>
-
-                    <!-- 2. Assessment & 3. Treatment Rendered (FIXED ID: treatmentRendered) -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="assessment"
-                                class="block text-[10px] font-extrabold uppercase text-slate-500 tracking-wider mb-1.5">
-                                Assessment / Diagnosis <span class="text-rose-500">*</span>
-                            </label>
-                            <textarea id="assessment" name="assessment" rows="3" required
-                                placeholder="Enter clinical evaluation findings, diagnostic assessments..."
-                                class="w-full text-xs px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 bg-slate-50/50 font-medium text-slate-800 placeholder:text-slate-400 transition-all resize-none"></textarea>
-                        </div>
-
-                        <div>
-                            <label for="treatmentRendered"
-                                class="block text-[10px] font-extrabold uppercase text-slate-500 tracking-wider mb-1.5">
-                                Treatment Rendered <span class="text-rose-500">*</span>
-                            </label>
-                            <textarea id="treatmentRendered" name="treatmentRendered" rows="3" required
-                                placeholder="e.g. Performed Implant placement, prophylaxis, extraction..."
-                                class="w-full text-xs px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 bg-slate-50/50 font-medium text-slate-800 placeholder:text-slate-400 transition-all resize-none"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- 4. Progress Notes (FIXED ID: progressNotes) & 5. Doctor Recommendations -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="progressNotes"
-                                class="block text-[10px] font-extrabold uppercase text-slate-500 tracking-wider mb-1.5">
-                                Progress Notes
-                            </label>
-                            <textarea id="progressNotes" name="progressNotes" rows="2"
-                                placeholder="Anesthesia metrics, operative progress, patient responses..."
-                                class="w-full text-xs px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 bg-slate-50/50 font-medium text-slate-800 placeholder:text-slate-400 transition-all resize-none"></textarea>
-                        </div>
-
-                        <div>
-                            <label for="recommendations"
-                                class="block text-[10px] font-extrabold uppercase text-slate-500 tracking-wider mb-1.5">
-                                Doctor's Recommendations
-                            </label>
-                            <textarea id="recommendations" name="recommendations" rows="2"
-                                placeholder="e.g. Maintain routine oral hygiene and follow-up as needed."
-                                class="w-full text-xs px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 bg-slate-50/50 font-medium text-slate-800 placeholder:text-slate-400 transition-all resize-none"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- 6. Next Visit Date & Actions -->
+                    <span id="right-queue-count"
+                        class="inline-flex items-center gap-1.5 text-[11px] font-black text-sky-700 bg-sky-50 border border-sky-200 px-2.5 py-1 rounded-lg">
+                        <span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>
+                        <span>0</span>
+                    </span>
+                </div>
+                <div id="right-queue-container" class="flex-1 overflow-y-auto scroll-thin p-4 xl:p-5 space-y-3">
                     <div
-                        class="pt-2 flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-t border-slate-100">
-                        <div class="w-full sm:w-64">
-                            <label for="next-visit-date"
-                                class="block text-[10px] font-extrabold uppercase text-slate-500 tracking-wider mb-1.5">
-                                Next Recommended Visit
-                            </label>
-                            <input type="date" id="nextVisitDate" name="nextVisitDate"
-                                class="w-full text-xs px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 bg-slate-50/50 font-medium text-slate-800 transition-all" />
-                        </div>
-
-                        <div class="flex items-center gap-3 w-full sm:w-auto">
-                            <button type="button" onclick="alert('Diagnostic data backups initialized.')"
-                                class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 active:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold px-4 py-3 rounded-xl transition-all cursor-pointer shadow-2xs">
-                                <span>🩻</span> Order X-Ray
-                            </button>
-
-                            <button type="submit"
-                                class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-sky-600 hover:bg-sky-500 active:scale-[0.99] text-white text-xs font-bold px-6 py-3 rounded-xl transition-all cursor-pointer shadow-md shadow-sky-600/15"
-                                id="your-submit-button-id">
-                                Complete Procedure & Release Patient ✅
-                            </button>
-                        </div>
+                        class="p-6 text-center border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-xs font-bold uppercase tracking-wider">
+                        Loading patients...
                     </div>
+                </div>
+            </aside>
+        </div>
+    </div>
 
-                </form>
+    <!-- ============================================================
+         MODAL : Today's Queue (expanded view)
+    ============================================================= -->
+    <div id="queue-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 p-4 sm:p-6 lg:p-10"
+        role="dialog" aria-modal="true" aria-labelledby="queue-modal-title">
+        <div class="mx-auto max-w-3xl rounded-2xl bg-white shadow-2xl">
+            <header
+                class="flex items-start justify-between gap-4 p-6 sm:p-7 border-b border-slate-100 bg-gradient-to-r from-sky-50/80 to-transparent rounded-t-2xl">
+                <div class="flex items-center gap-3.5">
+                    <span
+                        class="w-11 h-11 shrink-0 rounded-xl bg-sky-100 border border-sky-200 text-sky-600 flex items-center justify-center text-xl">🪑</span>
+                    <div>
+                        <h2 id="queue-modal-title" class="text-lg font-black text-slate-900 tracking-tight">
+                            Today's Queue</h2>
+                        <p class="text-[11px] text-slate-500 font-medium mt-0.5">Approved & waiting patients assigned
+                            to you</p>
+                    </div>
+                </div>
+                <button type="button" id="close-queue-modal"
+                    class="rounded-lg px-2.5 py-1.5 text-xl text-slate-400 hover:bg-white hover:text-slate-700 transition-colors"
+                    aria-label="Close today's queue">×</button>
+            </header>
+            <div class="p-5 sm:p-7">
+                <div class="mb-4 flex items-center justify-between gap-3">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Live queue</p>
+                    <span
+                        class="inline-flex items-center gap-1.5 text-[11px] font-black text-sky-700 bg-sky-50 border border-sky-200 px-2.5 py-1 rounded-lg">
+                        <span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>
+                        <span id="queue-count">0</span>
+                    </span>
+                </div>
+                <div id="queue-container" class="space-y-3 max-h-[60vh] overflow-y-auto scroll-thin pr-1">
+                    <div
+                        class="p-6 text-center border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-xs font-bold uppercase tracking-wider">
+                        Loading patients...
+                    </div>
+                </div>
             </div>
         </div>
+    </div>
 
-        <!-- 2. Patient Clinical History Panel -->
-        <div class="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+    <!-- ============================================================
+         MODAL : Patient History (clinical archive for active case)
+    ============================================================= -->
+    <div id="history-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 p-4 sm:p-6 lg:p-10"
+        role="dialog" aria-modal="true" aria-labelledby="history-modal-title">
+        <div class="mx-auto max-w-3xl rounded-2xl bg-white shadow-2xl">
+            <header
+                class="flex items-start justify-between gap-4 p-6 sm:p-7 border-b border-slate-100 bg-gradient-to-r from-teal-50/80 to-transparent rounded-t-2xl">
+                <div class="flex items-center gap-3.5">
+                    <span
+                        class="w-11 h-11 shrink-0 rounded-xl bg-teal-100 border border-teal-200 text-teal-600 flex items-center justify-center text-xl">🗂️</span>
+                    <div>
+                        <h2 id="history-modal-title" class="text-lg font-black text-slate-900 tracking-tight">
+                            Patient History</h2>
+                        <p class="text-[11px] text-slate-500 font-medium mt-0.5">Past treatment records for the
+                            active patient</p>
+                    </div>
+                </div>
+                <button type="button" id="close-history-modal"
+                    class="rounded-lg px-2.5 py-1.5 text-xl text-slate-400 hover:bg-white hover:text-slate-700 transition-colors"
+                    aria-label="Close patient history">×</button>
+            </header>
+            <div class="p-5 sm:p-7">
+                <div class="mb-4 flex items-center justify-between gap-3">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Clinical archive</p>
+                    <span id="history-active-patient"
+                        class="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate"></span>
+                </div>
+                <div id="patient-history-container" class="space-y-3 max-h-[60vh] overflow-y-auto scroll-thin pr-1">
+                    <div
+                        class="p-6 text-center border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-xs font-bold uppercase tracking-wider">
+                        Loading history...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         MODAL : Patient intake review (read-only)
+    ============================================================= -->
+    <div id="patient-intake-review" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 p-4 sm:p-8"
+        role="dialog" aria-modal="true" aria-labelledby="patient-intake-title">
+        <div class="mx-auto max-w-5xl rounded-2xl bg-white shadow-2xl">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-100 p-6 sm:p-8">
                 <div>
-                    <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-teal-500 shadow-[0_0_8px_rgba(20,184,166,0.5)]"></span>
-                        Patient Clinical History
-                    </h3>
-                    <p class="text-[10px] text-slate-400 font-bold mt-0.5">Past assessments, diagnostic notes, and
-                        treatment
-                        records</p>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-sky-600">Clinical intake review
+                    </p>
+                    <h2 id="patient-intake-title" class="mt-1 text-xl font-black text-slate-900">Patient Intake</h2>
+                    <p class="mt-1 text-xs text-slate-500">Read-only medical and dental history for clinical review.</p>
                 </div>
-                <span
-                    class="text-[10px] font-black text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg uppercase tracking-wider">
-                    Archive Log
-                </span>
+                <button type="button" id="close-patient-intake"
+                    class="rounded-lg px-3 py-2 text-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                    aria-label="Close patient intake">×</button>
             </div>
-
-            <!-- Container for dynamically rendered notes from clinicalNote.js -->
-            <div id="patient-history-container" class="space-y-3 max-h-[420px] overflow-y-auto pr-1">
-                <!-- Default Empty State -->
-                <div
-                    class="flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-slate-200/80 rounded-2xl bg-slate-50/50 space-y-2">
-                    <span class="text-3xl">📂</span>
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Syncing Clinical History...</p>
-                </div>
+            <div class="p-6 sm:p-8">
+                <div class="mb-5 flex items-center justify-between"><span id="patient-intake-status"
+                        class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500">Loading</span><span
+                        id="patient-intake-last-updated" class="text-[10px] text-slate-400"></span></div>
+                <div id="patient-intake-content" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
             </div>
         </div>
+    </div>
 
-    </main>
+    <!-- ============================================================
+         MODAL : X-ray referral composer
+    ============================================================= -->
+    <div id="xray-referral-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 p-4 sm:p-8"
+        role="dialog" aria-modal="true" aria-labelledby="xray-modal-title">
+        <div class="mx-auto max-w-3xl rounded-2xl bg-white shadow-2xl">
+            <div class="flex items-start justify-between border-b border-slate-100 p-6">
+                <div>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-sky-600">Diagnostic Referral</p>
+                    <h2 id="xray-modal-title" class="mt-1 text-xl font-black text-slate-900">Create X-ray Referral</h2>
+                    <p class="mt-1 text-xs text-slate-500">Complete the clinical details, then download a PDF-ready HTML
+                        document or print it directly.</p>
+                </div>
+                <button type="button" id="close-xray-modal"
+                    class="rounded-lg px-3 py-2 text-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                    aria-label="Close">×</button>
+            </div>
+            <form id="xray-referral-form" class="grid grid-cols-1 sm:grid-cols-2 gap-5 p-6 sm:p-8">
+                <div><label class="referral-label">Referring clinic</label>
+                    <p id="xray-clinic-name" class="referral-readonly">Automatically taken from this clinic</p>
+                </div>
+                <div><label class="referral-label">Referral date</label>
+                    <p id="xray-referral-date" class="referral-readonly">Automatically set to today</p>
+                </div>
+                <div><label class="referral-label">Referring dentist</label>
+                    <p id="xray-dentist-name" class="referral-readonly">Automatically taken from your account</p>
+                </div>
+                <div><label class="referral-label">Dentist license number</label>
+                    <p id="xray-dentist-license" class="referral-readonly">From dentist profile</p>
+                </div>
+                <div><label class="referral-label">Dentist contact / license</label>
+                    <p id="xray-dentist-contact" class="referral-readonly">From dentist profile</p>
+                </div>
+                <div><label class="referral-label">Patient full name</label>
+                    <p id="xray-patient-name" class="referral-readonly">From active case</p>
+                </div>
+                <div><label class="referral-label">Patient ID</label>
+                    <p id="xray-patient-id" class="referral-readonly">From active case</p>
+                </div>
+                <div><label class="referral-label">Date of birth</label>
+                    <p id="xray-patient-dob" class="referral-readonly">From patient record</p>
+                </div>
+                <div><label class="referral-label">Sex</label>
+                    <p id="xray-patient-sex" class="referral-readonly">From patient record</p>
+                </div>
+                <div class="sm:col-span-2"><label class="referral-label">Patient contact / address</label>
+                    <p id="xray-patient-contact" class="referral-readonly">From patient record</p>
+                </div>
+                <div class="border-t border-slate-100 pt-4 sm:col-span-2"><label for="xray-type"
+                        class="referral-label">Examination
+                        requested <span>*</span></label><select id="xray-type" required class="referral-input">
+                        <option value="">Select examination</option>
+                        <option>Periapical X-ray</option>
+                        <option>Bitewing X-rays</option>
+                        <option>Panoramic X-ray (OPG)</option>
+                        <option>Cephalometric X-ray</option>
+                        <option>CBCT scan</option>
+                        <option>Other / radiologist recommendation</option>
+                    </select></div>
+                <div><label for="xray-urgency" class="referral-label">Priority</label><select id="xray-urgency"
+                        class="referral-input">
+                        <option>Routine</option>
+                        <option>Urgent</option>
+                        <option>Emergency</option>
+                    </select></div>
+                <div><label for="xray-area" class="referral-label">Region / tooth
+                        number</label><input id="xray-area" class="referral-input"
+                        placeholder="e.g. Tooth 36, upper anterior region, or full dentition" /></div>
+                <div class="sm:col-span-2"><label for="xray-indication" class="referral-label">Clinical indication /
+                        question <span>*</span></label><textarea id="xray-indication" required rows="3"
+                        class="referral-input"
+                        placeholder="Symptoms, suspected diagnosis, and the clinical question the image should answer"></textarea>
+                </div>
+                <div class="sm:col-span-2"><label for="xray-history" class="referral-label">Clinical findings and
+                        relevant history</label><textarea id="xray-history" rows="3" class="referral-input"
+                        placeholder="Duration, trauma, swelling, vitality, previous treatment, medical history, pregnancy status, or relevant findings"></textarea>
+                </div>
+                <div class="sm:col-span-2"><label for="xray-notes" class="referral-label">Special instructions /
+                        comparison</label><textarea id="xray-notes" rows="2" class="referral-input"
+                        placeholder="Positioning notes, prior images for comparison, allergies, or other instructions"></textarea>
+                </div>
+                <div
+                    class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-4 sm:col-span-2 sm:flex-row sm:justify-end">
+                    <button type="button" id="cancel-xray-referral"
+                        class="rounded-xl border border-slate-200 px-5 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50">Cancel</button>
+                    <button type="button" id="download-xray-pdf"
+                        class="rounded-xl bg-sky-600 px-5 py-3 text-xs font-bold text-white shadow-md hover:bg-sky-500">Download
+                        PDF</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        .referral-label {
+            display: block;
+            margin-bottom: .375rem;
+            color: #475569;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .05em;
+            text-transform: uppercase
+        }
+
+        .referral-label span {
+            color: #f43f5e
+        }
+
+        .referral-readonly {
+            width: 100%;
+            min-height: 2.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: .75rem;
+            background: #f1f5f9;
+            color: #334155;
+            font-size: 12px;
+            font-weight: 700;
+            padding: .7rem 1rem;
+        }
+
+        .referral-input {
+            width: 100%;
+            border: 1px solid #e2e8f0;
+            border-radius: .75rem;
+            background: #f8fafc;
+            color: #1e293b;
+            font-size: 12px;
+            font-weight: 500;
+            padding: .7rem 1rem;
+            outline: none;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+
+        .referral-input:focus {
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgb(14 165 233 / .12)
+        }
+    </style>
 
     <!-- Main Clinical Orchestration Engine Modules -->
     <script type="module" src="/src/util/teeth.js"></script>

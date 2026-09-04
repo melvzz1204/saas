@@ -7,22 +7,56 @@ import {
 let activeSessionId = null;
 let activePatientId = null; // Required for the database
 let activeProcedureName = "General Consultation"; // Required for the note
+let activePatientIntake = null;
+let latestQueue = []; // Last-known dentist queue snapshot (for the queue modal)
 const API_BASE_URL = "http://localhost:5000";
+
+function readStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "{}");
+  } catch (error) {
+    console.warn(
+      "Invalid saved user profile; using staff session values.",
+      error,
+    );
+    return {};
+  }
+}
+
+function getStoredSession() {
+  const userData = readStoredUser();
+  const rawToken = localStorage.getItem("token") || "";
+  const token = rawToken.replace(/['"]+/g, "");
+  const clinicId = localStorage.getItem("clinicId") || userData.clinicId || "";
+  const staffId =
+    localStorage.getItem("staffId") ||
+    localStorage.getItem("userId") ||
+    userData._id ||
+    userData.id ||
+    userData.userId ||
+    userData.staffId ||
+    "";
+  return { token, userData, clinicId, staffId };
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
   // 1. Core State Verification Layer
-  let token = localStorage.getItem("token");
-  const userData = JSON.parse(localStorage.getItem("user") || "{}");
+  const { token, userData } = getStoredSession();
   const rawRole = localStorage.getItem("userRole") || userData.role || "";
-  const userRole = rawRole.toLowerCase();
+  const userRole = rawRole.toLowerCase().trim();
 
   const staffName =
-    localStorage.getItem("staffName") || userData.firstName || "Doctor";
-  const clinicName = localStorage.getItem("clinicName") || "Dental Clinic";
+    localStorage.getItem("staffName") ||
+    [userData.firstName, userData.lastName].filter(Boolean).join(" ") ||
+    userData.fullName ||
+    userData.name ||
+    "Doctor";
+  const clinicName =
+    localStorage.getItem("clinicName") ||
+    userData.clinicName ||
+    "Dental Clinic";
 
-  if (token) token = token.replace(/['"]+/g, "");
-
-  if (!token || userRole !== "dentist") {
+  if (!token || !["dentist", "doctor"].includes(userRole)) {
     console.warn(
       "Unauthorized terminal entry vector. Redirecting to security gate...",
     );
@@ -39,56 +73,199 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // 4. Form Action Processing Submission Bind
   bindProcedureSubmission();
+  bindXrayReferral();
+  bindPatientIntakeReview();
+
+  // 5. Navigation scroll-spy for the workspace rail
+  initNavScrollSpy();
+
+  // 6. Queue / history overlay modal triggers
+  bindModalTriggers();
 });
 
 document.addEventListener("DOMContentLoaded", () => {
   const logoutBtn = document.getElementById("dentist-logout-btn");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      if (confirm("Are you sure you want to log out of the dashboard?")) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        localStorage.removeItem("clinicId");
-        window.location.href = "/staffLogin.html";
-      }
-    });
-  }
+  logoutBtn?.addEventListener("click", (event) => {
+    event.preventDefault();
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("staffId");
+    localStorage.removeItem("staffName");
+    localStorage.removeItem("clinicId");
+    window.location.replace("/staffLogin.html");
+  });
 });
 
 function initDynamicBranding(doctorName, clinicTitle) {
-  const clinicTextElement = document.querySelector("h1.text-sm.font-black");
-  const doctorBadgeElement = document.querySelector(".text-\\[10px\\]");
+  const clinicTextElement = document.getElementById("clinic-title");
+  const identityName = document.getElementById("dentist-identity-name");
+  const avatar = document.getElementById("dentist-avatar");
 
   if (clinicTextElement && clinicTitle) {
     clinicTextElement.textContent = clinicTitle.trim();
   }
 
-  if (doctorBadgeElement && doctorName) {
-    const pulseIndicator = doctorBadgeElement.querySelector(".animate-pulse");
-    doctorBadgeElement.innerHTML = "";
-    if (pulseIndicator) {
-      doctorBadgeElement.appendChild(pulseIndicator);
-    }
-    const textNode = document.createTextNode(` Dr. ${doctorName}`);
-    doctorBadgeElement.appendChild(textNode);
+  const displayName = doctorName || "Doctor";
+
+  if (identityName) {
+    const firstName = String(displayName).split(" ")[0] || "";
+    const hasTitle = /^dr\.?\s/i.test(String(displayName).trim());
+    identityName.textContent = hasTitle
+      ? String(displayName).trim()
+      : `Dr. ${firstName}`;
+  }
+
+  if (avatar) {
+    avatar.textContent = (String(displayName).charAt(0) || "D").toUpperCase();
+  }
+}
+
+function initNavScrollSpy() {
+  const anchorLink = document.querySelector(
+    ".nav-link[data-scroll-target='clinical-record']",
+  );
+  if (!anchorLink) return;
+
+  const recordSection = document.getElementById("clinical-record");
+  if (recordSection) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          anchorLink.classList.toggle("nav-active", entry.isIntersecting);
+        });
+      },
+      { rootMargin: "-20% 0px -70% 0px", threshold: 0 },
+    );
+    observer.observe(recordSection);
+  }
+}
+
+// ---------------------------------------------------------------
+// Overlay modal helpers (queue + history open cleanly on request,
+// keeping the clinical workspace uncluttered)
+// ---------------------------------------------------------------
+function openModal(id) {
+  const modal = document.getElementById(id);
+  if (!modal) return;
+  modal.classList.remove("hidden");
+  document.body.classList.add("overflow-hidden");
+  // Refresh content each time the modal is opened.
+  if (id === "queue-modal") {
+    renderDentistQueueFromStore();
+  } else if (id === "history-modal") {
+    hydrateHistoryModal();
+  }
+}
+
+function closeModal(id) {
+  const modal = document.getElementById(id);
+  if (!modal) return;
+  modal.classList.add("hidden");
+  // Only release the page lock when every overlay is closed.
+  const anyOpen = [
+    "queue-modal",
+    "history-modal",
+    "patient-intake-review",
+    "xray-referral-modal",
+  ].some((mid) => !document.getElementById(mid)?.classList.contains("hidden"));
+  if (!anyOpen) document.body.classList.remove("overflow-hidden");
+}
+
+function bindModalTriggers() {
+  const openers = [{ btn: "nav-history-btn", modal: "history-modal" }];
+
+  openers.forEach(({ btn, modal }) => {
+    document.getElementById(btn)?.addEventListener("click", () => {
+      openModal(modal);
+    });
+  });
+
+  const closers = [
+    { btn: "close-queue-modal", modal: "queue-modal" },
+    { btn: "close-history-modal", modal: "history-modal" },
+  ];
+
+  closers.forEach(({ btn, modal }) => {
+    document.getElementById(btn)?.addEventListener("click", () => {
+      closeModal(modal);
+    });
+  });
+
+  // Click outside the dialog panel to dismiss.
+  ["queue-modal", "history-modal"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("click", (event) => {
+      if (event.target.id === id) closeModal(id);
+    });
+  });
+
+  // Escape key dismisses whichever queue/history overlay is open.
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    ["queue-modal", "history-modal"].forEach((id) => {
+      const modal = document.getElementById(id);
+      if (modal && !modal.classList.contains("hidden")) closeModal(id);
+    });
+  });
+}
+
+// Renders the last-known queue snapshot into the queue modal. The queue is
+// cached on every fetch so opening the modal never requires another round trip.
+function renderDentistQueueFromStore() {
+  if (typeof window.renderDentistQueue === "function") {
+    window.renderDentistQueue(latestQueue || []);
+  }
+}
+
+// Fetches + renders the clinical history for whichever patient is currently in
+// the active chair, refreshing the history modal every time it is opened.
+async function hydrateHistoryModal() {
+  const container = document.getElementById("patient-history-container");
+  if (!container) return;
+
+  const patientLabel = document.getElementById("history-active-patient");
+
+  if (!activePatientId) {
+    if (patientLabel) patientLabel.textContent = "";
+    container.innerHTML = `
+      <div class="flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+        <span class="text-2xl mb-2">📂</span>
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">No Active Patient</p>
+        <p class="mt-1 text-[10px] text-slate-400">Load a patient into the chair to view their history</p>
+      </div>`;
+    return;
+  }
+
+  const activeName =
+    document.getElementById("active-patient-name")?.textContent?.trim() ||
+    "Active patient";
+  if (patientLabel) patientLabel.textContent = activeName;
+
+  container.innerHTML = `
+    <p class="text-xs text-slate-400 text-center p-4">Loading past records...</p>`;
+
+  try {
+    const historyData = await fetchPatientHistory(activePatientId);
+    renderPatientHistoryUI(historyData, "patient-history-container");
+  } catch (error) {
+    container.innerHTML = `
+      <p class="text-xs text-rose-600 text-center p-4 bg-rose-50 border border-rose-200 rounded-xl">
+        Unable to load history: ${error.message}
+      </p>`;
   }
 }
 
 async function fetchClinicalQueue() {
-  const rawToken = localStorage.getItem("token");
-  const token = rawToken ? rawToken.replace(/['"]+/g, "") : "";
-  const userData = JSON.parse(localStorage.getItem("user") || "{}");
-  let clinicId = localStorage.getItem("clinicId") || userData.clinicId || "";
-
-  const myDentistId =
-    userData._id ||
-    userData.id ||
-    localStorage.getItem("userId") ||
-    localStorage.getItem("staffId");
+  const { token, userData, clinicId, staffId } = getStoredSession();
+  const myDentistId = staffId;
+  const myDentistEmail = String(
+    userData.email || localStorage.getItem("staffEmail") || "",
+  ).toLowerCase();
 
   if (!clinicId) {
     console.error("❌ Critical: No clinicId found in session context.");
+    renderQueueError("Clinic session is missing. Please log in again.");
     return;
   }
 
@@ -115,35 +292,67 @@ async function fetchClinicalQueue() {
     const allAppointments = data.appointments || data.data || [];
 
     const myQueue = allAppointments.filter((app) => {
-      const rawAssigned = app.dentistId || app.doctorId;
+      const rawAssigned = app.dentistId || app.doctorId || app.dentist;
       const assignedId =
         rawAssigned && typeof rawAssigned === "object"
           ? rawAssigned._id || rawAssigned.id
           : rawAssigned;
-      return String(assignedId) === String(myDentistId);
+      const normalizedStatus = String(app.status || "").toLowerCase();
+
+      // Keep all assigned active workflow states in the dentist queue. The
+      // active clinical case below is still restricted to in-treatment.
+      const isDentistPatient = [
+        "approved",
+        "pending",
+        "checked-in",
+        "waiting",
+        "in-treatment",
+        "treatment",
+      ].includes(normalizedStatus);
+
+      // Some API responses provide an unpopulated dentistId, while others
+      // return the populated Staff document. Compare every supported shape.
+      const assignedEmail =
+        rawAssigned && typeof rawAssigned === "object" ? rawAssigned.email : "";
+      const dentistMatches =
+        !rawAssigned ||
+        String(assignedId || "") === String(myDentistId || "") ||
+        (assignedEmail && assignedEmail.toLowerCase() === myDentistEmail);
+      return dentistMatches && isDentistPatient;
     });
 
-    if (typeof renderDentistQueue === "function") {
-      renderDentistQueue(myQueue);
+    latestQueue = myQueue;
+
+    if (typeof window.renderDentistQueue === "function") {
+      window.renderDentistQueue(myQueue);
     }
 
-    if (myQueue.length > 0) {
-      const activePatient = myQueue.find(
-        (app) => app.status === "in-treatment" || app.status === "treatment",
-      );
+    // Only a patient moved by staff into treatment is an active clinical case.
+    // Approved/checked-in patients remain available in the right-side queue.
+    const activePatient = myQueue.find((app) => {
+      const status = String(app.status || "").toLowerCase();
+      return status === "in-treatment" || status === "treatment";
+    });
 
-      if (activePatient) {
-        hydrateActiveChairView(activePatient);
-      } else {
-        clearActiveChairView();
-      }
+    if (activePatient) {
+      await hydrateActiveChairView(activePatient);
     } else {
       clearActiveChairView();
     }
   } catch (err) {
     console.error("Queue Synchronicity Fault:", err);
+    renderQueueError(err.message || "Unable to load today's queue.");
     clearActiveChairView(); // Ensure it clears if fetch fails
   }
+}
+
+function renderQueueError(message) {
+  ["queue-container", "right-queue-container"].forEach((id) => {
+    const container = document.getElementById(id);
+    if (container) {
+      container.innerHTML = `<div class="p-4 text-center rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs font-bold">${message}</div>`;
+    }
+  });
 }
 
 async function hydrateActiveChairView(patient) {
@@ -153,7 +362,7 @@ async function hydrateActiveChairView(patient) {
   activePatientId =
     patient.patientId && typeof patient.patientId === "object"
       ? patient.patientId._id || patient.patientId.id
-      : patient.patientId;
+      : patient.patientId || patient.patient?._id;
 
   // 2. EXTRACT PROCEDURE NAME
   activeProcedureName =
@@ -178,19 +387,163 @@ async function hydrateActiveChairView(patient) {
   const nameElement = document.getElementById("active-patient-name");
   if (nameElement) nameElement.textContent = displayName;
 
+  const statusLabel = String(patient.status || "").toLowerCase();
+  const statusText =
+    statusLabel === "checked-in" || statusLabel === "waiting"
+      ? "Patient waiting in lobby"
+      : statusLabel === "approved"
+        ? "Appointment approved"
+        : statusLabel === "pending"
+          ? "Appointment pending clinic confirmation"
+          : "Active treatment case";
+
   const procedureLabel = document.getElementById("active-procedure-container");
   if (procedureLabel) {
-    procedureLabel.innerHTML = `Assigned Procedure: <span class="text-slate-800 font-bold">${activeProcedureName}</span>`;
+    procedureLabel.innerHTML = `${statusText}: <span class="text-slate-800 font-bold">${activeProcedureName}</span>`;
   }
 
-  // 4. FETCH AND RENDER CLINICAL HISTORY
-  const historyContainer = document.getElementById("patient-history-container");
-  if (historyContainer && activePatientId) {
-    historyContainer.innerHTML = `<p class="text-xs text-slate-400 text-center p-4">Loading past records...</p>`;
-    const historyData = await fetchPatientHistory(activePatientId);
-    renderPatientHistoryUI(historyData, "patient-history-container");
+  // 4. Fetch the intake. (Clinical history now loads on demand inside the
+  //    Patient History modal via hydrateHistoryModal().)
+  await fetchPatientIntake(activePatientId);
+}
+async function fetchPatientIntake(patientId) {
+  const panel = document.getElementById("patient-intake-review");
+  const content = document.getElementById("patient-intake-content");
+  const status = document.getElementById("patient-intake-status");
+  if (!panel || !content || !status || !patientId) return;
+
+  const userData = JSON.parse(localStorage.getItem("user") || "{}");
+  const clinicId = localStorage.getItem("clinicId") || userData.clinicId || "";
+  const token = localStorage.getItem("token")?.replace(/["']+/g, "") || "";
+
+  panel.classList.add("hidden");
+  content.innerHTML =
+    '<p class="text-xs text-slate-400">Loading patient intake...</p>';
+  status.textContent = "Loading";
+
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/patients/profile/${patientId}`,
+      {
+        headers: { Authorization: `Bearer ${token}`, "x-clinic-id": clinicId },
+      },
+    );
+    const result = await response.json();
+    if (!response.ok)
+      throw new Error(result.message || "Unable to load intake");
+
+    activePatientIntake = result.data;
+    const profile = result.data.profile;
+    const patient = result.data.patient || {};
+    const completed = result.data.hasCompletedIntake;
+    status.textContent = completed ? "Completed" : "Not completed";
+    status.className = `text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg ${completed ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`;
+    document.getElementById("nav-intake-btn")?.classList.remove("hidden");
+
+    const personal = profile?.personalInformation || {};
+    const name = personal.name || {};
+    const medical = profile?.medicalHistory || {};
+    const questionnaire = medical.questionnaire || {};
+    const allergies = medical.allergies || {};
+    const conditions = profile?.medicalConditionsMatrix || {};
+    const item = (label, value, wide = false) =>
+      `<div class="${wide ? "sm:col-span-2 lg:col-span-3" : ""} bg-slate-50 border border-slate-100 rounded-xl p-3"><span class="block text-[9px] font-black uppercase tracking-wider text-slate-400">${label}</span><p class="mt-1 text-xs font-bold text-slate-700 whitespace-pre-wrap">${value || "Not provided"}</p></div>`;
+    const yes = (value) =>
+      value === true ? "Yes" : value === false ? "No" : "Not answered";
+    const flagged = Object.entries(conditions)
+      .filter(([, value]) => value === true)
+      .map(([key]) => key.replace(/([A-Z])/g, " $1"));
+
+    content.innerHTML = [
+      item(
+        "Patient",
+        `${name.first || patient.firstName || ""} ${name.last || patient.lastName || ""}`.trim(),
+      ),
+      item(
+        "Date of birth",
+        personal.birthdate
+          ? new Date(personal.birthdate).toLocaleDateString()
+          : patient.dateOfBirth
+            ? new Date(patient.dateOfBirth).toLocaleDateString()
+            : "Not provided",
+      ),
+      item("Sex", personal.sex),
+      item("Mobile", personal.cellMobileNo || patient.phone),
+      item("Reason for consultation", personal.reasonForConsultation, true),
+      item("General health", yes(questionnaire.isInGoodHealth)),
+      item(
+        "Medical treatment",
+        yes(questionnaire.isUnderMedicalTreatment?.status),
+      ),
+      item(
+        "Medications",
+        questionnaire.isTakingMedications?.medicationDetails ||
+          yes(questionnaire.isTakingMedications?.status),
+        true,
+      ),
+      item(
+        "Allergies",
+        Object.entries(allergies)
+          .filter(([key, value]) => key !== "other" && value)
+          .map(([key]) => key)
+          .join(", ") || allergies.other,
+        true,
+      ),
+      item("Conditions reported", flagged.join(", ") || "None reported", true),
+      item("Blood pressure", medical.vitals?.bloodPressure),
+      item(
+        "Dental history",
+        `${profile?.dentalHistory?.previousDentist || "No previous dentist listed"}; Last visit: ${profile?.dentalHistory?.lastDentalVisit || "Not provided"}`,
+        true,
+      ),
+    ].join("");
+  } catch (error) {
+    activePatientIntake = null;
+    status.textContent = "Unavailable";
+    content.innerHTML = `<p class="text-xs text-rose-600">${error.message}</p>`;
   }
 }
+
+function openPatientIntakeModal() {
+  const modal = document.getElementById("patient-intake-review");
+  if (!modal || !activePatientId) return;
+  modal.classList.remove("hidden");
+  document.body.classList.add("overflow-hidden");
+}
+
+function closePatientIntakeModal() {
+  document.getElementById("patient-intake-review")?.classList.add("hidden");
+  document.body.classList.remove("overflow-hidden");
+}
+
+function bindPatientIntakeReview() {
+  const intakeButton = document.getElementById("nav-intake-btn");
+  intakeButton?.addEventListener("click", (event) => {
+    event.preventDefault();
+    if (!activePatientId) {
+      alert("Select an active patient before opening Patient Intake.");
+      return;
+    }
+    openPatientIntakeModal();
+  });
+  document
+    .getElementById("close-patient-intake")
+    ?.addEventListener("click", closePatientIntakeModal);
+  document
+    .getElementById("patient-intake-review")
+    ?.addEventListener("click", (event) => {
+      if (event.target.id === "patient-intake-review")
+        closePatientIntakeModal();
+    });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    const intakeModal = document.getElementById("patient-intake-review");
+    if (intakeModal && !intakeModal.classList.contains("hidden")) {
+      closePatientIntakeModal();
+    }
+  });
+}
+
 // Maps a tooth number to its anatomical name
 function getToothDescription(toothId) {
   const toothNum = parseInt(toothId);
@@ -214,7 +567,10 @@ function getToothDescription(toothId) {
 function clearActiveChairView() {
   activeSessionId = null;
   activePatientId = null;
+  activePatientIntake = null;
   activeProcedureName = "General Consultation";
+  document.getElementById("nav-intake-btn")?.classList.add("hidden");
+  closePatientIntakeModal();
 
   const nameElement = document.getElementById("active-patient-name");
   if (nameElement) nameElement.textContent = "No Active Case";
@@ -225,6 +581,8 @@ function clearActiveChairView() {
   }
 
   // Clear the history panel
+  const historyLabel = document.getElementById("history-active-patient");
+  if (historyLabel) historyLabel.textContent = "";
   const historyContainer = document.getElementById("patient-history-container");
   if (historyContainer) {
     historyContainer.innerHTML = `
@@ -343,9 +701,8 @@ function bindProcedureSubmission() {
   });
 }
 
-const socketToken = localStorage.getItem("token");
-
 if (typeof io !== "undefined") {
+  const socketToken = getStoredSession().token;
   const socket = io("http://localhost:5000", {
     transports: ["websocket"],
     upgrade: false,
@@ -373,60 +730,85 @@ if (typeof io !== "undefined") {
 window.renderDentistQueue = function (queue) {
   const queueContainer = document.getElementById("queue-container");
   const queueCount = document.getElementById("queue-count");
+  const rightQueueContainer = document.getElementById("right-queue-container");
+  const rightQueueCount = document.getElementById("right-queue-count");
 
-  if (!queueContainer || !queueCount) return;
+  const waitingPatients = queue.filter((app) => {
+    const status = String(app.status || "").toLowerCase();
+    return [
+      "approved",
+      "pending",
+      "checked-in",
+      "waiting",
+      "in-treatment",
+      "treatment",
+    ].includes(status);
+  });
 
-  const waitingPatients = queue.filter(
-    (app) => app.status === "checked-in" || app.status === "waiting",
-  );
+  const countText = `${waitingPatients.length}`;
+  if (queueCount) queueCount.textContent = countText;
+  const rightQueueNumber = rightQueueCount?.querySelector("span:last-child");
+  if (rightQueueNumber) rightQueueNumber.textContent = countText;
 
-  queueCount.textContent = `${waitingPatients.length} Left`;
+  const renderCards = (container) => {
+    if (!container) return;
 
-  if (waitingPatients.length === 0) {
-    queueContainer.innerHTML = `
-      <div class="p-6 text-center border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-xs font-bold uppercase tracking-wider">
-        No patients waiting
-      </div>`;
-    return;
-  }
-
-  queueContainer.innerHTML = "";
-
-  waitingPatients.forEach((app, index) => {
-    const isNext = index === 0;
-
-    let patientName = "Unknown Patient";
-    if (app.patientId && typeof app.patientId === "object") {
-      patientName =
-        `${app.patientId.firstName || ""} ${app.patientId.lastName || ""}`.trim();
-    } else {
-      patientName = app.patientName || app.firstName || "Walk-In Patient";
+    if (waitingPatients.length === 0) {
+      container.innerHTML = `
+        <div class="p-6 text-center border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-xs font-bold uppercase tracking-wider">
+          No patients waiting
+        </div>`;
+      return;
     }
 
-    const procedure = app.service || app.treatmentName || "Consultation";
+    container.innerHTML = "";
 
-    const card = document.createElement("div");
-    card.className = `p-4 rounded-xl border transition-all flex flex-col gap-2 ${
-      isNext
-        ? "bg-sky-50 border-sky-200 shadow-sm scale-[1.02]"
-        : "bg-white border-slate-200 hover:border-slate-300"
-    }`;
+    waitingPatients.forEach((app, index) => {
+      const isNext = index === 0;
+      const status = String(app.status || "").toLowerCase();
+      const statusLabel =
+        status === "approved" ? "Approved" : status.replace("-", " ");
 
-    card.innerHTML = `
-      <div class="flex justify-between items-start">
-        <div>
-          ${isNext ? `<span class="text-[9px] font-black text-sky-600 uppercase tracking-wider mb-1 block">👉 Next Up</span>` : ""}
-          <h4 class="text-xs font-bold text-slate-800 uppercase">${patientName}</h4>
+      let patientName = "Unknown Patient";
+      if (app.patientId && typeof app.patientId === "object") {
+        patientName =
+          `${app.patientId.firstName || ""} ${app.patientId.lastName || ""}`.trim();
+      } else {
+        patientName = app.patientName || app.firstName || "Walk-In Patient";
+      }
+
+      const procedure = app.service || app.treatmentName || "Consultation";
+
+      const card = document.createElement("div");
+      card.className = `p-4 rounded-xl border transition-all flex flex-col gap-2 ${
+        isNext
+          ? "bg-sky-50 border-sky-200 shadow-sm scale-[1.02]"
+          : "bg-white border-slate-200 hover:border-slate-300"
+      }`;
+
+      card.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div>
+            ${isNext ? `<span class="text-[9px] font-black text-sky-600 uppercase tracking-wider mb-1 block">👉 Next Up</span>` : ""}
+            <h4 class="text-xs font-bold text-slate-800 uppercase">${patientName}</h4>
+          </div>
+          <span class="text-[9px] font-bold bg-white border border-slate-200 text-slate-500 px-2 py-0.5 rounded-md">
+            ${app.time || "Live"}
+          </span>
         </div>
-        <span class="text-[9px] font-bold bg-white border border-slate-200 text-slate-500 px-2 py-0.5 rounded-md">
-          ${app.time || "Live"}
-        </span>
-      </div>
-      <p class="text-[11px] text-slate-500 font-medium truncate">Procedure: <span class="text-slate-700">${procedure}</span></p>
-    `;
+        <div class="flex items-center justify-between gap-2">
+          <p class="text-[11px] text-slate-500 font-medium truncate">Procedure: <span class="text-slate-700">${procedure}</span></p>
+          <span class="shrink-0 text-[9px] font-black uppercase text-teal-700 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded">${statusLabel}</span>
+        </div>
+        <p class="text-[10px] text-slate-400">${app.date || "Today"}</p>
+      `;
 
-    queueContainer.appendChild(card);
-  });
+      container.appendChild(card);
+    });
+  };
+
+  renderCards(queueContainer);
+  renderCards(rightQueueContainer);
 };
 window.updateSelectedTeethUI = function () {
   const container = document.getElementById("selected-teeth-display");
@@ -521,3 +903,312 @@ document.addEventListener("click", (e) => {
     }
   }, 50);
 });
+
+function bindXrayReferral() {
+  const openButton = document.getElementById("order-xray-btn");
+  const modal = document.getElementById("xray-referral-modal");
+  const form = document.getElementById("xray-referral-form");
+  if (!openButton || !modal || !form) return;
+
+  const getSessionUser = () => JSON.parse(localStorage.getItem("user") || "{}");
+  const setValue = (id, value) => {
+    const field = document.getElementById(id);
+    if (field && value) {
+      if ("value" in field) field.value = value;
+      else field.textContent = value;
+    }
+  };
+  const today = new Date().toISOString().slice(0, 10);
+
+  const closeModal = () => {
+    modal.classList.add("hidden");
+    document.body.classList.remove("overflow-hidden");
+  };
+
+  openButton.addEventListener("click", () => {
+    if (!activePatientId) {
+      alert(
+        "Start an active patient treatment before creating an X-ray referral.",
+      );
+      return;
+    }
+
+    const user = getSessionUser();
+    const intake = activePatientIntake || {};
+    const patientProfile = intake.patient || {};
+    const personal = intake.profile?.personalInformation || {};
+    const patientName = personal.name || {};
+    const patientAddress = personal.homeAddress || personal.address || "";
+    const dentistName =
+      localStorage.getItem("staffName") ||
+      `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+      "Dentist";
+
+    setValue(
+      "xray-clinic-name",
+      localStorage.getItem("clinicName") || user.clinicName || "Dental Clinic",
+    );
+    setValue("xray-referral-date", today);
+    setValue("xray-dentist-name", dentistName);
+    setValue(
+      "xray-dentist-contact",
+      user.phone ||
+        localStorage.getItem("staffPhone") ||
+        user.email ||
+        localStorage.getItem("staffEmail") ||
+        "Not provided",
+    );
+    setValue(
+      "xray-dentist-license",
+      user.licenseNumber ||
+        localStorage.getItem("staffLicenseNumber") ||
+        "Not provided",
+    );
+    setValue(
+      "xray-patient-name",
+      [patientName.firstName, patientName.lastName].filter(Boolean).join(" ") ||
+        patientProfile.fullName ||
+        document.getElementById("active-patient-name")?.textContent.trim() ||
+        "Not provided",
+    );
+    setValue("xray-patient-id", activePatientId);
+    setValue(
+      "xray-patient-dob",
+      personal.birthdate || patientProfile.dateOfBirth || "Not provided",
+    );
+    setValue(
+      "xray-patient-sex",
+      personal.sex || patientProfile.sex || "Not provided",
+    );
+    setValue(
+      "xray-patient-contact",
+      personal.cellMobileNo || patientProfile.phone || "Not provided",
+    );
+    setValue(
+      "xray-patient-email",
+      personal.emailAddress || patientProfile.email || "Not provided",
+    );
+    setValue("xray-patient-address", patientAddress || "Not provided");
+    const selectedTeeth = window.getSelectedTeeth
+      ? window.getSelectedTeeth()
+      : [];
+    if (selectedTeeth.length)
+      setValue(
+        "xray-area",
+        selectedTeeth.map((tooth) => `Tooth ${tooth}`).join(", "),
+      );
+    modal.classList.remove("hidden");
+    document.body.classList.add("overflow-hidden");
+    document.getElementById("xray-type")?.focus();
+  });
+
+  document
+    .getElementById("close-xray-modal")
+    ?.addEventListener("click", closeModal);
+  document
+    .getElementById("cancel-xray-referral")
+    ?.addEventListener("click", closeModal);
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) closeModal();
+  });
+
+  const readReferralValues = () => {
+    const values = Object.fromEntries(new FormData(form).entries());
+    form.querySelectorAll("input, select, textarea, [id]").forEach((field) => {
+      if (!field.id) return;
+      values[field.id] =
+        "value" in field ? field.value.trim() : field.textContent.trim();
+    });
+    return values;
+  };
+
+  document
+    .getElementById("download-xray-pdf")
+    ?.addEventListener("click", () => {
+      if (!form.reportValidity()) return;
+      const values = readReferralValues();
+      downloadReferralPdf(values);
+    });
+}
+
+function downloadReferralPdf(values) {
+  const JsPdf = window.jspdf?.jsPDF;
+  if (!JsPdf) {
+    alert(
+      "PDF download is unavailable. Please refresh the page and try again.",
+    );
+    return;
+  }
+
+  const pdf = new JsPdf({ unit: "mm", format: "a4" });
+  const margin = 16;
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const contentWidth = pageWidth - margin * 2;
+  let y = 18;
+  const field = (id, fallback = "Not provided") =>
+    String(values[id] || fallback).trim();
+
+  const ensureSpace = (height = 24) => {
+    if (y + height > pageHeight - margin) {
+      pdf.addPage();
+      y = margin;
+    }
+  };
+
+  const addSection = (number, title) => {
+    ensureSpace(16);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(12);
+    pdf.setTextColor(15, 118, 110);
+    pdf.text(`${number}. ${title}`, margin, y);
+    y += 7;
+  };
+
+  const addField = (
+    label,
+    value,
+    fallback = "____________________",
+    size = 10,
+  ) => {
+    ensureSpace(16);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(23, 32, 51);
+    pdf.text(`${label}:`, margin, y);
+    const labelWidth = pdf.getTextWidth(`${label}: `);
+    const hasValue = value && value !== "Not provided";
+    if (hasValue) {
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(size);
+      const lines = pdf.splitTextToSize(value, contentWidth - labelWidth);
+      pdf.text(lines, margin + labelWidth, y);
+      y += Math.max(6, lines.length * 4.5) + 3;
+    } else {
+      pdf.setDrawColor(71, 85, 105);
+      pdf.setLineWidth(0.25);
+      pdf.line(margin + labelWidth, y + 1, pageWidth - margin, y + 1);
+      y += 9;
+    }
+  };
+
+  const addCheckboxes = (label, options, selected) => {
+    ensureSpace(12);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(23, 32, 51);
+    pdf.text(`${label}:`, margin, y);
+    let x = margin + pdf.getTextWidth(`${label}: `);
+    pdf.setFont("helvetica", "normal");
+    options.forEach((option) => {
+      const normalized = String(selected).toLowerCase();
+      const checked =
+        normalized === option.toLowerCase() ||
+        (option === "Male" && normalized === "m") ||
+        (option === "Female" && normalized === "f");
+      const text = `${checked ? "[X]" : "[ ]"} ${option}`;
+      pdf.text(text, x, y);
+      x += pdf.getTextWidth(text) + 7;
+      if (x > pageWidth - margin - 25) {
+        y += 5;
+        x = margin;
+      }
+    });
+    y += 8;
+  };
+
+  pdf.setDrawColor(15, 118, 110);
+  pdf.setLineWidth(1);
+  pdf.line(margin, y, pageWidth - margin, y);
+  y += 9;
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(18);
+  pdf.setTextColor(15, 23, 42);
+  pdf.text(field("xray-clinic-name", "Dental Clinic"), margin, y);
+  y += 6;
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9);
+  pdf.setTextColor(71, 85, 105);
+  pdf.text("Diagnostic imaging referral", margin, y);
+  y += 11;
+  pdf.setDrawColor(203, 213, 225);
+  pdf.setLineWidth(0.3);
+  pdf.line(margin, y, pageWidth - margin, y);
+  y += 8;
+
+  addSection(1, "Referral Details");
+  addField("Referral Date", field("xray-referral-date"));
+  addCheckboxes(
+    "Priority Level",
+    ["Routine", "Urgent", "Emergency"],
+    field("xray-urgency"),
+  );
+
+  addSection(2, "Referring Dentist Details");
+  addField("Clinic Name", field("xray-clinic-name", "Dental Clinic"));
+  addField("Referring Dentist", field("xray-dentist-name"));
+  addField("Phone / Email", field("xray-dentist-contact"));
+  addField("License Number", field("xray-dentist-license"));
+
+  addSection(3, "Patient Details");
+  addField("Patient Name", field("xray-patient-name"));
+  addField("Date of Birth", field("xray-patient-dob"));
+  addCheckboxes("Sex", ["Male", "Female", "Other"], field("xray-patient-sex"));
+  addField("Contact Number", field("xray-patient-contact"));
+  addField("Email", field("xray-patient-email"));
+  addField("Address", field("xray-patient-address"));
+
+  addSection(4, "Imaging Requested");
+  addCheckboxes(
+    "Examination Type",
+    [
+      "Periapical X-ray",
+      "Panoramic (OPG)",
+      "Bitewing",
+      "Occlusal",
+      "CBCT / 3D Scan",
+      "Other",
+    ],
+    field("xray-type"),
+  );
+  addField("Tooth Number / Target Area", field("xray-area"));
+
+  addSection(5, "Clinical Information");
+  addField(
+    "Clinical Indication / Diagnostic Question",
+    field("xray-indication"),
+  );
+  addField("Relevant Findings & Medical History", field("xray-history"));
+  addField("Special Instructions", field("xray-notes"));
+
+  addSection(6, "Sign-off");
+  addField("Dentist Signature");
+  addField("Dentist Name", field("xray-dentist-name"));
+  addField("Date", field("xray-referral-date"));
+  ensureSpace(25);
+  pdf.setDrawColor(51, 65, 85);
+  pdf.line(margin, y + 8, margin + 65, y + 8);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(8);
+  pdf.setTextColor(71, 85, 105);
+  pdf.text("Referring dentist", margin, y + 13);
+  pdf.setFont("helvetica", "bold");
+  pdf.text(field("xray-dentist-name", "Not provided"), margin, y + 18);
+
+  const safeName = field("xray-patient-name", "patient")
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase();
+  pdf.save(`dental-xray-referral-${safeName || "patient"}.pdf`);
+}
+
+function escapeReferralText(value = "") {
+  const text = String(value);
+  return text.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
+}
+
+function buildXrayReferral(values) {
+  const field = (id) => escapeReferralText(values[id] || "Not provided");
+  const date = field("xray-referral-date");
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Dental X-ray Referral - ${field("xray-patient-name")}</title><style>@page{size:A4;margin:16mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#172033;margin:0;line-height:1.45;font-size:13px}.header{display:flex;justify-content:space-between;border-bottom:3px solid #0f766e;padding-bottom:14px}.clinic{font-size:23px;font-weight:800;color:#0f172a}.tag{color:#0f766e;font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase}.meta{text-align:right;color:#475569;font-size:11px}.section{margin-top:20px;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden}.section h2{background:#f1f5f9;border-bottom:1px solid #cbd5e1;font-size:11px;letter-spacing:1px;margin:0;padding:8px 10px;text-transform:uppercase}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px}.label{color:#64748b;font-size:10px;font-weight:bold;text-transform:uppercase}.value{margin-top:2px;white-space:pre-wrap;min-height:18px}.request{padding:12px}.request strong{font-size:17px;color:#0f766e}.signature{margin-top:55px;width:260px;border-top:1px solid #334155;padding-top:7px;font-size:11px}@media print{body{font-size:12px}.section{break-inside:avoid}}</style></head><body><header class="header"><div><div class="tag">Diagnostic imaging referral</div><div class="clinic">${field("xray-clinic-name")}</div><div>Referral from dental clinic</div></div><div class="meta"><strong>Referral date</strong><br>${date}<br><br><strong>Priority</strong><br>${field("xray-urgency")}</div></header><section class="section"><h2>Patient details</h2><div class="grid"><div><div class="label">Patient name</div><div class="value">${field("xray-patient-name")}</div></div><div><div class="label">Patient ID</div><div class="value">${field("xray-patient-id")}</div></div></div></section><section class="section"><h2>Examination requested</h2><div class="request"><strong>${field("xray-type")}</strong><br><span class="label">Tooth / area</span><div class="value">${field("xray-area")}</div></div></section><section class="section"><h2>Clinical information</h2><div class="grid"><div style="grid-column:1/-1"><div class="label">Clinical indication / question</div><div class="value">${field("xray-indication")}</div></div><div style="grid-column:1/-1"><div class="label">Relevant findings / history</div><div class="value">${field("xray-history")}</div></div><div style="grid-column:1/-1"><div class="label">Additional instructions</div><div class="value">${field("xray-notes")}</div></div></div></section><div class="signature">Referring dentist<br><strong>Dr. ${field("xray-dentist-name")}</strong></div></body></html>`;
+}

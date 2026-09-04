@@ -131,7 +131,9 @@ export const loginClinicalStaff = async (req, res) => {
     const token = jwt.sign(
       {
         id: currentStaffNode._id,
-        role: "CLINIC_STAFF",
+        // Preserve the actual staff role so dentists can be authorized and
+        // routed to the dentist dashboard instead of the receptionist board.
+        role: currentStaffNode.role.toUpperCase(),
         clinicId: currentStaffNode.clinicId._id, // Extract ID from populated object safely
       },
       process.env.JWT_SECRET || "fallback_security_string_key",
@@ -154,6 +156,10 @@ export const loginClinicalStaff = async (req, res) => {
         id: currentStaffNode._id,
         fullName: currentStaffNode.fullName,
         role: currentStaffNode.role,
+        email: currentStaffNode.email,
+        phone: currentStaffNode.phone,
+        licenseNumber: currentStaffNode.licenseNumber || "",
+        specialization: currentStaffNode.specialization || "",
         clinicId: currentStaffNode.clinicId._id,
       },
     });

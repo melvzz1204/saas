@@ -212,19 +212,26 @@ export const getTodayAppointments = async (req, res) => {
 
     const query = {
       $or: [
+        // Scheduled appointments for today/future dates.
         { date: { $gte: dateString } },
+        // Lobby and chair records must remain visible even when their date is
+        // empty or was stored in a different format.
         {
           status: {
-            $in: ["checked-in", "in-treatment", "COMPLETED_PENDING_BILL"],
+            $in: ["checked-in", "waiting", "in-treatment", "treatment"],
           },
         },
       ],
       status: {
         $in: [
           "Approved",
+          "approved",
+          "Pending",
           "pending",
           "checked-in",
+          "waiting",
           "in-treatment",
+          "treatment",
           "completed",
           "COMPLETED_PENDING_BILL",
         ],

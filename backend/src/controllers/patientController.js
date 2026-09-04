@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { registerUser, loginUser } from "../services/patientService.js";
 import PatientFullInfo from "../models/patientFullInfoModel.js";
 import User from "../models/userModel.js";
@@ -142,6 +143,62 @@ export const getPatientProfileController = async (req, res) => {
     });
   }
 };
+// 🦷 Dentist/staff read-only access to a patient's intake record
+export const getPatientProfileForStaffController = async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    const clinicId =
+      req.clinicId || req.headers["x-clinic-id"] || req.user?.clinicId;
+
+    if (!patientId || !clinicId) {
+      return res.status(400).json({
+        success: false,
+        message: "Patient ID and clinic context are required.",
+      });
+    }
+
+    if (
+      !mongoose.Types.ObjectId.isValid(patientId) ||
+      !mongoose.Types.ObjectId.isValid(String(clinicId))
+    ) {
+      return res.status(422).json({
+        success: false,
+        message: "Invalid patient or clinic identifier.",
+      });
+    }
+
+    const profile = await PatientFullInfo.findOne({
+      userId: patientId,
+      clinicId,
+    }).lean();
+    const patient = await User.findOne({ _id: patientId, clinicId })
+      .select("firstName lastName email phone dateOfBirth")
+      .lean();
+
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        message: "Patient account not found in this clinic.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        profile,
+        patient,
+        hasCompletedIntake: Boolean(profile),
+      },
+    });
+  } catch (error) {
+    console.error("❌ Staff patient profile retrieval error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load the patient's intake record.",
+    });
+  }
+};
+
 // 💾 Save / Update Intake Form (Upsert)
 export const savePatientProfileController = async (req, res) => {
   try {
@@ -157,10 +214,97 @@ export const savePatientProfileController = async (req, res) => {
       });
     }
 
+    // The intake form submits a flat payload, while the Mongo document stores
+    // the clinical sections as subdocuments. Normalize it here so staff review
+    // and future reads receive the same structured record.
+    const body = req.body || {};
     const finalFormPayload = {
-      ...req.body,
       userId: userId.toString(),
       clinicId: clinicId.toString(),
+      personalInformation: {
+        name: {
+          last: body.lastName || "",
+          first: body.firstName || "",
+          middle: body.middleName || "",
+        },
+        birthdate: body.birthdate || null,
+        age: body.age ?? null,
+        sex: body.sex || "",
+        religion: body.religion || "",
+        nationality: body.nationality || "",
+        nickname: body.nickname || "",
+        homeAddress: body.homeAddress || "",
+        homeNo: body.homeNo || "",
+        occupation: body.occupation || "",
+        officeNo: body.officeNo || "",
+        faxNo: body.faxNo || "",
+        dentalInsurance: body.dentalInsurance || "",
+        effectiveDate: body.effectiveDate || null,
+        cellMobileNo: body.cellMobileNo || "",
+        emailAddress: body.email || body.emailAddress || "",
+        minorContingency: {
+          parentGuardianName: body.minorParentName || "",
+          occupation: body.minorParentOccupation || "",
+        },
+        referredBy: body.referredBy || "",
+        reasonForConsultation: body.reasonForConsultation || "",
+      },
+      dentalHistory: {
+        previousDentist: body.previousDentist || "",
+        lastDentalVisit: body.lastDentalVisit || "",
+      },
+      medicalHistory: {
+        physician: {
+          name: body.physicianName || "",
+          specialty: body.physicianSpecialty || "",
+          officeAddress: body.physicianOfficeAddress || "",
+          officeNumber: body.physicianOfficeNumber || "",
+        },
+        questionnaire: {
+          isInGoodHealth: body.qGoodHealth ?? null,
+          isUnderMedicalTreatment: {
+            status: body.qTreatmentStatus ?? null,
+            conditionDescription: body.qTreatmentDesc || "",
+          },
+          hasSeriousIllnessOrSurgery: {
+            status: body.qIllnessStatus ?? null,
+            illnessOrOperationDescription: body.qIllnessDesc || "",
+          },
+          hasBeenHospitalized: {
+            status: body.qHospitalStatus ?? null,
+            whenAndWhyDescription: body.qHospitalDesc || "",
+          },
+          isTakingMedications: {
+            status: body.qMedicationStatus ?? null,
+            medicationDetails: body.qMedicationDesc || "",
+          },
+          usesTobacco: body.qTobacco ?? null,
+          usesAlcoholOrDrugs: body.qDrugs ?? null,
+        },
+        allergies: {
+          localAnesthetic: Boolean(body.alLocalAnesthetic),
+          penicillinAntibiotics: Boolean(body.alPenicillinAntibiotics),
+          sulfaDrugs: Boolean(body.alSulfaDrugs),
+          aspirin: Boolean(body.alAspirin),
+          latex: Boolean(body.alLatex),
+          other: body.alOther || "",
+        },
+        forWomenOnly: {
+          isPregnant: Boolean(body.wIsPregnant),
+          isNursing: Boolean(body.wIsNursing),
+          isTakingBirthControlPills: Boolean(body.wIsTakingBirthControlPills),
+        },
+        vitals: {
+          bleedingTime: body.vBleedingTime || "",
+          bloodType: body.vBloodType || "",
+          bloodPressure: body.vBloodPressure || "",
+        },
+      },
+      medicalConditionsMatrix: body.matrix || {},
+      submissionMetadata: {
+        patientSignatureTextOrDataUrl: body.signature || "",
+        dateSigned: body.dateSigned || null,
+      },
     };
 
     const savedProfile = await PatientFullInfo.findOneAndUpdate(

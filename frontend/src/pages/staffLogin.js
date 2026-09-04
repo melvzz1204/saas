@@ -45,15 +45,49 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // Extract details from your matching backend response pattern
-      const staffProfile = data.staff;
-      const assignedRole = staffProfile.role; // 🧠 Extracts: "Dentist" or "Receptionist"
+      const staffProfile = data.staff || {};
+      const assignedRole = String(staffProfile.role || "").trim();
+      const normalizedRole = assignedRole.toLowerCase();
+
+      if (
+        !data.token ||
+        !staffProfile.id ||
+        !staffProfile.clinicId ||
+        !normalizedRole
+      ) {
+        throw new Error(
+          "The staff login response is missing required session data.",
+        );
+      }
 
       // Persistence Matrix Write operations
       localStorage.setItem("token", data.token);
-      localStorage.setItem("userRole", assignedRole.toLowerCase()); // Dynamic role tracking ("dentist"/"receptionist")
-      localStorage.setItem("staffName", staffProfile.fullName);
-      localStorage.setItem("staffId", staffProfile.id);
-      localStorage.setItem("clinicId", staffProfile.clinicId); // Cache tenant context for staff operational requests
+      localStorage.setItem("userRole", normalizedRole);
+      localStorage.setItem("staffName", staffProfile.fullName || "Doctor");
+      localStorage.setItem("staffId", String(staffProfile.id));
+      localStorage.setItem("staffPhone", staffProfile.phone || "");
+      localStorage.setItem(
+        "staffLicenseNumber",
+        staffProfile.licenseNumber || "",
+      );
+      localStorage.setItem(
+        "staffEmail",
+        staffProfile.email || email.toLowerCase(),
+      );
+      localStorage.setItem("clinicId", String(staffProfile.clinicId)); // Cache tenant context for staff operational requests
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          id: staffProfile.id,
+          fullName: staffProfile.fullName,
+          email: staffProfile.email || email.toLowerCase(),
+          phone: staffProfile.phone || "",
+          licenseNumber: staffProfile.licenseNumber || "",
+          specialization: staffProfile.specialization || "",
+          role: normalizedRole,
+          clinicId: staffProfile.clinicId,
+        }),
+      );
       localStorage.setItem(
         "clinicName",
         data.clinicName || "Apex Dental Practice",
@@ -62,13 +96,13 @@ document.addEventListener("DOMContentLoaded", () => {
       // =============================================================
       // 🚀 ROLE-BASED PIPELINE REDIRECTION SWITCH MATRIX
       // =============================================================
-      if (assignedRole === "Dentist") {
+      if (normalizedRole === "dentist" || normalizedRole === "doctor") {
         // Clinical operators get pushed to the dental chair cockpit view
         window.location.href = "/dentistDashboard.html";
-      } else if (assignedRole === "Receptionist") {
+      } else if (normalizedRole === "receptionist") {
         // Front desk staff route directly to lobby scheduling boards
         window.location.href = "/staffDashboard.html";
-      } else if (assignedRole === "Staff") {
+      } else if (normalizedRole === "staff") {
         window.location.href = "/staffDashboard.html";
       } else {
         // Fallback catchall for alternate operational deck roles (e.g., Dental Hygienist)
