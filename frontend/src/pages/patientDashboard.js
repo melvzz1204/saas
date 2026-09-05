@@ -789,8 +789,8 @@ function displayLiveApprovalBanner(appointmentData) {
     ? format12HourTime(appointmentData.time)
     : "";
 
-  // Format live status message
-  statusMessage.innerHTML = `🎉 Your appointment for <strong>${apptDate}${apptTime ? " at " + apptTime : ""}</strong> is officially <strong>approved</strong>!`;
+  // Format live status message with a clear next step for the patient.
+  statusMessage.innerHTML = `<strong>🎉 Appointment Confirmed</strong><br><span class="text-sm">Your visit is booked for <strong>${apptDate}${apptTime ? " at " + apptTime : ""}</strong>. Please arrive a few minutes early and check in at the front desk.</span>`;
 
   // Highlight steps in the UI tracker
   const stepExpected = document.getElementById("step-expected");
@@ -825,14 +825,14 @@ function triggerLiveStatusBanner(statusType, payload = {}) {
 
   // 🎯 Dynamic Banner Content & Styling
   if (["in-treatment", "in-chair", "ready"].includes(rawStatus)) {
-    messageEl.innerHTML = `You may now proceed to the dental chair. ${docString} is ready to see you! 🩺`;
+    messageEl.innerHTML = `<strong>🩺 Your Turn Is Ready</strong><br><span class="text-sm">Please proceed to the dental chair. ${docString} is ready to see you.</span>`;
   } else if (["completed", "paid", "payment-successful"].includes(rawStatus)) {
-    messageEl.innerHTML = `Payment successful! Thank you for visiting us today. Have a great day! 🎉`;
+    messageEl.innerHTML = `<strong>✅ Visit Complete</strong><br><span class="text-sm">Thank you for visiting us. Please keep your receipt and follow the care instructions provided by the clinic.</span>`;
   } else if (["in-lobby", "checked-in"].includes(rawStatus)) {
-    messageEl.innerHTML = `You are checked in! Please have a seat in our lobby. ${docString} will call you shortly. 🕒`;
+    messageEl.innerHTML = `<strong>🕒 You’re Checked In</strong><br><span class="text-sm">Please make yourself comfortable in the waiting area. ${docString} will call you when the dental chair is ready.</span>`;
   } else {
     // Default / fallback approval notice
-    messageEl.innerHTML = `Your appointment status has been updated.`;
+    messageEl.innerHTML = `<strong>🔔 Appointment Update</strong><br><span class="text-sm">Your appointment status has changed. Please check with the front desk if you need assistance.</span>`;
   }
 
   // Clear existing timer if another event fires quickly
@@ -916,22 +916,22 @@ function handleLiveStatusUpdate(data) {
       status,
     )
   ) {
-    customMessage = `You may now proceed to the dental chair. ${docString} is ready to see you! 🩺`;
+    customMessage = `<strong>🩺 Your Turn Is Ready</strong><br><span class="text-sm">Please proceed to the dental chair. ${docString} is ready to see you.</span>`;
     shouldShowBanner = true;
   } else if (
     ["completed", "paid", "payment-successful", "payment_received"].includes(
       status,
     )
   ) {
-    customMessage = `Payment successful! Thank you for visiting us today. Have a great day! 🎉`;
+    customMessage = `<strong>✅ Visit Complete</strong><br><span class="text-sm">Thank you for visiting us. Please keep your receipt and follow the care instructions provided by the clinic.</span>`;
     shouldShowBanner = true;
   } else if (["approved", "confirmed", "accepted"].includes(status)) {
     const apptDate = appt.date || "today";
     const apptTime = appt.time ? format12HourTime(appt.time) : "";
-    customMessage = `🎉 Your appointment for <strong>${apptDate}${apptTime ? " at " + apptTime : ""}</strong> is officially <strong>approved</strong>!`;
+    customMessage = `<strong>🎉 Appointment Confirmed</strong><br><span class="text-sm">Your visit is booked for <strong>${apptDate}${apptTime ? " at " + apptTime : ""}</strong>. Please arrive a few minutes early and check in at the front desk.</span>`;
     shouldShowBanner = true;
   } else if (["in-lobby", "checked-in", "in_lobby"].includes(status)) {
-    customMessage = `You are checked in! Please have a seat in our lobby. ${docString} will call you shortly. 🕒`;
+    customMessage = `<strong>🕒 You’re Checked In</strong><br><span class="text-sm">Please make yourself comfortable in the waiting area. ${docString} will call you when the dental chair is ready.</span>`;
     shouldShowBanner = true;
   }
 

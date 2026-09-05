@@ -179,22 +179,22 @@ function updateTrackerUI(rawStatus, doctorName) {
 
   if (isExpected) {
     updateSteps("expected");
-    msgEl.innerHTML = `You are expected for your appointment with ${docString} today, <b>${todayDateFormatted}</b>. Please check in at the front desk upon arrival.`;
+    msgEl.innerHTML = `<strong>📅 Appointment Scheduled</strong><br><span class="text-sm">Your appointment with ${docString} is set for <b>${todayDateFormatted}</b>. Please check in at the front desk when you arrive.</span>`;
   } else if (isApproved) {
     updateSteps("expected");
-    msgEl.innerHTML = `Your appointment for <b>${todayDateFormatted}</b> is officially approved! We look forward to seeing you with ${docString}.`;
+    msgEl.innerHTML = `<strong>🎉 Appointment Confirmed</strong><br><span class="text-sm">Your visit is approved for <b>${todayDateFormatted}</b>. Please arrive a few minutes early and we’ll be ready to welcome you.</span>`;
   } else if (isCheckedIn) {
     updateSteps("lobby");
-    msgEl.innerHTML = `You are checked in! Please have a seat in the lobby. We will call you shortly.`;
+    msgEl.innerHTML = `<strong>🕒 You’re Checked In</strong><br><span class="text-sm">Please relax in the waiting area. We’ll notify you as soon as the dental chair is ready.</span>`;
   } else if (isInTreatment) {
     updateSteps("chair");
-    msgEl.innerHTML = `You may now proceed to the dental chair. ${docString} is ready to see you!`;
+    msgEl.innerHTML = `<strong>🩺 Your Turn Is Ready</strong><br><span class="text-sm">Please proceed to the dental chair. ${docString} is ready to see you.</span>`;
   } else if (isCompletedPendingBill) {
     updateSteps("bill");
-    msgEl.innerHTML = `Your session is complete! Please proceed to the front desk to settle your account.`;
+    msgEl.innerHTML = `<strong>🧾 Treatment Complete</strong><br><span class="text-sm">Please proceed to the front desk to review and settle your account.</span>`;
   } else if (isPaid) {
     updateSteps("chair");
-    msgEl.innerHTML = `Payment successful! Thank you for visiting us today. Have a great day! 🎉`;
+    msgEl.innerHTML = `<strong>✅ Visit Complete</strong><br><span class="text-sm">Thank you for visiting us. Please keep your receipt and follow the care instructions provided by the clinic.</span>`;
   } else {
     updateSteps("expected");
     msgEl.innerHTML = `Your appointment status is currently: <b>${cleanStatus}</b>. Please see the front desk.`;

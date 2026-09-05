@@ -561,8 +561,8 @@
                 <div>
                     <p class="text-[10px] font-black uppercase tracking-widest text-sky-600">Diagnostic Referral</p>
                     <h2 id="xray-modal-title" class="mt-1 text-xl font-black text-slate-900">Create X-ray Referral</h2>
-                    <p class="mt-1 text-xs text-slate-500">Complete the clinical details, then download a PDF-ready HTML
-                        document or print it directly.</p>
+                    <p class="mt-1 text-xs text-slate-500">Prepare a clear clinical referral. The downloaded PDF uses a
+                        professional A5 letterhead layout.</p>
                 </div>
                 <button type="button" id="close-xray-modal"
                     class="rounded-lg px-3 py-2 text-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700"
@@ -581,7 +581,7 @@
                 <div><label class="referral-label">Dentist license number</label>
                     <p id="xray-dentist-license" class="referral-readonly">From dentist profile</p>
                 </div>
-                <div><label class="referral-label">Dentist contact / license</label>
+                <div><label class="referral-label">Dentist contact</label>
                     <p id="xray-dentist-contact" class="referral-readonly">From dentist profile</p>
                 </div>
                 <div><label class="referral-label">Patient full name</label>
@@ -589,15 +589,6 @@
                 </div>
                 <div><label class="referral-label">Patient ID</label>
                     <p id="xray-patient-id" class="referral-readonly">From active case</p>
-                </div>
-                <div><label class="referral-label">Date of birth</label>
-                    <p id="xray-patient-dob" class="referral-readonly">From patient record</p>
-                </div>
-                <div><label class="referral-label">Sex</label>
-                    <p id="xray-patient-sex" class="referral-readonly">From patient record</p>
-                </div>
-                <div class="sm:col-span-2"><label class="referral-label">Patient contact / address</label>
-                    <p id="xray-patient-contact" class="referral-readonly">From patient record</p>
                 </div>
                 <div class="border-t border-slate-100 pt-4 sm:col-span-2"><label for="xray-type"
                         class="referral-label">Examination
@@ -624,13 +615,13 @@
                         class="referral-input"
                         placeholder="Symptoms, suspected diagnosis, and the clinical question the image should answer"></textarea>
                 </div>
-                <div class="sm:col-span-2"><label for="xray-history" class="referral-label">Clinical findings and
-                        relevant history</label><textarea id="xray-history" rows="3" class="referral-input"
-                        placeholder="Duration, trauma, swelling, vitality, previous treatment, medical history, pregnancy status, or relevant findings"></textarea>
+                <div class="sm:col-span-2"><label for="xray-history" class="referral-label">Relevant findings /
+                        history</label><textarea id="xray-history" rows="2" class="referral-input"
+                        placeholder="Key symptoms, trauma, swelling, previous treatment, or relevant findings"></textarea>
                 </div>
-                <div class="sm:col-span-2"><label for="xray-notes" class="referral-label">Special instructions /
-                        comparison</label><textarea id="xray-notes" rows="2" class="referral-input"
-                        placeholder="Positioning notes, prior images for comparison, allergies, or other instructions"></textarea>
+                <div class="sm:col-span-2"><label for="xray-notes" class="referral-label">Special
+                        instructions</label><textarea id="xray-notes" rows="1" class="referral-input"
+                        placeholder="Optional positioning or image-comparison instructions"></textarea>
                 </div>
                 <div
                     class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-4 sm:col-span-2 sm:flex-row sm:justify-end">

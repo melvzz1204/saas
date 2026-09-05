@@ -21,11 +21,39 @@ dotenv.config();
 const app = express();
 initAppointmentCleanupJob();
 
-// 1. Configure CORS First
+// Configure CORS before JSON parsing and routes. Explicitly handling the
+// preflight avoids browsers receiving a bare 204 without CORS headers.
+app.use((req, res, next) => {
+  const requestOrigin = req.headers.origin;
+  const isLocalOrigin =
+    !requestOrigin ||
+    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin);
+
+  if (isLocalOrigin && requestOrigin) {
+    res.setHeader("Access-Control-Allow-Origin", requestOrigin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
+
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET,POST,PATCH,PUT,DELETE,OPTIONS",
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    req.headers["access-control-request-headers"] ||
+      "Content-Type, Authorization",
+  );
+
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
-    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
+    origin: true,
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   }),
 );

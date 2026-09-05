@@ -1040,29 +1040,32 @@ function downloadReferralPdf(values) {
     return;
   }
 
-  const pdf = new JsPdf({ unit: "mm", format: "a4" });
-  const margin = 16;
+  // A5 keeps the referral compact while preserving a professional, readable layout.
+  const pdf = new JsPdf({ unit: "mm", format: "a5", orientation: "portrait" });
+  const margin = 12;
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   const contentWidth = pageWidth - margin * 2;
-  let y = 18;
+  let y = 12;
   const field = (id, fallback = "Not provided") =>
     String(values[id] || fallback).trim();
 
-  const ensureSpace = (height = 24) => {
+  const ensureSpace = (height = 12) => {
     if (y + height > pageHeight - margin) {
       pdf.addPage();
       y = margin;
     }
   };
 
-  const addSection = (number, title) => {
-    ensureSpace(16);
+  const addSection = (title) => {
+    ensureSpace(9);
+    pdf.setFillColor(240, 249, 255);
+    pdf.roundedRect(margin, y - 3.5, contentWidth, 7, 1.5, 1.5, "F");
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(12);
-    pdf.setTextColor(15, 118, 110);
-    pdf.text(`${number}. ${title}`, margin, y);
-    y += 7;
+    pdf.setFontSize(8);
+    pdf.setTextColor(3, 105, 161);
+    pdf.text(title.toUpperCase(), margin + 3, y + 1);
+    y += 8;
   };
 
   const addField = (
@@ -1071,129 +1074,87 @@ function downloadReferralPdf(values) {
     fallback = "____________________",
     size = 10,
   ) => {
-    ensureSpace(16);
+    ensureSpace(9);
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(8.5);
-    pdf.setTextColor(23, 32, 51);
-    pdf.text(`${label}:`, margin, y);
-    const labelWidth = pdf.getTextWidth(`${label}: `);
-    const hasValue = value && value !== "Not provided";
-    if (hasValue) {
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(size);
-      const lines = pdf.splitTextToSize(value, contentWidth - labelWidth);
-      pdf.text(lines, margin + labelWidth, y);
-      y += Math.max(6, lines.length * 4.5) + 3;
-    } else {
-      pdf.setDrawColor(71, 85, 105);
-      pdf.setLineWidth(0.25);
-      pdf.line(margin + labelWidth, y + 1, pageWidth - margin, y + 1);
-      y += 9;
-    }
-  };
-
-  const addCheckboxes = (label, options, selected) => {
-    ensureSpace(12);
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(8.5);
-    pdf.setTextColor(23, 32, 51);
-    pdf.text(`${label}:`, margin, y);
-    let x = margin + pdf.getTextWidth(`${label}: `);
+    pdf.setFontSize(7);
+    pdf.setTextColor(100, 116, 139);
+    pdf.text(label.toUpperCase(), margin, y);
+    y += 3.2;
     pdf.setFont("helvetica", "normal");
-    options.forEach((option) => {
-      const normalized = String(selected).toLowerCase();
-      const checked =
-        normalized === option.toLowerCase() ||
-        (option === "Male" && normalized === "m") ||
-        (option === "Female" && normalized === "f");
-      const text = `${checked ? "[X]" : "[ ]"} ${option}`;
-      pdf.text(text, x, y);
-      x += pdf.getTextWidth(text) + 7;
-      if (x > pageWidth - margin - 25) {
-        y += 5;
-        x = margin;
-      }
-    });
-    y += 8;
+    pdf.setFontSize(size - 1);
+    pdf.setTextColor(15, 23, 42);
+    const lines = pdf.splitTextToSize(value || "Not provided", contentWidth);
+    pdf.text(lines, margin, y);
+    y += Math.max(4.5, lines.length * 3.6) + 2;
   };
 
-  pdf.setDrawColor(15, 118, 110);
-  pdf.setLineWidth(1);
-  pdf.line(margin, y, pageWidth - margin, y);
-  y += 9;
+  const addCallout = (label, value) => {
+    ensureSpace(18);
+    pdf.setFillColor(248, 250, 252);
+    pdf.setDrawColor(203, 213, 225);
+    pdf.roundedRect(margin, y - 3, contentWidth, 15, 1.5, 1.5, "FD");
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(7);
+    pdf.setTextColor(100, 116, 139);
+    pdf.text(label.toUpperCase(), margin + 3, y + 1);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(11);
+    pdf.setTextColor(15, 118, 110);
+    pdf.text(value, margin + 3, y + 8);
+    y += 19;
+  };
+
+  pdf.setFillColor(15, 118, 110);
+  pdf.roundedRect(margin, y, contentWidth, 22, 2, 2, "F");
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(18);
-  pdf.setTextColor(15, 23, 42);
-  pdf.text(field("xray-clinic-name", "Dental Clinic"), margin, y);
-  y += 6;
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(9);
-  pdf.setTextColor(71, 85, 105);
-  pdf.text("Diagnostic imaging referral", margin, y);
-  y += 11;
-  pdf.setDrawColor(203, 213, 225);
-  pdf.setLineWidth(0.3);
-  pdf.line(margin, y, pageWidth - margin, y);
-  y += 8;
-
-  addSection(1, "Referral Details");
-  addField("Referral Date", field("xray-referral-date"));
-  addCheckboxes(
-    "Priority Level",
-    ["Routine", "Urgent", "Emergency"],
-    field("xray-urgency"),
-  );
-
-  addSection(2, "Referring Dentist Details");
-  addField("Clinic Name", field("xray-clinic-name", "Dental Clinic"));
-  addField("Referring Dentist", field("xray-dentist-name"));
-  addField("Phone / Email", field("xray-dentist-contact"));
-  addField("License Number", field("xray-dentist-license"));
-
-  addSection(3, "Patient Details");
-  addField("Patient Name", field("xray-patient-name"));
-  addField("Date of Birth", field("xray-patient-dob"));
-  addCheckboxes("Sex", ["Male", "Female", "Other"], field("xray-patient-sex"));
-  addField("Contact Number", field("xray-patient-contact"));
-  addField("Email", field("xray-patient-email"));
-  addField("Address", field("xray-patient-address"));
-
-  addSection(4, "Imaging Requested");
-  addCheckboxes(
-    "Examination Type",
-    [
-      "Periapical X-ray",
-      "Panoramic (OPG)",
-      "Bitewing",
-      "Occlusal",
-      "CBCT / 3D Scan",
-      "Other",
-    ],
-    field("xray-type"),
-  );
-  addField("Tooth Number / Target Area", field("xray-area"));
-
-  addSection(5, "Clinical Information");
-  addField(
-    "Clinical Indication / Diagnostic Question",
-    field("xray-indication"),
-  );
-  addField("Relevant Findings & Medical History", field("xray-history"));
-  addField("Special Instructions", field("xray-notes"));
-
-  addSection(6, "Sign-off");
-  addField("Dentist Signature");
-  addField("Dentist Name", field("xray-dentist-name"));
-  addField("Date", field("xray-referral-date"));
-  ensureSpace(25);
-  pdf.setDrawColor(51, 65, 85);
-  pdf.line(margin, y + 8, margin + 65, y + 8);
+  pdf.setFontSize(16);
+  pdf.setTextColor(255, 255, 255);
+  pdf.text(field("xray-clinic-name", "Dental Clinic"), margin + 5, y + 8);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8);
+  pdf.text("DIAGNOSTIC IMAGING REFERRAL", margin + 5, y + 14);
+  pdf.setFontSize(7);
+  pdf.text(
+    `Referral date: ${field("xray-referral-date")}`,
+    pageWidth - margin - 45,
+    y + 8,
+  );
+  pdf.text(
+    `Priority: ${field("xray-urgency")}`,
+    pageWidth - margin - 45,
+    y + 14,
+  );
+  y += 29;
+
+  addSection("Patient identification");
+  addField("Patient name", field("xray-patient-name"), "", 10);
+
+  addSection("Examination requested");
+  addCallout("Requested imaging", field("xray-type"));
+  addField("Tooth / region", field("xray-area"), "", 10);
+
+  addSection("Clinical indication");
+  addField("Diagnostic question", field("xray-indication"), "", 10);
+  addField("Relevant findings / history", field("xray-history"), "", 9);
+  addField("Special instructions", field("xray-notes"), "", 9);
+
+  addSection("Referring clinician");
+  addField("Dentist", field("xray-dentist-name"), "", 10);
+  addField("Contact", field("xray-dentist-contact"), "", 9);
+  addField("Professional license", field("xray-dentist-license"), "", 9);
+  ensureSpace(22);
+  pdf.setDrawColor(51, 65, 85);
+  pdf.setLineWidth(0.3);
+  pdf.line(margin, y + 8, margin + 55, y + 8);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7);
   pdf.setTextColor(71, 85, 105);
-  pdf.text("Referring dentist", margin, y + 13);
-  pdf.setFont("helvetica", "bold");
-  pdf.text(field("xray-dentist-name", "Not provided"), margin, y + 18);
+  pdf.text("Referring dentist signature", margin, y + 12);
+  pdf.text(
+    "Please attach relevant prior images or reports when available.",
+    margin,
+    y + 19,
+  );
 
   const safeName = field("xray-patient-name", "patient")
     .replace(/[^a-z0-9]+/gi, "-")
