@@ -85,6 +85,9 @@ async function sendViaResend({ fromEmail, fromName, to, subject, text, html }) {
       out?.message || `Resend rejected the email (HTTP ${res.status}).`,
     );
   }
+  // Log the Resend message id (no content) so a send can be correlated with
+  // the delivery/bounce status shown in the Resend dashboard.
+  if (out?.id) console.log(`✉️  Resend accepted email id=${out.id} to=${maskEmail(to)}`);
   return out;
 }
 

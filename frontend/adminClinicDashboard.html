@@ -367,7 +367,12 @@
                         </svg>
                         <span>Appointments Queue</span>
                     </div>
-                    <span class="active-dot w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+                    <span class="flex items-center gap-1.5">
+                        <span id="nav-appointments-badge"
+                            class="hidden text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-indigo-600 text-white"
+                            role="status"></span>
+                        <span class="active-dot w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+                    </span>
                 </a>
 
                 <a href="#" id="nav-staff" data-target="panel-staff" data-roles="SUPER_ADMIN,CLINIC_ADMIN"
@@ -381,7 +386,12 @@
                         </svg>
                         <span>Staff Management</span>
                     </div>
-                    <span class="active-dot w-1.5 h-1.5 rounded-full bg-indigo-600 hidden"></span>
+                    <span class="flex items-center gap-1.5">
+                        <span id="nav-staff-badge"
+                            class="hidden text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950"
+                            role="status"></span>
+                        <span class="active-dot w-1.5 h-1.5 rounded-full bg-indigo-600 hidden"></span>
+                    </span>
                 </a>
 
                 <a href="#" id="nav-pricing" data-target="panel-pricing" data-roles="SUPER_ADMIN,CLINIC_ADMIN"
@@ -1917,6 +1927,7 @@
     <script src="/src/pages/dentalPricing.js"></script>
     <script src="/src/util/operatingHours.js"></script>
     <script src="/src/util/dentistInfo.js"></script>
+    <script src="/src/util/setupGuide.js"></script>
     <style>
         .application-locked #dashboard-panels {
             opacity: .55;
@@ -1932,6 +1943,10 @@
             user-select: none;
         }
     </style>
+
+    <!-- First-login floating setup prompts (Dental Pricing + Operating Hours) -->
+    <div id="setup-guide-slot" aria-live="polite"
+        class="fixed bottom-4 right-4 z-40 flex flex-col gap-3 w-[320px] max-w-[calc(100vw-2rem)]"></div>
 
     <!-- Image crop dialog (Cropper.js) for logo + block images -->
     <div id="landing-crop-modal" role="dialog" aria-modal="true" aria-labelledby="landing-crop-title"

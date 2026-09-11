@@ -625,6 +625,13 @@ async function fetchDashboardData() {
       const kpiStaffEl = document.getElementById("kpi-total-staff");
       if (kpiStaffEl) kpiStaffEl.textContent = staff.data.length;
 
+      // Live attention badge: staff not in Active status (On Leave /
+      // Inactive) need a review. Refreshed on every pipeline update.
+      const staffAttention = (staff.data || []).filter(
+        (m) => String(m.status || "Active") !== "Active",
+      ).length;
+      setNavCountBadge("nav-staff-badge", staffAttention, "flagged");
+
       // Render staff rows into the active staff directory table
       renderStaffTable(staff.data);
     }
@@ -633,7 +640,58 @@ async function fetchDashboardData() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Navbar notification badges (Appointments Queue + Staff Management)
+// ---------------------------------------------------------------------------
+// Shows e.g. "2 new" on a nav badge; hides it at zero. Tone is baked into
+// the markup (indigo for bookings, amber for staff attention).
+function setNavCountBadge(id, count, label) {
+  const badge = document.getElementById(id);
+  if (!badge) return;
+  if (!count) {
+    badge.classList.add("hidden");
+    badge.removeAttribute("aria-label");
+    return;
+  }
+  badge.classList.remove("hidden");
+  badge.textContent = `${count} ${label}`;
+  badge.setAttribute("aria-label", `${count} ${label}`);
+}
+
+// Pending booking ids seen so far. Null until the first load so the initial
+// fetch establishes a baseline instead of toasting for old bookings.
+let knownPendingIds = null;
+
+function bookingPatientName(appt) {
+  if (appt.patientName) return appt.patientName;
+  if (appt.patientId && typeof appt.patientId === "object") {
+    return (
+      `${appt.patientId.firstName || ""} ${appt.patientId.lastName || ""}`.trim() ||
+      "Registered Patient"
+    );
+  }
+  if (appt.userId && typeof appt.userId === "object") {
+    return (
+      `${appt.userId.firstName || ""} ${appt.userId.lastName || ""}`.trim() ||
+      "Registered Patient"
+    );
+  }
+  return "Walk-In Patient";
+}
+
+function notifyNewBooking(appt) {
+  const when = [appt.date, appt.time].filter(Boolean).join(" @ ");
+  const detail = [appt.service || appt.reason || "General Consultation", when]
+    .filter(Boolean)
+    .join(" · ");
+  const message = `New booking: ${bookingPatientName(appt)}${detail ? ` — ${detail}` : ""}`;
+  if (window.DashboardUI && typeof window.DashboardUI.toast === "function") {
+    window.DashboardUI.toast(message, "info");
+  }
+}
+
 function renderAppointmentsTable(appointments) {
+  if (!Array.isArray(appointments)) appointments = [];
   const tableBody = document.getElementById("appointment-table-body");
   if (!tableBody) return;
 
@@ -646,10 +704,25 @@ function renderAppointmentsTable(appointments) {
 
   if (totalApptsEl) totalApptsEl.textContent = appointments.length;
 
-  const pendingCount = appointments.filter(
+  const pendingAppts = appointments.filter(
     (a) => a.status && a.status.toLowerCase() === "pending",
-  ).length;
+  );
+  const pendingCount = pendingAppts.length;
   if (pendingApptsEl) pendingApptsEl.textContent = pendingCount;
+
+  // Navbar badge: count of unapproved bookings. Toasts only for bookings that
+  // arrived after the baseline load; approving/declining re-fetches, so the
+  // badge clears automatically once nothing is pending.
+  const pendingIds = new Set(pendingAppts.map((a) => String(a._id)));
+  if (knownPendingIds === null) {
+    knownPendingIds = pendingIds;
+  } else {
+    for (const appt of pendingAppts) {
+      if (!knownPendingIds.has(String(appt._id))) notifyNewBooking(appt);
+    }
+    knownPendingIds = pendingIds;
+  }
+  setNavCountBadge("nav-appointments-badge", pendingCount, "new");
 
   const now = new Date();
   const dynamicToday = now.toISOString().split("T")[0];
