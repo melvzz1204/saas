@@ -189,13 +189,21 @@ handled entirely in the browser.
    it to the frontend URL.
 3. **Uploads vanish after deploy** → missing **Persistent Disk**. Add the disk
    at `/opt/render/project/src/backend/uploads` (see §2.3).
-4. **`ERR_MODULE_NOT_FOUND: Cannot find package 'bcryptjs'`** → all backend
-   password hashing uses the pure-JS `bcryptjs` (no native build needed), but it
-   must be a **declared dependency**. If the error appears on a clean Render
-   build, commit `backend/package.json` (it now lists `"bcryptjs": "^2.4.3"`)
-   **and** the regenerated `backend/package-lock.json`, then redeploy. Do
-   **not** `npm rebuild bcrypt` — the native `bcrypt` package is no longer
-   imported anywhere (all imports point at `bcryptjs`).
+4. **`ERR_MODULE_NOT_FOUND: Cannot find package '<pkg>'` on a clean build** →
+   the backend previously ran locally only because the package existed in an
+   ancestor/global `node_modules`. Every import must be a **declared
+   dependency**. Two were fixed this way:
+   - `bcryptjs` (password hashing) → declared as `^2.4.3`, and the last native
+     `bcrypt` import in
+     [`tenantController.js`](../backend/src/controllers/tenantController.js:4)
+     was switched to `bcryptjs` (pure-JS, no native build).
+   - `multer` (file uploads, used by
+     [`uploadMiddleware.js`](../backend/src/middlewares/uploadMiddleware.js:1)
+     and [`staffRoutes.js`](../backend/src/routes/staffRoutes.js:1)) → declared
+     as `^2.3.0`. Fix: add the missing package to `backend/package.json`, run
+     `npm install` in `backend/` so `package-lock.json` is regenerated, then
+     commit **both** files and redeploy. Do **not** `npm rebuild bcrypt` — the
+     native `bcrypt` package is no longer imported anywhere.
 5. **Free tier sleep** → both services spin down after ~15 min idle; first
    request after sleep can take 30–60s to wake. Not a bug.
 6. **CORS on upload URLs** → [`app.js`](../backend/src/app.js:71) already sends
