@@ -30,11 +30,12 @@ initBillingJobs();
 // preflight avoids browsers receiving a bare 204 without CORS headers.
 app.use((req, res, next) => {
   const requestOrigin = req.headers.origin;
-  const isLocalOrigin =
-    !requestOrigin ||
-    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin);
 
-  if (isLocalOrigin && requestOrigin) {
+  // Reflect the caller's origin so credentialed requests (Authorization/cookies)
+  // pass the browser's CORS check. This must run for the preflight too — the
+  // OPTIONS short-circuit below returns before the cors() middleware, so any
+  // origin (localhost dev AND the deployed Vercel frontend) is echoed here.
+  if (requestOrigin) {
     res.setHeader("Access-Control-Allow-Origin", requestOrigin);
     res.setHeader("Vary", "Origin");
     res.setHeader("Access-Control-Allow-Credentials", "true");
