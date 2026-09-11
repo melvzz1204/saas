@@ -19,7 +19,7 @@ export const registerClinicalStaff = async (req, res) => {
       bio,
     } = req.body;
 
-    const clinicId = req.headers["x-clinic-id"];
+    const clinicId = req.headers["x-clinic-id"] || req.body?.clinicId;
 
     // 1. Data Sanitization and Validation Guard
     if (!fullName || !role || !email || !phone || !accessPin || !clinicId) {
@@ -28,6 +28,26 @@ export const registerClinicalStaff = async (req, res) => {
         message: "Payload integrity check failed: Missing required parameters.",
       });
     }
+
+    // Reject missing/placeholder clinic context before Mongoose casts it
+    // (otherwise CastError bubbles as a generic 500 with no useful message).
+    const normalizedClinicId = String(clinicId).trim();
+    if (
+      ["null", "undefined", "", "[object Object]"].includes(
+        normalizedClinicId.toLowerCase(),
+      ) ||
+      !mongoose.Types.ObjectId.isValid(normalizedClinicId)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid clinic context: missing or malformed X-Clinic-ID header. Please re-login.",
+      });
+    }
+
+    // Normalize role casing ("staff" -> "Staff") so the enum check is forgiving
+    const normalizedRole =
+      String(role).trim().toLowerCase() === "dentist" ? "Dentist" : "Staff";
 
     // 2. Cross-Collision Duplication Verification
     const explicitEmailConflict = await Staff.findOne({
@@ -43,12 +63,12 @@ export const registerClinicalStaff = async (req, res) => {
 
     // 3. Hydrate Instance Matching the Passwordless Architecture
     const freshStaffNode = new Staff({
-      clinicId: clinicId,
+      clinicId: normalizedClinicId,
       fullName: fullName.trim(),
       specialization: specialization
         ? specialization.trim()
         : "General Dentistry",
-      role,
+      role: normalizedRole,
       email: email.toLowerCase().trim(),
       phone: phone.trim(),
       accessPin: accessPin.toString(),
@@ -81,10 +101,27 @@ export const registerClinicalStaff = async (req, res) => {
       "Critical Exception Caught inside staff register controller:",
       error,
     );
+    // Surface real validation messages (Mongoose enum/required/CastError)
+    // so production failures are debuggable instead of a generic 500.
+    if (error?.name === "ValidationError") {
+      const details = Object.values(error.errors || {})
+        .map((e) => e.message)
+        .join(" ");
+      return res.status(400).json({
+        success: false,
+        message: `Staff validation failed: ${details || error.message}`,
+      });
+    }
+    if (error?.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "A staff member is already registered with this email address.",
+      });
+    }
     return res.status(500).json({
       success: false,
-      message:
-        "Internal framework exception: Failed to write staff configuration data structure.",
+      message: `Failed to register staff: ${error.message}`,
     });
   }
 };

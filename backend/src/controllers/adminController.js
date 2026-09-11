@@ -57,11 +57,13 @@ export const updateAppointmentAction = async (req, res) => {
   }
 };
 
-// 3. Add Staff Member
+// 3. Add Staff Member (legacy JSON endpoint — generates accessPin server-side
+// because Staff.accessPin is required by the schema)
 export const addStaffMember = async (req, res) => {
   try {
     const clinicId = req.headers["x-clinic-id"] || req.user?.clinicId;
-    const { fullName, role, specialization, email, phone } = req.body;
+    const { fullName, role, specialization, email, phone, accessPin, licenseNumber } =
+      req.body || {};
 
     if (!clinicId || !fullName || !role || !email || !phone) {
       return res.status(400).json({
@@ -70,17 +72,43 @@ export const addStaffMember = async (req, res) => {
       });
     }
 
+    const normalizedRole =
+      String(role).trim().toLowerCase() === "dentist" ? "Dentist" : "Staff";
+    // Generate a PIN when the caller doesn't supply one (dashboard generates
+    // its own; direct API callers may not).
+    const finalPin = accessPin
+      ? String(accessPin)
+      : Math.floor(100000 + Math.random() * 900000).toString();
+
     const newStaff = await Staff.create({
       clinicId,
       fullName,
-      role,
-      specialization: role === "Dentist" ? specialization : "N/A",
-      email,
+      role: normalizedRole,
+      specialization:
+        normalizedRole === "Dentist" ? specialization || "General Dentistry" : "N/A",
+      email: String(email).toLowerCase().trim(),
       phone,
+      accessPin: finalPin,
+      ...(normalizedRole === "Dentist" && licenseNumber ? { licenseNumber } : {}),
     });
 
     return res.status(201).json({ success: true, data: newStaff });
   } catch (error) {
+    if (error?.name === "ValidationError") {
+      const details = Object.values(error.errors || {})
+        .map((e) => e.message)
+        .join(" ");
+      return res.status(400).json({
+        success: false,
+        message: `Staff validation failed: ${details || error.message}`,
+      });
+    }
+    if (error?.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "A staff member is already registered with this email address.",
+      });
+    }
     return res.status(500).json({ success: false, message: error.message });
   }
 };

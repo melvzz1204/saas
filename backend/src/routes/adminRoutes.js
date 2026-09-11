@@ -15,6 +15,7 @@ import {
 } from "../controllers/appointmentController.js"; //[cite: 18]
 import { identifyTenant } from "../middlewares/tenantMiddleware.js";
 import { protectAdminRoute } from "../middlewares/authMiddleware.js";
+import { handleStaffImageUpload } from "./staffRoutes.js";
 
 const router = express.Router();
 
@@ -35,7 +36,9 @@ router.patch(
 // 🩺 Internal Clinic Staff Framework
 router.post("/staff", protectAdminRoute, addStaffMember); //[cite: 18]
 router.get("/staff", protectAdminRoute, getClinicStaff); //[cite: 18]
-router.post("/staff/register", protectAdminRoute, registerClinicalStaff); //[cite: 18]
+// NOTE: multipart/form-data from dashboard needs multer before the controller,
+// otherwise req.body is empty and validation fails.
+router.post("/staff/register", protectAdminRoute, handleStaffImageUpload, registerClinicalStaff); //[cite: 18]
 router.post("/staff/reset-pin", resetStaffPin);
 
 export default router;

@@ -954,7 +954,12 @@ async function handleStaffOnboarding(e) {
         const errJson = JSON.parse(errorText);
         parseMessage = errJson.message || parseMessage;
       } catch {
-        parseMessage = errorText || parseMessage;
+        // Backend returned HTML (e.g. Express fallback 500) — don't dump markup into the toast
+        if (errorText.trim().startsWith("<")) {
+          parseMessage = `Server error (HTTP ${response.status}). Please retry; if it persists, check backend logs.`;
+        } else {
+          parseMessage = errorText.slice(0, 300) || parseMessage;
+        }
       }
       throw new Error(parseMessage);
     }

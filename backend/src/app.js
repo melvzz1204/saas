@@ -48,7 +48,7 @@ app.use((req, res, next) => {
   res.setHeader(
     "Access-Control-Allow-Headers",
     req.headers["access-control-request-headers"] ||
-      "Content-Type, Authorization",
+      "Content-Type, Authorization, X-Clinic-ID",
   );
 
   if (req.method === "OPTIONS") return res.sendStatus(204);
@@ -59,7 +59,7 @@ app.use(
   cors({
     origin: true,
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Clinic-ID", "x-clinic-id"],
     credentials: true,
   }),
 );
