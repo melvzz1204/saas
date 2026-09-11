@@ -1,0 +1,31 @@
+# --- Secrets: never commit real credentials ---
+.env
+.env.*
+!.env.example
+
+# --- Dependencies (keep package-lock.json tracked for reproducible installs) ---
+node_modules/
+
+# --- Build output ---
+dist/
+build/
+.vite/
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Uploaded user content (licenses, IDs, avatars — privacy!) ---
+backend/uploads/
+backend/public/uploads/
+uploads/
+
+# --- Test / coverage artifacts ---
+coverage/
+.vitest/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

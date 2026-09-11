@@ -1,10 +1,12 @@
 // src/services/emailService.js
-// Gmail-backed transactional email for the clinic email-verification flow.
+// Transactional email for the clinic email-verification flow. Two providers:
+//   PRODUCTION: Resend HTTP API — set RESEND_API_KEY plus RESEND_FROM_EMAIL
+//     (must be a sender/domain verified in your Resend dashboard).
+//   FALLBACK:   Gmail SMTP — set EMAIL_USER (Gmail address) and EMAIL_PASS
+//     (Gmail *App Password*, 16 chars, not your login password).
+//   MAIL_FROM_NAME    Optional display name (default "NovaClinic").
 //
-// Configuration comes ONLY from environment variables (never hard-coded):
-//   EMAIL_USER        Gmail address that sends the mail
-//   EMAIL_PASS        Gmail *App Password* (16 chars, not your login password)
-//   MAIL_FROM_NAME    Optional display name (default "NovaClinic")
+// Configuration comes ONLY from environment variables (never hard-coded).
 //
 // Security: the verification code is included in the email body (that is its
 // purpose) but is NEVER written to application logs. Only the (masked)
@@ -34,9 +36,82 @@ function getTransporter() {
 
 // Verify the SMTP credentials/connection. Useful in setup scripts and tests.
 export async function verifyEmailTransport() {
+  if (resendConfigured()) {
+    // Lightweight key check: listing domains requires a valid API key.
+    const res = await fetch("https://api.resend.com/domains", {
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
+    });
+    if (!res.ok) {
+      throw new Error(`Resend key check failed (HTTP ${res.status}).`);
+    }
+    return true;
+  }
   const transporter = getTransporter();
   await transporter.verify();
   return true;
+}
+
+function resendConfigured() {
+  return Boolean(process.env.RESEND_API_KEY);
+}
+
+// RESEND_FROM_EMAIL may be a bare address ("no-reply@example.com") or an
+// already-formatted sender ("MarSU SOMIS <no-reply@example.com>"). A
+// preformatted value is used exactly as-is so we never nest angle brackets.
+function formatResendSender(fromEmail, fromName) {
+  const raw = String(fromEmail || "").trim();
+  if (/<[^<>]+>/.test(raw)) return raw;
+  return fromName ? `${fromName} <${raw}>` : raw;
+}
+
+async function sendViaResend({ fromEmail, fromName, to, subject, text, html }) {
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: formatResendSender(fromEmail, fromName),
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      text,
+      html,
+    }),
+  });
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      out?.message || `Resend rejected the email (HTTP ${res.status}).`,
+    );
+  }
+  return out;
+}
+
+// Single choke point for every sender below: Resend in production,
+// Gmail SMTP otherwise. Callers pass content only — sender identity is
+// resolved here from the environment.
+async function dispatchMail({ to, subject, text, html }) {
+  const fromName = process.env.MAIL_FROM_NAME || "NovaClinic";
+  if (resendConfigured()) {
+    const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.EMAIL_USER;
+    if (!fromEmail) {
+      throw new Error(
+        "Email service is not configured. Set RESEND_FROM_EMAIL (or EMAIL_USER) alongside RESEND_API_KEY.",
+      );
+    }
+    await sendViaResend({ fromEmail, fromName, to, subject, text, html });
+    return { provider: "resend" };
+  }
+  const transporter = getTransporter();
+  await transporter.sendMail({
+    from: `"${fromName}" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    text,
+    html,
+  });
+  return { provider: "gmail" };
 }
 
 // Mask an email for safe logging: "jo***@gmail.com".
@@ -90,17 +165,9 @@ function buildEmail({ code, clinicName, ttlMinutes }) {
 
 // Send a verification code. Resolves on success, throws on transport failure.
 export async function sendVerificationEmail({ to, code, clinicName, ttlMinutes }) {
-  const transporter = getTransporter();
-  const fromName = process.env.MAIL_FROM_NAME || "NovaClinic";
   const { subject, text, html } = buildEmail({ code, clinicName, ttlMinutes });
 
-  await transporter.sendMail({
-    from: `"${fromName}" <${process.env.EMAIL_USER}>`,
-    to,
-    subject,
-    text,
-    html,
-  });
+  await dispatchMail({ to, subject, text, html });
 
   // Log only non-sensitive metadata — never the code.
   console.log(`✉️  Verification code sent to ${maskEmail(to)}`);
@@ -140,8 +207,6 @@ function ctaButton(href, label) {
 
 // Sent when a clinic application is APPROVED.
 export async function sendApplicationApprovedEmail({ to, clinicName, slug }) {
-  const transporter = getTransporter();
-  const fromName = process.env.MAIL_FROM_NAME || "NovaClinic";
   const name = clinicName || "your clinic";
   const loginUrl = appUrl("/index.html?auth=login");
   const publicUrl = slug ? appUrl(`/clinicHomePage.html?clinic=${encodeURIComponent(slug)}`) : "";
@@ -166,8 +231,7 @@ export async function sendApplicationApprovedEmail({ to, clinicName, slug }) {
     ${publicUrl ? `<p style="font-size:13px;line-height:1.6;color:#64748b;text-align:center">Your public page: <a href="${escapeHtml(publicUrl)}" style="color:#0f766e">${escapeHtml(publicUrl)}</a></p>` : ""}
   `;
 
-  await transporter.sendMail({
-    from: `"${fromName}" <${process.env.EMAIL_USER}>`,
+  await dispatchMail({
     to,
     subject,
     text,
@@ -180,8 +244,6 @@ export async function sendApplicationApprovedEmail({ to, clinicName, slug }) {
 
 // Sent when a clinic application is REJECTED.
 export async function sendApplicationRejectedEmail({ to, clinicName, reason }) {
-  const transporter = getTransporter();
-  const fromName = process.env.MAIL_FROM_NAME || "NovaClinic";
   const name = clinicName || "your clinic";
   const loginUrl = appUrl("/index.html?auth=login");
   const safeReason = String(reason || "").trim() || "Additional information is required.";
@@ -209,8 +271,7 @@ export async function sendApplicationRejectedEmail({ to, clinicName, reason }) {
     ${ctaButton(loginUrl, "Sign in to resubmit")}
   `;
 
-  await transporter.sendMail({
-    from: `"${fromName}" <${process.env.EMAIL_USER}>`,
+  await dispatchMail({
     to,
     subject,
     text,
@@ -223,8 +284,6 @@ export async function sendApplicationRejectedEmail({ to, clinicName, reason }) {
 
 // Sent right after a successful up-front subscription payment at registration.
 export async function sendSubscriptionActiveEmail({ to, clinicName, planName, amount, currency = "PHP", billingCycle, nextRenewalDate, reference }) {
-  const transporter = getTransporter();
-  const fromName = process.env.MAIL_FROM_NAME || "NovaClinic";
   const name = clinicName || "your clinic";
   const symbol = currency === "PHP" ? "₱" : currency === "USD" ? "$" : "";
   const amt = `${symbol}${Number(amount || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -261,8 +320,7 @@ export async function sendSubscriptionActiveEmail({ to, clinicName, planName, am
       🧪 Simulated payment environment — no real card was charged.
     </p>`;
 
-  await transporter.sendMail({
-    from: `"${fromName}" <${process.env.EMAIL_USER}>`,
+  await dispatchMail({
     to,
     subject,
     text,
@@ -276,8 +334,6 @@ export async function sendSubscriptionActiveEmail({ to, clinicName, planName, am
 // Sent when a SaaS admin manually warns a clinic (expiring soon / overdue /
 // trial ending / custom). `kind` controls the subject line + heading.
 export async function sendSubscriptionWarningEmail({ to, clinicName, kind = "custom", planName, amount, currency = "PHP", dueDate, message }) {
-  const transporter = getTransporter();
-  const fromName = process.env.MAIL_FROM_NAME || "NovaClinic";
   const name = clinicName || "your clinic";
   const loginUrl = appUrl("/index.html?auth=login");
   const symbol = currency === "PHP" ? "₱" : currency === "USD" ? "$" : "";
@@ -320,8 +376,7 @@ export async function sendSubscriptionWarningEmail({ to, clinicName, kind = "cus
     ${ctaButton(loginUrl, "Manage subscription")}
   `;
 
-  await transporter.sendMail({
-    from: `"${fromName}" <${process.env.EMAIL_USER}>`,
+  await dispatchMail({
     to,
     subject,
     text,
