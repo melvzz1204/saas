@@ -9,7 +9,7 @@ let activePatientId = null; // Required for the database
 let activeProcedureName = "General Consultation"; // Required for the note
 let activePatientIntake = null;
 let latestQueue = []; // Last-known dentist queue snapshot (for the queue modal)
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = window.ApiBase;
 
 // Non-blocking feedback (falls back to alert only if the shared UI is absent).
 const notify = (message, type = "info") =>
@@ -708,7 +708,7 @@ function bindProcedureSubmission() {
 
 if (typeof io !== "undefined") {
   const socketToken = getStoredSession().token;
-  const socket = io("http://localhost:5000", {
+  const socket = io(window.socketUrl(), {
     transports: ["websocket"],
     upgrade: false,
     auth: {

@@ -8,7 +8,7 @@
 (function () {
   "use strict";
 
-  const API = "http://localhost:5000/api/v1/billing";
+  const API = window.apiUrl("/api/v1/billing");
   const getToken = () => localStorage.getItem("token");
   const headers = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 

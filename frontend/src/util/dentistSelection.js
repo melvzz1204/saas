@@ -1,7 +1,7 @@
 // dentistSelection.js
 
-// 🚨 1. Define the missing backend base URL (adjust if your backend is hosted elsewhere)
-const API_BASE_URL = "http://localhost:5000";
+// Backend base URL (centralized in src/util/apiBase.js — env-aware).
+const API_BASE_URL = window.ApiBase;
 
 // Non-blocking feedback (falls back to alert only if the shared UI is absent).
 const notify = (message, type = "info") =>
@@ -199,7 +199,7 @@ async function processCheckout(appointmentId, totalAmount) {
 
   try {
     const response = await fetch(
-      `http://localhost:5000/api/v1/appointments/${appointmentId}/checkout`,
+      window.apiUrl(`/api/v1/appointments/${appointmentId}/checkout`),
       {
         method: "PATCH", // or POST, depending on your backend
         headers: {

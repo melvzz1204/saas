@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:5000/api/v1/dental-price";
+const API_BASE_URL = window.apiUrl("/api/v1/dental-price");
 const ADMIN_ID_DEFAULT = "admin_climen_master";
 
 // Non-blocking feedback (falls back to alert only if the shared UI is absent).
@@ -221,7 +221,7 @@ function attachToggleEventListeners() {
 
       try {
         const response = await fetch(
-          `http://localhost:5000/api/v1/dental-price/toggle/${serviceId}`,
+          window.apiUrl(`/api/v1/dental-price/toggle/${serviceId}`),
           {
             method: "PATCH",
             headers: {
@@ -341,9 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const clinicId = localStorage.getItem("clinicId");
     const token = localStorage.getItem("token");
 
-    const API_BASE_URL = window.location.origin.includes("localhost")
-      ? "http://localhost:5000"
-      : window.location.origin;
+    const API_BASE_URL = window.ApiBase;
 
     try {
       // Send update request

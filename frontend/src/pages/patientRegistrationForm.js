@@ -5,7 +5,7 @@
 
 const URL_PARAMS_CONTEXT = new URLSearchParams(window.location.search);
 const CLINIC_SLUG_TOKEN = URL_PARAMS_CONTEXT.get("clinic");
-const API_GATEWAY_NODE = "http://localhost:5000";
+const API_GATEWAY_NODE = window.ApiBase;
 
 document.addEventListener("DOMContentLoaded", async () => {
   const registrationForm = document.getElementById("registration-form");

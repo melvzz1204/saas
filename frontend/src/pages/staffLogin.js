@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       // 🚀 LINKED: Points directly to your active Port 5000 login node layout
       const { response, data } = await AppFeedback.request(
-        "http://localhost:5000/api/v1/staff/login",
+        window.apiUrl("/api/v1/staff/login"),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

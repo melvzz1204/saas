@@ -7,7 +7,7 @@ async function loadDentistProfiles() {
 
     // 🛑 Update this URL to match your specific patient-facing route for fetching dentists
     const response = await fetch(
-      `http://localhost:5000/api/v1/staff/public/dentists?clinicId=${clinicId}`,
+      window.apiUrl(`/api/v1/staff/public/dentists?clinicId=${clinicId}`),
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -29,8 +29,8 @@ async function loadDentistProfiles() {
       .map((dentist) => {
         const imageUrl =
           dentist.profileImage && dentist.profileImage !== "default-avatar.png"
-            ? `http://localhost:5000/uploads/${dentist.profileImage.replace(/^public[\\/]/, "").replace(/^uploads[\\/]/, "")}`
-            : `http://localhost:5000/uploads/default-avatar.png`;
+            ? window.apiUrl(`/uploads/${dentist.profileImage.replace(/^public[\\/]/, "").replace(/^uploads[\\/]/, "")}`)
+            : window.apiUrl(`/uploads/default-avatar.png`);
 
         return `
 

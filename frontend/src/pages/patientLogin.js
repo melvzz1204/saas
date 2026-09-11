@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // 1. Fetch structural clinic metadata via your adaptive identity endpoint
   try {
     const { data: result } = await AppFeedback.request(
-      `http://localhost:5000/api/v1/tenants/slug/${clinicSlug}`,
+      window.apiUrl(`/api/v1/tenants/slug/${clinicSlug}`),
     );
 
     if (result.success && result.data) {
@@ -107,7 +107,7 @@ async function handlePatientLoginSubmit(e) {
   try {
     // 🔗 Hit the central authentication node and pass the critical tenant header context!
     const { response, data: result } = await AppFeedback.request(
-      "http://localhost:5000/api/v1/patients/login",
+      window.apiUrl("/api/v1/patients/login"),
       {
         method: "POST",
         headers: {

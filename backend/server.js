@@ -8,6 +8,9 @@ import { Server } from "socket.io";
 const PORT = process.env.PORT || 5000;
 
 const httpServer = createServer(app);
+// Production frontend origin (Render static site). Empty in local dev, where
+// the localhost entries below apply.
+const FRONTEND_URL = String(process.env.FRONTEND_URL || "").replace(/\/+$/, "");
 const io = new Server(httpServer, {
   cors: {
     origin: [
@@ -16,6 +19,7 @@ const io = new Server(httpServer, {
       "http://localhost:5500",
       "http://localhost:5173",
       "http://localhost:5174",
+      ...(FRONTEND_URL ? [FRONTEND_URL] : []),
     ],
     methods: ["GET", "POST", "PATCH"],
     credentials: true,

@@ -10,7 +10,7 @@ async function loginPatient(event) {
 
   try {
     const response = await fetch(
-      "http://localhost:5000/api/v1/patients/login",
+      window.apiUrl("/api/v1/patients/login"),
       {
         method: "POST",
         headers: {

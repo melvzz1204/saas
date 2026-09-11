@@ -17,7 +17,7 @@ async function registerPatient(event) {
 
   try {
     const response = await fetch(
-      "http://localhost:5000/api/v1/patients/register",
+      window.apiUrl("/api/v1/patients/register"),
       {
         method: "POST",
         headers: {

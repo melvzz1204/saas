@@ -50,10 +50,7 @@ export async function initPatientTracker() {
     if (token) headers["Authorization"] = `Bearer ${token}`;
     if (clinicId) headers["x-clinic-id"] = clinicId;
 
-    const API_BASE_URL =
-      window.location.hostname === "localhost"
-        ? "http://localhost:5000"
-        : window.location.origin;
+    const API_BASE_URL = window.ApiBase;
 
     // 🎯 Properly declared fetch request
     const res = await fetch(
@@ -104,11 +101,7 @@ export async function initPatientTracker() {
   // 3. WebSocket Listener for Live Updates
   if (typeof io !== "undefined") {
     try {
-      const APP_BASE_URL =
-        window.location.hostname === "localhost"
-          ? "http://localhost:5000"
-          : window.location.origin;
-      const socket = io(APP_BASE_URL);
+      const socket = io(window.socketUrl());
 
       socket.emit("join_patient_room", patientId);
       socket.on("status_updated", (data) => {

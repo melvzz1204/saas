@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:5000"; // TODO: move to env var before deploying
+const API_BASE_URL = window.ApiBase;
 
 // ==========================================
 // 1. HELPER: Get Security Headers
@@ -48,7 +48,7 @@ export async function fetchPatientHistory(patientId = null) {
 
   // 1. PATIENTS: Always use /my-notes
   if (userRole === "PATIENT" || !patientId) {
-    endpoint = "http://localhost:5000/api/v1/clinical-notes/my-notes";
+    endpoint = window.apiUrl("/api/v1/clinical-notes/my-notes");
   }
   // 2. DENTISTS / STAFF / ADMIN: Use /patient/:patientId
   else {
@@ -57,7 +57,7 @@ export async function fetchPatientHistory(patientId = null) {
       console.warn("⚠️ Patient ID missing or invalid. Skipping fetch.");
       return [];
     }
-    endpoint = `http://localhost:5000/api/v1/clinical-notes/patient/${patientId}`;
+    endpoint = window.apiUrl(`/api/v1/clinical-notes/patient/${patientId}`);
   }
 
   try {

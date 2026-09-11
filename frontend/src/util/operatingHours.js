@@ -1,5 +1,5 @@
 // 1. Renamed to APP_BASE_URL to avoid colliding with booking.js!
-const APP_BASE_URL = "http://localhost:5000";
+const APP_BASE_URL = window.ApiBase;
 
 // Non-blocking feedback (falls back to alert only if the shared UI is absent).
 const notifyHours = (message, type = "info") =>

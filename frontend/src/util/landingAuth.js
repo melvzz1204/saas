@@ -306,7 +306,7 @@
       try {
         // Same endpoint and payload as the standalone clinic login page.
         const { response, data: result } = await AppFeedback.request(
-          "http://localhost:5000/api/v1/admin/login",
+          window.apiUrl("/api/v1/admin/login"),
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -539,7 +539,7 @@
     const refreshPrice = () => { paintPlanCards(); paintOrder(); };
     (async () => {
       try {
-        const out = await (await fetch("http://localhost:5000/api/v1/billing/meta")).json();
+        const out = await (await fetch(window.apiUrl("/api/v1/billing/meta"))).json();
         billingMeta = out.data;
         const pro = billingMeta.plans.find((p) => p.key === "pro") || billingMeta.plans[0];
         if (planSelect) { planSelect.innerHTML = `<option value="${pro.key}">${pro.name}</option>`; planSelect.value = pro.key; }
@@ -549,7 +549,7 @@
         paintPlanCards(); paintCardList(); paintOrder();
       } catch {
         // Loud failure: an empty Plan & Pay step looks "unselectable". Show why.
-        if (planCards) planCards.innerHTML = `<div class="banner banner-error block">Couldn't load plans. Is the backend running on http://localhost:5000? <button type="button" id="auth-retry-meta" class="switch-link">Retry</button></div>`;
+        if (planCards) planCards.innerHTML = `<div class="banner banner-error block">Couldn't load plans. Is the backend running at ${window.ApiBase}? <button type="button" id="auth-retry-meta" class="switch-link">Retry</button></div>`;
         document.getElementById("auth-retry-meta")?.addEventListener("click", () => window.location.reload());
       }
     })();
@@ -735,7 +735,7 @@
         // STEP 1: Start registration — the server emails a verification code.
         // The clinic + admin are only created once the code is verified.
         const initiateResponse = await fetch(
-          "http://localhost:5000/api/v1/tenants/register/initiate",
+          window.apiUrl("/api/v1/tenants/register/initiate"),
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -903,7 +903,7 @@
       if (spinner) spinner.hidden = false;
 
       try {
-        const res = await fetch("http://localhost:5000/api/v1/tenants/register/verify", {
+        const res = await fetch(window.apiUrl("/api/v1/tenants/register/verify"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pendingId, code }),
@@ -925,7 +925,7 @@
         const fd = new FormData();
         fd.append("documents", pendingDocs.business);
         fd.append("documents", pendingDocs.medical);
-        const up = await fetch(`http://localhost:5000/api/v1/tenants/${clinicId}/upload-docs`, {
+        const up = await fetch(window.apiUrl(`/api/v1/tenants/${clinicId}/upload-docs`), {
           method: "POST",
           body: fd,
         });
@@ -966,7 +966,7 @@
       hideVerifyBanner();
       resendBtn.disabled = true;
       try {
-        const res = await fetch("http://localhost:5000/api/v1/tenants/register/resend", {
+        const res = await fetch(window.apiUrl("/api/v1/tenants/register/resend"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pendingId }),

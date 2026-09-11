@@ -92,9 +92,11 @@
         </section>
     </div>
 
+    <script>window.VITE_API_URL="%VITE_API_URL%";</script>
+    <script src="/src/util/apiBase.js"></script>
     <script src="/src/util/toast.js"></script>
     <script type="module">
-        const API = "http://localhost:5000/api/v1/billing";
+        const API = window.apiUrl("/api/v1/billing");
         const token = localStorage.getItem("saasAdminToken");
         let meta = null, tab = "subscriptions", filters = {};
 

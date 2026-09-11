@@ -115,7 +115,7 @@ async function fetchPatientIntakeRecord() {
     }
 
     const response = await fetch(
-      `http://localhost:5000/api/v1/patients/profile`,
+      window.apiUrl(`/api/v1/patients/profile`),
       {
         method: "GET",
         headers: {
@@ -499,7 +499,7 @@ if (intakeForm) {
       showToast("Saving legal medical record changes...", "orange");
 
       const response = await fetch(
-        "http://localhost:5000/api/v1/patients/profile",
+        window.apiUrl("/api/v1/patients/profile"),
         {
           method: "POST", // Swap out for 'PUT' if your backend profile router design updates documents dynamically
           headers: {

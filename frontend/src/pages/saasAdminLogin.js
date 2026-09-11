@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const { data: result } = await AppFeedback.request(
-        "http://localhost:5000/api/v1/saas-admin/login",
+        window.apiUrl("/api/v1/saas-admin/login"),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

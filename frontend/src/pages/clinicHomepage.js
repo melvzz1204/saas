@@ -2,9 +2,7 @@
 // Public clinic landing page controller — renders profile, services, dentists,
 // testimonials and wires booking / auth / navigation UI.
 
-const API_BASE_URL = window.location.origin.includes("localhost")
-  ? "http://localhost:5000"
-  : window.location.origin;
+const API_BASE_URL = window.ApiBase;
 
 const URL_PARAMS = new URLSearchParams(window.location.search);
 const CLINIC_SLUG =

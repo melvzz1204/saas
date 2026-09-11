@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = window.ApiBase;
 
 const rawGlobalToken = localStorage.getItem("token");
 const globalToken = rawGlobalToken ? rawGlobalToken.replace(/['"]+/g, "") : "";
@@ -310,7 +310,7 @@ document.addEventListener("DOMContentLoaded", () => {
           // 🎯 FIXED: Updated to match your EXACT backend route and payload
           // Note: Make sure the base URL '/api/v1/appointments' matches where you mounted the router!
           const response = await fetch(
-            `http://localhost:5000/api/v1/appointments/settle-payment`,
+            window.apiUrl(`/api/v1/appointments/settle-payment`),
             {
               method: "PATCH",
               headers: {

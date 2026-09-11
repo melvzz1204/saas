@@ -73,13 +73,13 @@
         <div id="loader-error" role="alert"></div>
     </div>
 
+    <script>window.VITE_API_URL="%VITE_API_URL%";</script>
+    <script src="/src/util/apiBase.js"></script>
     <script>
         (function () {
             "use strict";
 
-            var API_BASE_URL = window.location.origin.indexOf("localhost") !== -1
-                ? "http://localhost:5000"
-                : window.location.origin;
+            var API_BASE_URL = window.apiUrl("/").replace(/\/+$/, "");
 
             // Mirror of backend/src/utils/landingTemplates.js `file` fields. Kept
             // inline so the redirect is instant (no extra catalog round-trip).

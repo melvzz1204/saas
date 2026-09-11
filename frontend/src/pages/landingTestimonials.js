@@ -15,9 +15,7 @@
     );
     if (!grid) return;
 
-    const apiBaseUrl = window.location.origin.includes("localhost")
-      ? "http://localhost:5000"
-      : window.location.origin;
+    const apiBaseUrl = window.ApiBase;
 
     const escapeHtml = (value) =>
       String(value ?? "").replace(/[&<>"']/g, (character) => ({

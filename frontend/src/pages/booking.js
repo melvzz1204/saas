@@ -1,4 +1,4 @@
-const APP_BASE_URL = "http://localhost:5000";
+const APP_BASE_URL = window.ApiBase;
 window.isFetchingSlots = false;
 
 document.addEventListener("DOMContentLoaded", () => {

@@ -1,7 +1,7 @@
 import { fetchPatientHistory } from "../util/clinicalNote.js";
 
-const API_PRICING_URL = "http://localhost:5000/api/v1/dental-price/services";
-const API_BASE_URL = "http://localhost:5000";
+const API_PRICING_URL = window.apiUrl("/api/v1/dental-price/services");
+const API_BASE_URL = window.ApiBase;
 const token = localStorage.getItem("token");
 const userJson = localStorage.getItem("user");
 
@@ -132,7 +132,7 @@ async function fetchClinicName() {
 
   try {
     const response = await fetch(
-      `http://localhost:5000/api/v1/tenants/${DYNAMIC_CLINIC_ID}`,
+      window.apiUrl(`/api/v1/tenants/${DYNAMIC_CLINIC_ID}`),
       {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
@@ -470,7 +470,7 @@ async function cancelAppointmentById(appointmentId) {
 
   try {
     const response = await fetch(
-      `http://localhost:5000/api/v1/appointments/${appointmentId}/cancel`,
+      window.apiUrl(`/api/v1/appointments/${appointmentId}/cancel`),
       {
         method: "PATCH",
         headers: {
@@ -643,7 +643,7 @@ function initReschedulePicker(overlay, appointmentId) {
     // Reuse the patient's currently selected dentist for slot availability
     const dentistId = document.getElementById("booking-dentist")?.value || "";
     try {
-      const url = `http://localhost:5000/api/v1/appointments/available-slots?date=${dateStr}&clinicId=${DYNAMIC_CLINIC_ID}&dentistId=${dentistId}`;
+      const url = window.apiUrl(`/api/v1/appointments/available-slots?date=${dateStr}&clinicId=${DYNAMIC_CLINIC_ID}&dentistId=${dentistId}`);
       const res = await fetch(url, {
         headers: {
           "Content-Type": "application/json",
@@ -714,7 +714,7 @@ function initReschedulePicker(overlay, appointmentId) {
     const dentistId = document.getElementById("booking-dentist")?.value || "";
     try {
       const res = await fetch(
-        `http://localhost:5000/api/v1/appointments/${appointmentId}/reschedule`,
+        window.apiUrl(`/api/v1/appointments/${appointmentId}/reschedule`),
         {
           method: "PATCH",
           headers: {
@@ -800,7 +800,7 @@ async function loadPatientBookings() {
 
   try {
     const response = await fetch(
-      `http://localhost:5000/api/v1/appointments/patient/${verifiedPatientId}`,
+      window.apiUrl(`/api/v1/appointments/patient/${verifiedPatientId}`),
       {
         method: "GET",
         headers: {
@@ -1077,7 +1077,7 @@ if (bookingForm) {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/v1/appointments/book",
+        window.apiUrl("/api/v1/appointments/book"),
         {
           method: "POST",
           headers: {
@@ -1162,7 +1162,7 @@ function setupDynamicTimeSlots() {
       const safeToken = token ? token.replace(/['"]+/g, "") : "";
 
       const response = await fetch(
-        `http://localhost:5000/api/v1/appointments/available-slots?date=${selectedDate}&clinicId=${DYNAMIC_CLINIC_ID}&dentistId=${selectedDentistId}`,
+        window.apiUrl(`/api/v1/appointments/available-slots?date=${selectedDate}&clinicId=${DYNAMIC_CLINIC_ID}&dentistId=${selectedDentistId}`),
         {
           method: "GET",
           headers: {
@@ -1284,7 +1284,7 @@ async function populateDentistDropdown() {
   try {
     // ✅ Pointing to your public route! No token needed since it is public.
     const response = await fetch(
-      `http://localhost:5000/api/v1/staff/public/dentists?clinicId=${DYNAMIC_CLINIC_ID}`,
+      window.apiUrl(`/api/v1/staff/public/dentists?clinicId=${DYNAMIC_CLINIC_ID}`),
       {
         method: "GET",
         headers: {
@@ -1428,7 +1428,7 @@ function triggerLiveStatusBanner(statusType, payload = {}) {
 // =========================================================================
 // ⚡ REAL-TIME PATIENT PIPELINE & LIVE STATUS ENGINE
 // =========================================================================
-const socket = io("http://localhost:5000", {
+const socket = io(window.socketUrl(), {
   transports: ["websocket"],
   upgrade: false,
 });
@@ -1636,9 +1636,9 @@ async function loadPatientReviewStatus() {
 
   try {
     const response = await fetch(
-      `http://localhost:5000/api/v1/clinics/${encodeURIComponent(
+      window.apiUrl(`/api/v1/clinics/${encodeURIComponent(
         DYNAMIC_CLINIC_ID,
-      )}/testimonials/mine`,
+      )}/testimonials/mine`),
       {
         method: "GET",
         headers: {
@@ -1771,9 +1771,9 @@ window.loadPatientReviewModule = function () {
 
       try {
         const response = await fetch(
-          `http://localhost:5000/api/v1/clinics/${encodeURIComponent(
+          window.apiUrl(`/api/v1/clinics/${encodeURIComponent(
             DYNAMIC_CLINIC_ID,
-          )}/testimonials`,
+          )}/testimonials`),
           {
             method: "POST",
             headers: {

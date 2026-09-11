@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function safeHttpUrl(fileUrl) {
     if (!fileUrl) return null;
     try {
-      const url = new URL(fileUrl, "http://localhost:5000");
+      const url = new URL(fileUrl, window.ApiBase);
       return url.protocol === "http:" || url.protocol === "https:"
         ? url.href
         : null;
@@ -144,7 +144,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // -----------------------------------------------------------------------
   async function apiFetch(endpoint, options = {}) {
     const response = await fetch(
-      `http://localhost:5000/api/v1/saas-admin${endpoint}`,
+      window.apiUrl(`/api/v1/saas-admin${endpoint}`),
       {
         ...options,
         headers: {
@@ -864,7 +864,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // =======================================================================
   // 💳 Subscriptions (clinics x subscription + warnings + actions)
   // =======================================================================
-  const BILLING_API = "http://localhost:5000/api/v1/billing";
+  const BILLING_API = window.apiUrl("/api/v1/billing");
   async function billingFetch(path, options = {}) {
     const res = await fetch(`${BILLING_API}${path}`, {
       ...options,

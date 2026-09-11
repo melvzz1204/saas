@@ -101,7 +101,7 @@ async function fetchClinicMetadata() {
   if (!clinicId) return;
   try {
     const response = await fetch(
-      `http://localhost:5000/api/v1/tenants/${clinicId}`,
+      window.apiUrl(`/api/v1/tenants/${clinicId}`),
       {
         headers: { Authorization: `Bearer ${token}` },
       },
@@ -123,7 +123,7 @@ async function fetchClinicMetadata() {
   // returns a complete draft + published pair.
   try {
     const response = await fetch(
-      `http://localhost:5000/api/v1/tenants/${clinicId}/landing`,
+      window.apiUrl(`/api/v1/tenants/${clinicId}/landing`),
       { headers: { Authorization: `Bearer ${token}` } },
     );
     const resData = await response.json();
@@ -144,7 +144,7 @@ async function fetchApplicationStatus() {
   if (!panel || !clinicId) return;
   try {
     const response = await fetch(
-      `http://localhost:5000/api/v1/tenants/${clinicId}`,
+      window.apiUrl(`/api/v1/tenants/${clinicId}`),
       {
         headers: { Authorization: `Bearer ${token}`, "x-clinic-id": clinicId },
       },
@@ -206,7 +206,7 @@ async function fetchApplicationStatus() {
         hideResubmitFeedback();
         try {
           const upload = await fetch(
-            `http://localhost:5000/api/v1/tenants/${clinicId}/resubmit-docs`,
+            window.apiUrl(`/api/v1/tenants/${clinicId}/resubmit-docs`),
             {
               method: "POST",
               headers: {
@@ -587,9 +587,9 @@ async function fetchDashboardData() {
     };
 
     const [apptRes, staffRes, servicesRes] = await Promise.all([
-      fetch("http://localhost:5000/api/v1/admin/appointments", { headers }),
-      fetch("http://localhost:5000/api/v1/admin/staff", { headers }),
-      fetch("http://localhost:5000/api/v1/dental-price/services", {
+      fetch(window.apiUrl("/api/v1/admin/appointments"), { headers }),
+      fetch(window.apiUrl("/api/v1/admin/staff"), { headers }),
+      fetch(window.apiUrl("/api/v1/dental-price/services"), {
         headers,
       }).catch((err) => {
         console.warn("⚠️ Services fetch dropped early:", err);
@@ -763,7 +763,7 @@ function renderAppointmentsTable(appointments) {
 async function modifyAppointmentStatus(appointmentId, newStatus) {
   try {
     const response = await fetch(
-      `http://localhost:5000/api/v1/admin/appointments/${appointmentId}`,
+      window.apiUrl(`/api/v1/admin/appointments/${appointmentId}`),
       {
         method: "PATCH",
         headers: {
@@ -863,7 +863,7 @@ async function handleStaffOnboarding(e) {
 
   try {
     const response = await fetch(
-      "http://localhost:5000/api/v1/staff/register",
+        window.apiUrl("/api/v1/staff/register"),
       {
         method: "POST",
         headers: {
@@ -990,7 +990,7 @@ async function removeStaffMember(staffId) {
 
   try {
     const response = await fetch(
-      `http://localhost:5000/api/v1/admin/staff/${staffId}`,
+      window.apiUrl(`/api/v1/admin/staff/${staffId}`),
       {
         method: "DELETE",
         headers: {
@@ -1016,7 +1016,7 @@ async function removeStaffMember(staffId) {
 window.removeStaffMember = removeStaffMember;
 
 // Real-time Event Subscription Layout
-const socket = io("http://localhost:5000", {
+const socket = io(window.socketUrl(), {
   transports: ["websocket"],
   upgrade: false,
 });
@@ -1036,7 +1036,7 @@ async function handleResetStaffPassword(staffId) {
     const token = localStorage.getItem("token").replace(/['"]+/g, "");
 
     const response = await fetch(
-      "http://localhost:5000/api/v1/staff/reset-pin",
+      window.apiUrl("/api/v1/staff/reset-pin"),
       {
         method: "POST",
         headers: {
@@ -1253,9 +1253,9 @@ async function loadTestimonials() {
 
   try {
     const response = await fetch(
-      `http://localhost:5000/api/v1/clinics/${encodeURIComponent(
+      window.apiUrl(`/api/v1/clinics/${encodeURIComponent(
         clinicId,
-      )}/testimonials/admin`,
+      )}/testimonials/admin`),
       {
         method: "GET",
         headers: {
@@ -1770,7 +1770,7 @@ function landingTemplateById(id) {
 // to the hardcoded LANDING_TEMPLATES above if the request fails.
 async function landingLoadCatalog() {
   try {
-    const res = await fetch("http://localhost:5000/api/v1/landing/catalog");
+    const res = await fetch(window.apiUrl("/api/v1/landing/catalog"));
     const data = await res.json();
     if (
       data?.success &&
@@ -2802,7 +2802,7 @@ async function landingCleanupImage(url) {
   if (!url || !clinicId) return;
   try {
     await fetch(
-      `http://localhost:5000/api/v1/tenants/${clinicId}/landing/image`,
+      window.apiUrl(`/api/v1/tenants/${clinicId}/landing/image`),
       {
         method: "DELETE",
         headers: {
@@ -2831,7 +2831,7 @@ async function landingUploadImage(fileOrBlob) {
       : fileOrBlob.name;
     fd.append("image", fileOrBlob, name);
     const res = await fetch(
-      `http://localhost:5000/api/v1/tenants/${clinicId}/landing/upload`,
+      window.apiUrl(`/api/v1/tenants/${clinicId}/landing/upload`),
       {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -2943,7 +2943,7 @@ async function landingSaveDraft() {
   }
   try {
     const res = await fetch(
-      `http://localhost:5000/api/v1/tenants/${clinicId}/landing`,
+      window.apiUrl(`/api/v1/tenants/${clinicId}/landing`),
       {
         method: "PATCH",
         headers: {
@@ -2979,7 +2979,7 @@ async function landingPublish() {
   if (!saved) return;
   try {
     const res = await fetch(
-      `http://localhost:5000/api/v1/tenants/${clinicId}/landing/publish`,
+      window.apiUrl(`/api/v1/tenants/${clinicId}/landing/publish`),
       { method: "POST", headers: { Authorization: `Bearer ${token}` } },
     );
     const data = await res.json();
