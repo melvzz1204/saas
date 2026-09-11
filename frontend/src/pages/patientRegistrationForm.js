@@ -63,8 +63,35 @@ document.addEventListener("DOMContentLoaded", async () => {
         role: "PATIENT",
       };
 
+      const requiredFields = [
+        "firstName",
+        "lastName",
+        "email",
+        "phone",
+        "dateOfBirth",
+        "password",
+      ];
+      const firstInvalid = requiredFields.find((field) => !payload[field]);
+      if (firstInvalid) {
+        const field = document.getElementById(firstInvalid);
+        AppFeedback.showFieldError(
+          field,
+          "This field is required. Please provide it to continue.",
+        );
+        field?.focus();
+        resetSubmitButton(submitBtn);
+        return;
+      }
+      const emailField = document.getElementById("email");
+      if (!emailField.checkValidity()) {
+        AppFeedback.showFieldError(emailField, "Enter a valid email address.");
+        emailField.focus();
+        resetSubmitButton(submitBtn);
+        return;
+      }
+
       try {
-        const response = await fetch(
+        const { response, data: result } = await AppFeedback.request(
           `${API_GATEWAY_NODE}/api/v1/patients/register`,
           {
             method: "POST",
@@ -75,8 +102,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             body: JSON.stringify(payload),
           },
         );
-
-        const result = await response.json();
 
         if (response.ok && (result.success || result.data)) {
           // 🎯 Targets your exact visual modal notice text container element!
@@ -89,10 +114,18 @@ document.addEventListener("DOMContentLoaded", async () => {
           registrationForm.reset();
 
           // ⏳ Let them see the validation indicator, then pull the modal view down smoothly
+          // and hand them straight to sign in so they can book right away.
           setTimeout(() => {
             const registerModal = document.getElementById("register-modal");
             if (registerModal) {
               registerModal.classList.add("hidden");
+            }
+
+            const loginModal = document.getElementById("login-modal");
+            if (loginModal) {
+              loginModal.classList.remove("hidden");
+              document.getElementById("login-email")?.focus();
+            } else {
               document.body.classList.remove("overflow-hidden");
             }
 
@@ -108,14 +141,27 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
           }, 2500);
         } else {
+          console.warn("Patient registration rejected", {
+            status: response.status,
+            result,
+          });
           showModalBanner(
-            `Processing Blocked: ${result.message || "Invalid account payload dimensions."}`,
+            response.status === 403
+              ? "Registration is not available for this clinic. Please contact the clinic directly."
+              : "Please review the highlighted information and try again.",
             "error",
           );
           resetSubmitButton(submitBtn);
         }
       } catch (error) {
-        showModalBanner(error.message, "error");
+        console.error("Patient registration request failed", error);
+        showModalBanner(
+          AppFeedback.safeMessage(
+            error,
+            error.status ? { status: error.status } : null,
+          ),
+          "error",
+        );
         resetSubmitButton(submitBtn);
       }
     });

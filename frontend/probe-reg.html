@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Registration Probe</title>
+</head>
+
+<body>
+    <h1>Registration Probe</h1>
+    <pre id="out">running...</pre>
+    <script>
+        (async () => {
+            const out = document.getElementById("out");
+            const log = (m) => (out.textContent += "\n" + m);
+            const slug = "bright-teeth-dental-clinic";
+            try {
+                // Step 1: resolve tenant
+                const slugRes = await fetch(
+                    `http://localhost:5000/api/v1/tenants/slug/${slug}`,
+                );
+                const slugData = await slugRes.json();
+                log(`SLUG status=${slugRes.status} ok=${slugRes.ok}`);
+                log(`SLUG body=${JSON.stringify(slugData)}`);
+                const clinicId = slugData.data?._id;
+
+                const uniqueEmail = `probe${Date.now()}@example.com`;
+
+                // Step 2: POST register fresh
+                const res = await fetch("http://localhost:5000/api/v1/patients/register", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-clinic-id": clinicId,
+                    },
+                    body: JSON.stringify({
+                        clinicId,
+                        firstName: "Probe",
+                        lastName: "Test",
+                        email: uniqueEmail,
+                        phone: "1234567890",
+                        dateOfBirth: "1990-01-01",
+                        password: "password123",
+                        role: "PATIENT",
+                    }),
+                });
+                let body = null;
+                try {
+                    body = await res.json();
+                } catch (_) { }
+                log(`REGISTER-FRESH status=${res.status} ok=${res.ok}`);
+                log(`REGISTER-FRESH body=${JSON.stringify(body)}`);
+
+                // Step 3: POST duplicate email (same email again)
+                const res2 = await fetch("http://localhost:5000/api/v1/patients/register", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-clinic-id": clinicId,
+                    },
+                    body: JSON.stringify({
+                        clinicId,
+                        firstName: "Probe",
+                        lastName: "Test",
+                        email: uniqueEmail,
+                        phone: "1234567890",
+                        dateOfBirth: "1990-01-01",
+                        password: "password123",
+                        role: "PATIENT",
+                    }),
+                });
+                let body2 = null;
+                try {
+                    body2 = await res2.json();
+                } catch (_) { }
+                log(`REGISTER-DUP status=${res2.status} ok=${res2.ok}`);
+                log(`REGISTER-DUP body=${JSON.stringify(body2)}`);
+
+                // Step 4: missing clinic context (no header)
+                const res3 = await fetch("http://localhost:5000/api/v1/patients/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        firstName: "Probe",
+                        lastName: "Test",
+                        email: `probe3${Date.now()}@example.com`,
+                        phone: "1234567890",
+                        dateOfBirth: "1990-01-01",
+                        password: "password123",
+                        role: "PATIENT",
+                    }),
+                });
+                let body3 = null;
+                try {
+                    body3 = await res3.json();
+                } catch (_) { }
+                log(`REGISTER-NOCTX status=${res3.status} ok=${res3.ok}`);
+                log(`REGISTER-NOCTX body=${JSON.stringify(body3)}`);
+            } catch (err) {
+                log(`EXCEPTION: ${err.message}`);
+            }
+        })();
+    </script>
+</body>
+
+</html>

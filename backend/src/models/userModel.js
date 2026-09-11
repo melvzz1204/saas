@@ -16,19 +16,27 @@ const userSchema = new mongoose.Schema(
     phone: {
       type: String,
       required: function () {
-        return this.role !== "SAAS_ADMIN";
+        return this.role !== "SAAS_ADMIN" && this.role !== "SUPER_ADMIN";
       },
     },
     role: {
       type: String,
-      enum: ["PATIENT", "CLINIC_ADMIN", "DENTIST", "STAFF", "SAAS_ADMIN"],
+      enum: [
+        "PATIENT",
+        "CLINIC_ADMIN",
+        "CLINIC_STAFF",
+        "STAFF",
+        "DENTIST",
+        "SUPER_ADMIN",
+        "SAAS_ADMIN",
+      ],
       required: true,
     },
     clinicId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Clinic",
       required: function () {
-        return this.role !== "SAAS_ADMIN";
+        return this.role !== "SAAS_ADMIN" && this.role !== "SUPER_ADMIN";
       },
     },
     isActive: { type: Boolean, default: true },

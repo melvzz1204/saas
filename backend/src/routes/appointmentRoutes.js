@@ -7,6 +7,8 @@ import {
   createWalkInAppointment,
   updateAppointmentStatus,
   settlePayment,
+  rescheduleAppointment,
+  cancelAppointment,
 } from "../controllers/appointmentController.js"; //[cite: 19]
 import { identifyTenant } from "../middlewares/tenantMiddleware.js";
 import { protectPatientRoute } from "../middlewares/authMiddleware.js";
@@ -20,6 +22,8 @@ router.post("/book", bookAppointment); //[cite: 19]
 router.get("/patient/:patientId", getPatientAppointments); //[cite: 19]
 router.post("/walk-in", createWalkInAppointment); //[cite: 19]
 router.patch("/:id/status", updateAppointmentStatus); //[cite: 19]
+router.patch("/:id/reschedule", protectPatientRoute, rescheduleAppointment);
+router.patch("/:id/cancel", protectPatientRoute, cancelAppointment);
 router.get("/today", getTodayAppointments); //[cite: 19]
 router.patch("/settle-payment", protectPatientRoute, settlePayment); //[cite: 19]
 router.get("/available-slots", getAvailableSlots);

@@ -7,12 +7,331 @@
     <title>Clinic Admin Command Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+    <style>
+        :root {
+            --focus-ring: #4f46e5;
+            /* Shared status color tokens for consistent, WCAG-AA color coding */
+            --status-critical: #e11d48;
+            --status-warning: #b45309;
+            --status-success: #047857;
+            --status-info: #4f46e5;
+        }
+
+        /* Keyboard-only skip link to the main content region */
+        .skip-link {
+            position: fixed;
+            top: .5rem;
+            left: .5rem;
+            z-index: 60;
+            background: #4f46e5;
+            color: #fff;
+            font-weight: 700;
+            font-size: .75rem;
+            padding: .6rem 1rem;
+            border-radius: .5rem;
+            transform: translateY(-160%);
+            transition: transform .18s ease;
+        }
+
+        .skip-link:focus {
+            transform: none;
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+
+        /* Consistent, visible focus indicator for all interactive elements */
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible,
+        [role="tab"]:focus-visible,
+        [tabindex]:focus-visible {
+            outline: 2px solid var(--focus-ring);
+            outline-offset: 2px;
+            border-radius: 6px;
+        }
+
+        .dashboard-panel:focus {
+            outline: none;
+        }
+
+        /* Lock body scroll while the mobile nav drawer is open */
+        body.sidebar-open {
+            overflow: hidden;
+        }
+
+        @media (min-width: 768px) {
+            body.sidebar-open {
+                overflow: auto;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                transition-duration: .01ms !important;
+                animation-duration: .01ms !important;
+            }
+        }
+
+        /* Preset cards in the landing page builder */
+        .landing-preset-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            min-width: 120px;
+        }
+
+        .landing-preset-card:hover {
+            border-color: #94a3b8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .landing-preset-active {
+            border-color: #0f766e;
+            box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .landing-preset-colors {
+            display: flex;
+            gap: 4px;
+        }
+
+        .landing-preset-swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 1px solid #e2e8f0;
+        }
+
+        .landing-preset-name {
+            font-size: 11px;
+            font-weight: 700;
+            color: #334155;
+            text-align: center;
+        }
+
+        .landing-preset-desc {
+            font-size: 10px;
+            color: #94a3b8;
+            text-align: center;
+        }
+
+        /* Template (whole-page layout) cards in the landing page builder */
+        .landing-template-card {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: #fff;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.15s ease;
+        }
+
+        .landing-template-card:hover {
+            border-color: #94a3b8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .landing-template-active {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.18);
+        }
+
+        .landing-template-thumb {
+            width: 100%;
+            aspect-ratio: 16 / 10;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            display: block;
+        }
+
+        .landing-template-name {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .landing-template-badge {
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #4f46e5;
+            background: #eef2ff;
+            padding: 2px 6px;
+            border-radius: 999px;
+        }
+
+        .landing-template-desc {
+            font-size: 10.5px;
+            line-height: 1.45;
+            color: #94a3b8;
+        }
+
+        /* Keyboard-only skip link to the main content region */
+        .skip-link {
+            position: fixed;
+            top: .5rem;
+            left: .5rem;
+            z-index: 60;
+            background: #4f46e5;
+            color: #fff;
+            font-weight: 700;
+            font-size: .75rem;
+            padding: .6rem 1rem;
+            border-radius: .5rem;
+            transform: translateY(-160%);
+            transition: transform .18s ease;
+        }
+
+        .skip-link:focus {
+            transform: none;
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+
+        /* Consistent, visible focus indicator for all interactive elements */
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible,
+        [role="tab"]:focus-visible,
+        [tabindex]:focus-visible {
+            outline: 2px solid var(--focus-ring);
+            outline-offset: 2px;
+            border-radius: 6px;
+        }
+
+        .dashboard-panel:focus {
+            outline: none;
+        }
+
+        /* Lock body scroll while the mobile nav drawer is open */
+        body.sidebar-open {
+            overflow: hidden;
+        }
+
+        @media (min-width: 768px) {
+            body.sidebar-open {
+                overflow: auto;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                transition-duration: .01ms !important;
+                animation-duration: .01ms !important;
+            }
+        }
+
+        /* Gated takeover: when the application is Rejected (or Pending), hide
+           the entire dashboard chrome and focus only on the required action. */
+        #gated-topbar {
+            display: none;
+        }
+
+        body.app-gated #clinic-sidebar,
+        body.app-gated #sidebar-backdrop,
+        body.app-gated #mobile-topbar {
+            display: none !important;
+        }
+
+        body.app-gated #main-content {
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 60rem;
+            width: 100%;
+        }
+
+        body.app-gated #dashboard-header,
+        body.app-gated #kpi-stats,
+        body.app-gated #dashboard-panels {
+            display: none !important;
+        }
+
+        body.app-gated #gated-topbar {
+            display: flex !important;
+        }
+
+        body.app-gated #application-review-panel,
+        body.app-gated #application-pending-panel {
+            max-width: 60rem;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Subtle entrance for the focused action card */
+        body.app-gated #application-review-panel,
+        body.app-gated #application-pending-panel {
+            animation: gatedPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes gatedPop {
+            from {
+                opacity: 0;
+                transform: translateY(10px) scale(0.99);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+    </style>
 </head>
 
 <body
     class="bg-slate-50 text-slate-700 font-sans min-h-screen flex antialiased selection:bg-indigo-100 selection:text-indigo-900">
-    <aside
-        class="w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between p-5 shrink-0 hidden md:flex shadow-2xs">
+
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Mobile top bar (the sidebar is an off-canvas drawer on small screens) -->
+    <header id="mobile-topbar"
+        class="md:hidden fixed top-0 inset-x-0 z-30 h-14 bg-white border-b border-slate-200 flex items-center gap-3 px-4">
+        <button type="button" id="sidebar-toggle" aria-controls="clinic-sidebar" aria-expanded="false"
+            aria-label="Open navigation menu"
+            class="w-10 h-10 -ml-2 grid place-items-center rounded-lg text-slate-600 hover:bg-slate-100 cursor-pointer">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
+            </svg>
+        </button>
+        <span class="font-black text-sm tracking-tight text-slate-900 uppercase">Clinic Console</span>
+    </header>
+
+    <!-- Backdrop shown behind the mobile nav drawer -->
+    <div id="sidebar-backdrop" class="hidden md:hidden fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm"></div>
+
+    <aside id="clinic-sidebar"
+        class="w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between p-5 shrink-0 shadow-2xs fixed inset-y-0 left-0 z-40 overflow-y-auto -translate-x-full transition-transform duration-200 md:static md:translate-x-0 md:z-auto">
         <div class="space-y-7">
             <div class="flex items-center space-x-3 px-1 py-0.5">
                 <div
@@ -51,7 +370,7 @@
                     <span class="active-dot w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
                 </a>
 
-                <a href="#" id="nav-staff" data-target="panel-staff"
+                <a href="#" id="nav-staff" data-target="panel-staff" data-roles="SUPER_ADMIN,CLINIC_ADMIN"
                     class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
                     <div class="flex items-center space-x-2.5">
                         <svg class="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors"
@@ -65,7 +384,7 @@
                     <span class="active-dot w-1.5 h-1.5 rounded-full bg-indigo-600 hidden"></span>
                 </a>
 
-                <a href="#" id="nav-pricing" data-target="panel-pricing"
+                <a href="#" id="nav-pricing" data-target="panel-pricing" data-roles="SUPER_ADMIN,CLINIC_ADMIN"
                     class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
                     <div class="flex items-center space-x-2.5">
                         <svg class="w-4 h-4 text-slate-400 group-hover:text-emerald-600 transition-colors"
@@ -80,7 +399,7 @@
                 </a>
 
                 <!-- 🕒 NEW: Operating Hours Nav Item -->
-                <a href="#" id="nav-hours" data-target="panel-hours"
+                <a href="#" id="nav-hours" data-target="panel-hours" data-roles="SUPER_ADMIN,CLINIC_ADMIN"
                     class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
                     <div class="flex items-center space-x-2.5">
                         <svg class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors"
@@ -94,7 +413,38 @@
                     <span class="active-dot w-1.5 h-1.5 rounded-full bg-indigo-600 hidden"></span>
                 </a>
 
-                <a href="#" id="nav-reports" data-target="panel-reports"
+                <a href="#" id="nav-landing" data-target="panel-landing" data-roles="SUPER_ADMIN,CLINIC_ADMIN"
+                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
+                    <div class="flex items-center space-x-2.5">
+                        <svg class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors"
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                            stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M4.5 5.25A1.5 1.5 0 0 1 6 3.75h12a1.5 1.5 0 0 1 1.5 1.5V8.25H4.5V5.25Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M4.5 10.5h8.25v9.75H6a1.5 1.5 0 0 1-1.5-1.5V10.5ZM14.25 10.5H19.5v8.25a1.5 1.5 0 0 1-1.5 1.5h-3.75V10.5Z" />
+                        </svg>
+                        <span>Landing Page</span>
+                    </div>
+                    <span class="active-dot w-1.5 h-1.5 rounded-full bg-indigo-600 hidden"></span>
+                </a>
+
+                <!-- ⭐ NEW: Testimonials Moderation Nav Item -->
+                <a href="#" id="nav-testimonials" data-target="panel-testimonials" data-roles="SUPER_ADMIN,CLINIC_ADMIN"
+                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
+                    <div class="flex items-center space-x-2.5">
+                        <svg class="w-4 h-4 text-slate-400 group-hover:text-amber-500 transition-colors"
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+                        </svg>
+                        <span>Testimonials</span>
+                    </div>
+                    <span class="active-dot w-1.5 h-1.5 rounded-full bg-amber-500 hidden"></span>
+                </a>
+
+                <a href="#" id="nav-reports" data-target="panel-reports" data-roles="SUPER_ADMIN,CLINIC_ADMIN"
                     class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
                     <div class="flex items-center space-x-2.5">
                         <svg class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors"
@@ -106,6 +456,28 @@
                         <span>Reports</span>
                     </div>
                     <span class="active-dot w-1.5 h-1.5 rounded-full bg-indigo-600 hidden"></span>
+                </a>
+
+                <p class="text-[10px] font-bold text-slate-400 tracking-widest uppercase px-2 mb-2 pt-3">
+                    Billing
+                </p>
+
+                <a href="#" id="nav-subscription" data-target="panel-subscription" data-roles="SUPER_ADMIN,CLINIC_ADMIN"
+                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
+                    <div class="flex items-center space-x-2.5">
+                        <svg class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors"
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
+                        </svg>
+                        <span>My Subscription</span>
+                    </div>
+                    <span class="flex items-center gap-1.5">
+                        <span id="nav-subscription-badge"
+                            class="hidden text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full"></span>
+                        <span class="active-dot w-1.5 h-1.5 rounded-full bg-indigo-600 hidden"></span>
+                    </span>
                 </a>
             </nav>
 
@@ -123,7 +495,7 @@
                     </svg>
                     <span>View Live Website</span>
                 </a>
-                <a href="/staffLogin.html" id="nav-staff-login"
+                <a href="/staffLogin.html" target="_blank" rel="noopener noreferrer" id="nav-staff-login"
                     class="group flex items-center space-x-2.5 text-slate-600 hover:text-blue-600 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all">
                     <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors"
                         xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
@@ -158,8 +530,33 @@
         </div>
     </aside>
 
-    <main class="flex-1 p-6 md:p-8 overflow-y-auto space-y-8">
-        <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+    <main id="main-content" tabindex="-1"
+        class="flex-1 px-4 sm:px-6 md:px-8 pt-20 pb-8 md:pt-8 overflow-y-auto space-y-8">
+        <!-- Minimal top bar shown only in gated (Rejected/Pending) takeover mode -->
+        <div id="gated-topbar"
+            class="items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div
+                    class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center border border-indigo-100 shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" />
+                        <path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9" />
+                        <path d="M12 11v6" />
+                        <path d="M9 14h6" />
+                    </svg>
+                </div>
+                <div class="truncate">
+                    <p id="gated-clinic-name" class="text-xs font-black text-slate-900 truncate">Loading workspace…</p>
+                    <p id="gated-user-email" class="text-[10px] text-slate-400 truncate">…</p>
+                </div>
+            </div>
+            <button id="gated-logout-btn" type="button"
+                class="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-pointer">
+                Sign Out
+            </button>
+        </div>
+        <header id="dashboard-header" class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div>
                 <h1 id="dashboard-title" class="text-xl font-black tracking-tight text-slate-900">
                     Operations Overview
@@ -170,7 +567,7 @@
             </div>
         </header>
 
-        <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <section id="kpi-stats" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div class="bg-white border border-slate-200/80 rounded-xl p-5 space-y-1 shadow-xs">
                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                     Total Scheduled Today
@@ -202,6 +599,185 @@
                 <p id="kpi-pending-bookings" class="text-2xl font-black text-amber-500">
                     0
                 </p>
+            </div>
+        </section>
+
+        <section id="application-review-panel"
+            class="hidden overflow-hidden rounded-2xl border border-rose-200 bg-white shadow-sm">
+            <!-- Header -->
+            <div class="flex items-start gap-3 bg-rose-50 border-b border-rose-100 px-5 py-4">
+                <span aria-hidden="true"
+                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-600 text-white text-lg font-black">!</span>
+                <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-rose-600">Action required</p>
+                        <span
+                            class="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">Rejected</span>
+                    </div>
+                    <h2 class="text-lg font-black text-slate-900 mt-0.5">Your application needs corrections</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Fix the issues below, re-upload both licenses, and we'll
+                        fast-track your re-review.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 p-5">
+                <!-- Left: feedback + guidance -->
+                <div class="space-y-4">
+                    <div class="rounded-xl border border-rose-200 bg-rose-50/60 p-4">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-rose-600">Why it was rejected
+                        </p>
+                        <p id="application-rejection-reason"
+                            class="text-sm text-slate-800 mt-1.5 whitespace-pre-line leading-relaxed"></p>
+                    </div>
+
+                    <ol class="space-y-2.5 text-xs text-slate-600">
+                        <li class="flex gap-2.5">
+                            <span
+                                class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white text-[10px] font-black">1</span>
+                            <span><strong class="text-slate-900">Review the feedback</strong> above — it tells you
+                                exactly what to fix.</span>
+                        </li>
+                        <li class="flex gap-2.5">
+                            <span
+                                class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white text-[10px] font-black">2</span>
+                            <span><strong class="text-slate-900">Replace both documents</strong> on the right. Clear
+                                scans or photos work best.</span>
+                        </li>
+                        <li class="flex gap-2.5">
+                            <span
+                                class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white text-[10px] font-black">3</span>
+                            <span><strong class="text-slate-900">Resubmit</strong> — your status returns to
+                                <em>Pending</em> and reviewers are notified.</span>
+                        </li>
+                    </ol>
+
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Previously
+                            submitted</p>
+                        <ul id="application-previous-docs" class="space-y-1.5 text-xs"></ul>
+                    </div>
+                </div>
+
+                <!-- Right: resubmit form -->
+                <form id="application-resubmit-form"
+                    class="space-y-3 rounded-xl border border-slate-200 bg-slate-50/60 p-4" novalidate>
+                    <div class="flex items-center justify-between">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Corrected documents
+                        </p>
+                        <p id="resubmit-step-hint" class="text-[10px] font-bold text-slate-400">0 of 2 ready</p>
+                    </div>
+
+                    <!-- Business license slot -->
+                    <div id="drop-business"
+                        class="group rounded-xl border-2 border-dashed border-slate-300 bg-white p-3.5 transition-colors hover:border-indigo-400 focus-within:border-indigo-500">
+                        <div class="flex items-center gap-3">
+                            <span aria-hidden="true"
+                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-lg">📄</span>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs font-black text-slate-900">Business License <span
+                                        class="text-rose-500">*</span></p>
+                                <p id="business-file-meta" class="text-[11px] text-slate-400 truncate">Mayor's Permit,
+                                    DTI/SEC, or equivalent · PDF/JPG/PNG/WEBP · max 5MB</p>
+                                <p id="business-file-error" class="hidden text-[11px] font-bold text-rose-600 mt-0.5">
+                                </p>
+                            </div>
+                            <label for="application-resubmit-business"
+                                class="shrink-0 cursor-pointer rounded-lg bg-slate-900 px-3 py-2 text-[11px] font-bold text-white hover:bg-slate-700">Browse</label>
+                        </div>
+                        <input id="application-resubmit-business" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp"
+                            class="sr-only">
+                        <div id="business-file-chip"
+                            class="hidden mt-2.5 flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-2">
+                            <span aria-hidden="true" class="text-sm">✅</span>
+                            <span id="business-file-name"
+                                class="min-w-0 flex-1 truncate text-[11px] font-bold text-emerald-800"></span>
+                            <button type="button" id="business-file-remove"
+                                class="text-[11px] font-bold text-slate-400 hover:text-rose-600">Remove</button>
+                        </div>
+                    </div>
+
+                    <!-- Medical license slot -->
+                    <div id="drop-medical"
+                        class="group rounded-xl border-2 border-dashed border-slate-300 bg-white p-3.5 transition-colors hover:border-indigo-400 focus-within:border-indigo-500">
+                        <div class="flex items-center gap-3">
+                            <span aria-hidden="true"
+                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-lg">🩺</span>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs font-black text-slate-900">Medical License <span
+                                        class="text-rose-500">*</span></p>
+                                <p id="medical-file-meta" class="text-[11px] text-slate-400 truncate">PRC, professional,
+                                    or facility license · PDF/JPG/PNG/WEBP · max 5MB</p>
+                                <p id="medical-file-error" class="hidden text-[11px] font-bold text-rose-600 mt-0.5">
+                                </p>
+                            </div>
+                            <label for="application-resubmit-medical"
+                                class="shrink-0 cursor-pointer rounded-lg bg-slate-900 px-3 py-2 text-[11px] font-bold text-white hover:bg-slate-700">Browse</label>
+                        </div>
+                        <input id="application-resubmit-medical" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp"
+                            class="sr-only">
+                        <div id="medical-file-chip"
+                            class="hidden mt-2.5 flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-2">
+                            <span aria-hidden="true" class="text-sm">✅</span>
+                            <span id="medical-file-name"
+                                class="min-w-0 flex-1 truncate text-[11px] font-bold text-emerald-800"></span>
+                            <button type="button" id="medical-file-remove"
+                                class="text-[11px] font-bold text-slate-400 hover:text-rose-600">Remove</button>
+                        </div>
+                    </div>
+
+                    <p class="text-[10px] text-slate-400">Tip: make sure names, dates, and seals are readable. Blurry
+                        photos are the #1 reason for a second rejection.</p>
+
+                    <button id="application-resubmit-submit" type="submit" disabled
+                        class="w-full rounded-xl bg-slate-900 py-3 text-xs font-black uppercase tracking-wider text-white transition-all hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40">Attach
+                        both documents to continue</button>
+                    <div id="resubmit-progress" class="hidden h-1.5 overflow-hidden rounded-full bg-slate-200">
+                        <div class="h-full w-1/3 animate-pulse rounded-full bg-indigo-500"></div>
+                    </div>
+                    <p id="application-resubmit-feedback" class="hidden text-xs font-semibold" role="status"
+                        aria-live="polite"></p>
+                </form>
+            </div>
+        </section>
+        <section id="application-pending-panel"
+            class="hidden overflow-hidden rounded-2xl border border-amber-200 bg-white shadow-sm" role="status"
+            aria-live="polite">
+            <div class="flex items-start gap-3 bg-amber-50 border-b border-amber-100 px-5 py-4">
+                <span aria-hidden="true"
+                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white text-lg">⏳</span>
+                <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-amber-700">Under review</p>
+                        <span
+                            class="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">Pending</span>
+                    </div>
+                    <h2 class="text-lg font-black text-slate-900 mt-0.5">Your application is being reviewed</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Our team usually reviews within 24 hours. We'll notify you
+                        by email the moment there's an update.</p>
+                </div>
+            </div>
+            <div class="p-5">
+                <ol class="space-y-2.5 text-xs text-slate-600">
+                    <li class="flex gap-2.5">
+                        <span
+                            class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white text-[10px] font-black">✓</span>
+                        <span><strong class="text-slate-900">Submitted</strong> — documents received.</span>
+                    </li>
+                    <li class="flex gap-2.5">
+                        <span
+                            class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white text-[10px] font-black">2</span>
+                        <span><strong class="text-slate-900">In review</strong> — a SaaS administrator is checking your
+                            licenses.</span>
+                    </li>
+                    <li class="flex gap-2.5">
+                        <span
+                            class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 text-[10px] font-black">3</span>
+                        <span><strong class="text-slate-900">Approved</strong> — your full dashboard unlocks
+                            automatically.</span>
+                    </li>
+                </ol>
+                <p class="text-[11px] text-slate-400 mt-4">No action needed right now. You can safely sign out — we'll
+                    email you when it's approved.</p>
             </div>
         </section>
         <div id="dashboard-panels">
@@ -270,9 +846,19 @@
                                     </tr>
                                 </thead>
                                 <tbody id="staff-table-body" class="text-xs text-slate-700 divide-y divide-slate-100">
-                                    <tr>
-                                        <td colspan="5" class="p-8 text-center text-slate-400 italic font-medium">
-                                            Loading clinical staff directory...
+                                    <tr aria-hidden="true">
+                                        <td colspan="5" class="p-3">
+                                            <div class="h-4 bg-slate-100 rounded animate-pulse"></div>
+                                        </td>
+                                    </tr>
+                                    <tr aria-hidden="true">
+                                        <td colspan="5" class="p-3">
+                                            <div class="h-4 bg-slate-100 rounded animate-pulse"></div>
+                                        </td>
+                                    </tr>
+                                    <tr aria-hidden="true">
+                                        <td colspan="5" class="p-3">
+                                            <div class="h-4 bg-slate-100 rounded animate-pulse"></div>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -390,12 +976,14 @@
                                 class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" />
                         </div>
 
-                        <!-- Contact Phone Number -->
+                        <!-- Contact Number -->
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                                Contact Phone Number
+                            <label for="staff-phone"
+                                class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                Contact Number
                             </label>
-                            <input type="text" id="staff-phone" required placeholder="+63 912 345 6789"
+                            <input type="tel" id="staff-phone" required aria-label="Contact Number"
+                                placeholder="+63 912 345 6789"
                                 class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" />
                         </div>
 
@@ -596,6 +1184,318 @@
                     </svg>
                     Export Financial & Operation Report
                 </button>
+            </div>
+
+            <!-- MY SUBSCRIPTION PANEL (clinic self-serve billing) -->
+            <div id="panel-subscription" class="dashboard-panel hidden space-y-6">
+                <div id="sub-alert-slot"></div>
+
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    <!-- Current plan card -->
+                    <div class="xl:col-span-2 bg-white border border-slate-200/80 rounded-xl shadow-xs p-6">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current plan
+                                </p>
+                                <div class="flex items-center gap-2.5 mt-1.5">
+                                    <h3 id="my-sub-plan-name" class="text-xl font-black text-slate-900">—</h3>
+                                    <span id="my-sub-status"
+                                        class="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full bg-slate-100 text-slate-500">—</span>
+                                </div>
+                                <p id="my-sub-price" class="text-xs text-slate-500 mt-1">—</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2" id="my-sub-actions"></div>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-5 text-sm">
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Next charge</p>
+                                <p id="my-sub-next-charge" class="font-bold text-slate-800 mt-0.5">—</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Renews / ends
+                                </p>
+                                <p id="my-sub-renewal" class="font-bold text-slate-800 mt-0.5">—</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Payment method
+                                </p>
+                                <p id="my-sub-method" class="font-bold text-slate-800 mt-0.5">—</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Auto-renew</p>
+                                <label class="mt-1 inline-flex items-center gap-2 cursor-pointer">
+                                    <input id="my-sub-autorenew" type="checkbox"
+                                        class="w-4 h-4 rounded accent-indigo-600 cursor-pointer" />
+                                    <span id="my-sub-autorenew-label" class="text-xs font-bold text-slate-700">On</span>
+                                </label>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-4">🧪 Test mode — no real money moves.</p>
+                    </div>
+
+                    <!-- Manage card -->
+                    <div class="bg-white border border-slate-200/80 rounded-xl shadow-xs p-6 space-y-4 h-fit">
+                        <div>
+                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Payment method</h3>
+                            <p class="text-[11px] text-slate-400 font-medium mt-0.5">Card · GCash · PayMaya · bank (test
+                                mode).</p>
+                        </div>
+                        <div>
+                            <p id="my-sub-current-method" class="text-sm font-bold text-slate-800">—</p>
+                            <p id="my-sub-card-expiry" class="text-xs text-slate-500 mt-1">Expiry —</p>
+                            <div id="my-sub-card-warning" class="hidden mt-2 text-xs font-semibold text-amber-700">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="my-sub-card-select" class="sr-only">Test payment method</label>
+                            <div class="flex items-center gap-2">
+                                <select id="my-sub-card-select"
+                                    class="flex-1 min-w-0 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"></select>
+                                <button id="my-sub-card-apply" type="button"
+                                    class="shrink-0 bg-slate-900 hover:bg-slate-700 text-white text-xs font-bold px-3 py-2 rounded-lg cursor-pointer">Update</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200/80 rounded-xl shadow-xs p-6">
+                    <div id="my-sub-features" class="space-y-2 text-xs text-slate-600"></div>
+                </div>
+
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <div class="bg-white border border-slate-200/80 rounded-xl shadow-xs p-6">
+                        <h3 class="font-black text-xs uppercase tracking-wider text-slate-800 mb-3">Invoices</h3>
+                        <div id="my-sub-invoices" class="space-y-2">
+                            <div class="h-10 bg-slate-100 rounded-lg animate-pulse"></div>
+                        </div>
+                    </div>
+                    <div class="bg-white border border-slate-200/80 rounded-xl shadow-xs p-6">
+                        <h3 class="font-black text-xs uppercase tracking-wider text-slate-800 mb-3">Billing notices</h3>
+                        <div id="my-sub-notifs" class="space-y-2 max-h-96 overflow-y-auto">
+                            <div class="h-10 bg-slate-100 rounded-lg animate-pulse"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LANDING PAGE BUILDER PANEL -->
+            <div id="panel-landing" class="dashboard-panel hidden space-y-6">
+                <div
+                    class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">Landing Page Builder</h2>
+                        <p class="text-xs text-slate-500 mt-1">Customize your public clinic page.</p>
+                        <p id="landing-status" class="text-[11px] font-semibold text-slate-400 mt-1" role="status"
+                            aria-live="polite"></p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button id="landing-preview-btn" type="button"
+                            class="inline-flex items-center gap-1.5 bg-white border border-slate-200 hover:border-indigo-300 text-slate-700 text-xs font-bold px-3.5 py-2.5 rounded-lg transition-all cursor-pointer">Preview</button>
+                        <button id="landing-publish-btn" type="button"
+                            class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-all cursor-pointer">Publish</button>
+                    </div>
+                </div>
+
+                <!-- Embedded live preview -->
+                <div id="landing-preview-wrap"
+                    class="hidden bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Live preview</h3>
+                        <button id="landing-preview-close" type="button"
+                            class="text-xs font-bold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg cursor-pointer">Close</button>
+                    </div>
+                    <div class="rounded-lg overflow-hidden border border-slate-200">
+                        <iframe id="landing-preview-frame" title="Live preview of your public clinic page"
+                            class="w-full h-[70vh] bg-white" sandbox="allow-scripts allow-same-origin"
+                            loading="lazy"></iframe>
+                    </div>
+                </div>
+
+                <!-- Choose a Template (whole-page layout) -->
+                <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm space-y-4">
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Choose a Template</h3>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Pick the overall layout for your public page. Each
+                            template is a completely different page design. Your colors, text, and content carry over
+                            when you switch.</p>
+                    </div>
+                    <div id="landing-template-cards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+                </div>
+
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <!-- Choose a Preset -->
+                    <div class="xl:col-span-2 bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm space-y-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Choose a Preset</h3>
+                        <p class="text-[11px] text-slate-400">Pick a pre-designed theme to quickly set up your landing
+                            page, or choose <strong>Custom</strong> to start from scratch and configure every detail.
+                        </p>
+                        <div id="landing-preset-cards" class="flex flex-wrap gap-3"></div>
+                    </div>
+                    <!-- Branding -->
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm space-y-5">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Branding</h3>
+                        <div class="flex items-center gap-4">
+                            <img id="landing-logo-preview" alt="Current clinic logo"
+                                class="hidden w-14 h-14 rounded-xl object-cover border border-slate-200" />
+                            <div class="min-w-0">
+                                <label for="landing-logo-input"
+                                    class="block text-xs font-semibold text-slate-700 mb-1">Clinic logo</label>
+                                <input id="landing-logo-input" type="file" accept="image/png,image/jpeg,image/webp"
+                                    class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" />
+                                <p class="text-[11px] text-slate-400 mt-1">PNG, JPG, or WEBP. Max 5MB.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="landing-color-hex"
+                                class="block text-xs font-semibold text-slate-700 mb-1">Primary color</label>
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <input id="landing-color-input" type="color" value="#0f766e"
+                                    aria-label="Primary color picker"
+                                    class="h-9 w-12 rounded cursor-pointer border border-slate-200 bg-white" />
+                                <input id="landing-color-hex" type="text" inputmode="text" placeholder="#0f766e"
+                                    maxlength="7"
+                                    class="w-28 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:bg-white focus:outline-none focus:border-indigo-500" />
+                                <div id="landing-color-presets" class="flex items-center gap-1.5"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="landing-secondary-hex"
+                                class="block text-xs font-semibold text-slate-700 mb-1">Secondary color</label>
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <input id="landing-secondary-input" type="color" value="#0d9488"
+                                    aria-label="Secondary color picker"
+                                    class="h-9 w-12 rounded cursor-pointer border border-slate-200 bg-white" />
+                                <input id="landing-secondary-hex" type="text" inputmode="text" placeholder="#0d9488"
+                                    maxlength="7"
+                                    class="w-28 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:bg-white focus:outline-none focus:border-indigo-500" />
+                                <div id="landing-secondary-presets" class="flex items-center gap-1.5"></div>
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-1">Tint used for section eyebrows and accents.
+                                Optional.</p>
+                        </div>
+                        <div>
+                            <label for="landing-typography"
+                                class="block text-xs font-semibold text-slate-700 mb-1">Typography</label>
+                            <select id="landing-typography"
+                                class="w-full max-w-xs bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-3 py-2 focus:bg-white focus:outline-none focus:border-indigo-500">
+                                <option value="default">Default (system)</option>
+                                <option value="clean">Clean (Inter)</option>
+                                <option value="elegant">Elegant (serif)</option>
+                                <option value="rounded">Rounded (friendly)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="landing-header-hex"
+                                class="block text-xs font-semibold text-slate-700 mb-1">Header background</label>
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <input id="landing-header-input" type="color" value="#ffffff"
+                                    aria-label="Header background picker"
+                                    class="h-9 w-12 rounded cursor-pointer border border-slate-200 bg-white" />
+                                <input id="landing-header-hex" type="text" inputmode="text" placeholder="#ffffff"
+                                    maxlength="7"
+                                    class="w-28 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:bg-white focus:outline-none focus:border-indigo-500" />
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-1">Leave blank to keep the default frosted white
+                                header.</p>
+                        </div>
+                        <div>
+                            <label for="landing-footer-hex"
+                                class="block text-xs font-semibold text-slate-700 mb-1">Footer background</label>
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <input id="landing-footer-input" type="color" value="#0f172a"
+                                    aria-label="Footer background picker"
+                                    class="h-9 w-12 rounded cursor-pointer border border-slate-200 bg-white" />
+                                <input id="landing-footer-hex" type="text" inputmode="text" placeholder="#0f172a"
+                                    maxlength="7"
+                                    class="w-28 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:bg-white focus:outline-none focus:border-indigo-500" />
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-1">Leave blank to keep the default dark navy footer.
+                            </p>
+                        </div>
+                        <div>
+                            <label for="landing-tagline-input"
+                                class="block text-xs font-semibold text-slate-700 mb-1">Tagline</label>
+                            <input id="landing-tagline-input" maxlength="160"
+                                placeholder="Gentle, modern dentistry for the whole family."
+                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:bg-white focus:outline-none focus:border-indigo-500" />
+                        </div>
+                    </div>
+                    <!-- Section visibility -->
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm space-y-3">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Sections</h3>
+                        <p class="text-[11px] text-slate-400">Toggle which sections appear on your public page.</p>
+                        <div id="landing-sections" class="space-y-2"></div>
+                    </div>
+                </div>
+
+                <!-- Profile & page text (merged landing/profile editing) -->
+                <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm space-y-5">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Profile & page text</h3>
+                    <div>
+                        <label for="landing-description" class="block text-xs font-semibold text-slate-700 mb-1">Clinic
+                            description</label>
+                        <textarea id="landing-description" maxlength="600" rows="5"
+                            class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                            placeholder="Tell patients what makes your clinic special."></textarea>
+                        <div class="flex justify-between gap-4 mt-1.5">
+                            <p class="text-[11px] text-slate-400">Plain text only. Maximum 600 characters.</p>
+                            <p id="landing-description-count" class="text-[11px] text-slate-400">0 / 600</p>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="landing-hero-eyebrow" class="block text-xs font-semibold text-slate-700 mb-1">Hero
+                            welcome line</label>
+                        <input id="landing-hero-eyebrow" maxlength="120" placeholder="Welcome to"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:bg-white focus:outline-none focus:border-indigo-500" />
+                        <p class="text-[11px] text-slate-400 mt-1">Shown above your clinic name on the public page.</p>
+                    </div>
+                </div>
+
+                <!-- Static section texts (headlines + intros) -->
+                <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm space-y-4">
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Page section text</h3>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Edit the eyebrow, heading, and intro shown above
+                            each
+                            built-in section. Leave a field blank to keep the original text.</p>
+                    </div>
+                    <div id="landing-section-texts" class="space-y-4"></div>
+                </div>
+
+                <!-- Social links -->
+                <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Social links</h3>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Show your clinic's profiles in the page footer.
+                                Up to 5 links.</p>
+                        </div>
+                        <button id="landing-add-social" type="button"
+                            class="self-start bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-3 py-2 rounded-lg cursor-pointer">+
+                            Add link</button>
+                    </div>
+                    <div id="landing-social-links" class="space-y-2"></div>
+                </div>
+
+                <!-- Content blocks -->
+                <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Content blocks</h3>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Add custom text or image sections. Reorder with
+                                the arrows. Up to 12 blocks.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="landing-add-text" type="button"
+                                class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-3 py-2 rounded-lg cursor-pointer">+
+                                Text block</button>
+                            <button id="landing-add-image" type="button"
+                                class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-3 py-2 rounded-lg cursor-pointer">+
+                                Image block</button>
+                        </div>
+                    </div>
+                    <div id="landing-blocks" class="space-y-3"></div>
+                </div>
             </div>
 
             <!-- OPERATING HOURS PANEL -->
@@ -870,6 +1770,49 @@
                     </div>
                 </form>
             </div>
+
+            <!-- ⭐ TESTIMONIALS MODERATION PANEL -->
+            <div id="panel-testimonials" class="dashboard-panel hidden space-y-6">
+                <div
+                    class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+                            </svg>
+                            Testimonials
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-1">Patient feedback publishes automatically the moment it
+                            is submitted.</p>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <button id="refresh-testimonials" type="button"
+                            class="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-sm transition-all cursor-pointer">
+                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <div id="testimonials-moderation-list" class="space-y-4" aria-busy="true">
+                    <div class="bg-white border border-slate-200/80 rounded-xl p-5 space-y-3" aria-hidden="true">
+                        <div class="h-4 w-1/3 bg-slate-100 rounded animate-pulse"></div>
+                        <div class="h-16 bg-slate-100 rounded animate-pulse"></div>
+                    </div>
+                    <div class="bg-white border border-slate-200/80 rounded-xl p-5 space-y-3" aria-hidden="true">
+                        <div class="h-4 w-1/3 bg-slate-100 rounded animate-pulse"></div>
+                        <div class="h-16 bg-slate-100 rounded animate-pulse"></div>
+                    </div>
+                    <span class="sr-only">Loading testimonials…</span>
+                </div>
+            </div>
         </div>
     </main>
     <!-- 🔑 STAFF PIN RESET SUCCESS MODAL -->
@@ -913,6 +1856,38 @@
         </div>
     </div>
 
+    <div id="change-plan-modal" role="dialog" aria-modal="true" aria-labelledby="change-plan-title"
+        class="hidden fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-4">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <h2 id="change-plan-title" class="text-base font-black text-slate-900">Change billing cycle</h2>
+                    <p class="text-xs text-slate-500 mt-1">One fixed plan — switch between monthly and yearly.
+                        Switching restarts your billing period today and charges the new amount immediately.</p>
+                </div>
+                <button id="change-plan-close" type="button" aria-label="Close change plan dialog"
+                    class="text-slate-400 hover:text-slate-700 p-2 rounded-lg hover:bg-slate-100 cursor-pointer">✕</button>
+            </div>
+            <div>
+                <label for="change-plan-select" class="block text-xs font-bold text-slate-700 mb-1.5">Billing
+                    cycle</label>
+                <select id="change-plan-select"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500">
+                </select>
+                <p id="change-plan-empty" class="hidden mt-2 text-xs text-slate-500">Pricing is unavailable right now.
+                </p>
+            </div>
+            <p id="change-plan-error" class="hidden text-xs font-semibold text-rose-700" role="alert"></p>
+            <div class="flex justify-end gap-2">
+                <button id="change-plan-cancel" type="button"
+                    class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-lg cursor-pointer">Cancel</button>
+                <button id="change-plan-confirm" type="button"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg cursor-pointer">Switch
+                    cycle</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const roleSelect = document.getElementById("staff-role");
@@ -931,11 +1906,56 @@
         });
 
     </script>
+    <script src="/src/util/toast.js"></script>
+    <script src="/src/util/dashboardUI.js"></script>
     <script src="/src/util/nav.js"></script>
     <script src="/src/pages/adminClinicDashboard.js"></script>
+    <script src="/src/components/paymongoCheckout.js"></script>
+    <script src="/src/pages/clinicSubscription.js"></script>
     <script src="/src/pages/dentalPricing.js"></script>
     <script src="/src/util/operatingHours.js"></script>
     <script src="/src/util/dentistInfo.js"></script>
+    <style>
+        .application-locked #dashboard-panels {
+            opacity: .55;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .application-locked .nav-item,
+        .application-locked #viewLiveSiteBtn,
+        .application-locked #nav-staff-login {
+            opacity: .45;
+            pointer-events: none;
+            user-select: none;
+        }
+    </style>
+
+    <!-- Image crop dialog (Cropper.js) for logo + block images -->
+    <div id="landing-crop-modal" role="dialog" aria-modal="true" aria-labelledby="landing-crop-title"
+        class="hidden fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div
+            class="w-full max-w-2xl bg-white border border-slate-200 rounded-2xl shadow-2xl p-5 sm:p-6 space-y-4 relative max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between">
+                <h2 id="landing-crop-title" class="text-base font-bold text-slate-900">Crop image</h2>
+                <button id="landing-crop-cancel" type="button" aria-label="Cancel cropping"
+                    class="text-slate-400 hover:text-slate-700 p-2 rounded-lg hover:bg-slate-100 cursor-pointer">✕</button>
+            </div>
+            <div id="landing-crop-stage"
+                class="flex-1 min-h-0 overflow-hidden rounded-xl bg-slate-900 grid place-items-center">
+                <img id="landing-crop-image" alt="Image to crop" class="max-w-full max-h-full" />
+            </div>
+            <p class="text-[11px] text-slate-500 text-center">Drag to reposition · drag the corners to resize the crop
+                area.</p>
+            <div class="flex items-center justify-end gap-2">
+                <button id="landing-crop-cancel-btn" type="button"
+                    class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-lg cursor-pointer">Cancel</button>
+                <button id="landing-crop-apply" type="button"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg cursor-pointer">Apply
+                    & upload</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 

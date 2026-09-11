@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novaclinic Landing Page — Low-Fidelity Wireframes</title>
+    <style>
+        :root {
+            --ink: #1f2937;
+            --line: #9ca3af;
+            --soft: #e5e7eb;
+            --paper: #ffffff;
+            --bg: #f3f4f6;
+            --accent: #0f766e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+        }
+
+        body {
+            font-family: "Segoe UI", system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            padding: 2rem 1rem 4rem;
+            line-height: 1.5;
+        }
+
+        header.docs {
+            max-width: 1200px;
+            margin: 0 auto 2.5rem;
+        }
+
+        header.docs h1 {
+            font-size: 1.6rem;
+        }
+
+        header.docs p {
+            color: #4b5563;
+            font-size: 0.95rem;
+            margin-top: 0.4rem;
+            max-width: 60ch;
+        }
+
+        .breakpoint-label {
+            max-width: 1200px;
+            margin: 3rem auto 1rem;
+            font-weight: 700;
+            font-size: 1.05rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .breakpoint-label::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--line);
+            opacity: 0.4;
+        }
+
+        .frame {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: grid;
+            gap: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .frame.tablet {
+            max-width: 720px;
+        }
+
+        .frame.mobile {
+            max-width: 360px;
+        }
+
+        .block {
+            border: 1.5px dashed var(--line);
+            border-radius: 8px;
+            padding: 0.9rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background: #fafafa;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #6b7280;
+            letter-spacing: 0.02em;
+        }
+
+        .block.solid {
+            border-style: solid;
+            border-color: #d1d5db;
+        }
+
+        .block.accent {
+            border-color: var(--accent);
+            background: #ecfdf5;
+            color: var(--accent);
+        }
+
+        .row {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .row.nowrap {
+            flex-wrap: nowrap;
+        }
+
+        .grow {
+            flex: 1;
+        }
+
+        .w-40 {
+            width: 40%;
+        }
+
+        .w-30 {
+            width: 30%;
+        }
+
+        .w-20 {
+            width: 20%;
+        }
+
+        .w-60 {
+            width: 60%;
+        }
+
+        .w-50 {
+            width: 50%;
+        }
+
+        .btn {
+            border: 1.5px dashed var(--line);
+            border-radius: 6px;
+            padding: 0.5rem 0.9rem;
+            background: #fff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #6b7280;
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        .btn.fill {
+            border-style: solid;
+            border-color: var(--accent);
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn.outline {
+            border-style: solid;
+        }
+
+        .grid-cols {
+            display: grid;
+            gap: 0.75rem;
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .grid-cols.cols-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .grid-cols.cols-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .bar {
+            height: 6px;
+            border-radius: 3px;
+            background: var(--soft);
+        }
+
+        .bar.short {
+            width: 70%;
+        }
+
+        .bar.tiny {
+            width: 45%;
+            height: 5px;
+        }
+
+        .note {
+            font-size: 0.68rem;
+            color: #9ca3af;
+            font-weight: 500;
+        }
+
+        .hide-mobile {
+            display: contents;
+        }
+
+        @media (max-width: 760px) {
+            .frame.tablet,
+            .frame.mobile {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="docs">
+        <h1>Novaclinic Landing Page — Low-Fidelity Wireframes</h1>
+        <p>Block-level structure of the redesigned landing page at three breakpoints. Dashed boxes are sections;
+            solid accent boxes are primary CTAs. Annotations call out key conversion elements.</p>
+    </header>
+
+    <!-- ============================= DESKTOP ============================= -->
+    <h2 class="breakpoint-label">Desktop · 1440px · 12-column grid</h2>
+    <div class="frame">
+        <div class="block solid">
+            <div class="row nowrap">
+                <span class="w-20">Brand + logo</span>
+                <span class="grow row nowrap" style="justify-content: center;">Nav · Product | Benefits | How it works | Pricing | FAQ</span>
+                <span class="btn outline">Sign in</span>
+                <span class="btn fill">Get started</span>
+            </div>
+        </div>
+
+        <div class="block accent">HERO — 2-column: value prop + product mockup</div>
+        <div class="row nowrap">
+            <div class="grow block">
+                <span class="bar short"></span>
+                <span class="bar w-60"></span>
+                <span class="bar"></span>
+                <div class="row">
+                    <span class="btn fill">Get your clinic onboarded</span>
+                    <span class="btn outline">See how it works</span>
+                </div>
+                <div class="row nowrap note">
+                    <span class="w-20">★ Stat</span><span class="w-20">₱ Stat</span>
+                </div>
+            </div>
+            <div class="w-50 block solid">
+                <div class="row nowrap note"><span>Mockup · Live board</span></div>
+                <div class="grid-cols cols-3" style="grid-template-columns: repeat(3,1fr);">
+                    <div class="block"><span class="bar"></span><span class="bar tiny"></span></div>
+                    <div class="block"><span class="bar"></span></div>
+                    <div class="block"><span class="bar"></span><span class="bar tiny"></span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="block solid">SOCIAL PROOF — Trusted clinic network (live cards ×6) + count</div>
+
+        <div class="block solid">FEATURES — 6 cards in 3 columns (icon + title + copy)</div>
+
+        <div class="block solid">BENEFITS — split: checklist copy | notification stack visual</div>
+
+        <div class="block solid">HOW IT WORKS — 3 numbered steps</div>
+
+        <div class="block solid">PRICING — single plan card + 4 security badges</div>
+
+        <div class="block solid">TESTIMONIALS — 3 quote cards</div>
+
+        <div class="block solid">FAQ — 6 accordion items</div>
+
+        <div class="block accent">FINAL CTA — centered headline + 2 buttons</div>
+
+        <div class="block solid">
+            <div class="grid-cols cols-4">
+                <span>Brand</span><span>Product links</span><span>Resources</span><span>Company</span>
+            </div>
+            <span class="note">Bottom bar · © 2026</span>
+        </div>
+    </div>
+
+    <!-- ============================= TABLET ============================= -->
+    <h2 class="breakpoint-label">Tablet · 768px · 8-column grid</h2>
+    <div class="frame tablet">
+        <div class="block solid">
+            <div class="row nowrap">
+                <span class="grow">Brand</span>
+                <span class="btn fill">Get started</span>
+                <span class="btn outline">Menu ☰</span>
+            </div>
+            <span class="note">Nav links collapse → hamburger menu</span>
+        </div>
+
+        <div class="block accent">HERO — stacked: copy on top, mockup below</div>
+        <div class="block solid">
+            <span class="bar short"></span><span class="bar w-60"></span><span class="bar"></span>
+            <div class="row"><span class="btn fill">Get your clinic onboarded</span><span class="btn outline">See how it works</span></div>
+        </div>
+        <div class="block solid">
+            <div class="grid-cols cols-3">
+                <div class="block"><span class="bar"></span><span class="bar tiny"></span></div>
+                <div class="block"><span class="bar"></span></div>
+                <div class="block"><span class="bar"></span><span class="bar tiny"></span></div>
+            </div>
+        </div>
+
+        <div class="block solid">SOCIAL PROOF — 2-col grid of clinic cards</div>
+        <div class="block solid">FEATURES — 2-col grid (6 cards)</div>
+        <div class="block solid">BENEFITS — stacked: checklist, then visual</div>
+        <div class="block solid">HOW IT WORKS — 3 steps in 1 col / wrap</div>
+        <div class="block solid">PRICING — card full-width</div>
+        <div class="block solid">TESTIMONIALS — 1–2 col grid</div>
+        <div class="block solid">FAQ — single column</div>
+        <div class="block accent">FINAL CTA — stacked buttons</div>
+        <div class="block solid">FOOTER — 2×2 link grid</div>
+    </div>
+
+    <!-- ============================= MOBILE ============================= -->
+    <h2 class="breakpoint-label">Mobile · 390px · 4-column grid</h2>
+    <div class="frame mobile">
+        <div class="block solid">
+            <div class="row nowrap">
+                <span class="grow">Brand</span>
+                <span class="btn outline">Menu ☰</span>
+            </div>
+            <span class="note">Primary CTA lives in the mobile menu; header stays minimal</span>
+        </div>
+
+        <div class="block accent">HERO — single column</div>
+        <div class="block solid">
+            <span class="bar short"></span>
+            <span class="bar"></span>
+            <span class="bar tiny"></span>
+            <span class="btn fill" style="width: 100%;">Get your clinic onboarded</span>
+            <span class="btn outline" style="width: 100%;">See how it works</span>
+        </div>
+        <div class="block solid">
+            <div class="grid-cols cols-3">
+                <div class="block"><span class="bar"></span><span class="bar tiny"></span></div>
+                <div class="block"><span class="bar"></span></div>
+                <div class="block"><span class="bar"></span><span class="bar tiny"></span></div>
+            </div>
+        </div>
+
+        <div class="block solid">SOCIAL PROOF — 1-col clinic cards (6)</div>
+        <div class="block solid">FEATURES — 1-col stacked cards</div>
+        <div class="block solid">BENEFITS — checklist, then visual</div>
+        <div class="block solid">HOW IT WORKS — steps stacked</div>
+        <div class="block solid">PRICING — full width; security badges 2×2</div>
+        <div class="block solid">TESTIMONIALS — 1 col</div>
+        <div class="block solid">FAQ — accordions full width</div>
+        <div class="block accent">FINAL CTA — full-width stacked buttons</div>
+        <div class="block solid">FOOTER — brand, then stacked link lists</div>
+    </div>
+
+    <!-- ============================= ANNOTATIONS ============================= -->
+    <h2 class="breakpoint-label">Conversion &amp; UX annotations</h2>
+    <div class="frame">
+        <div class="grid-cols" style="grid-template-columns: repeat(auto-fit,minmax(280px,1fr));">
+            <div class="block">
+                <strong style="color: var(--ink);">1. Value prop above the fold</strong>
+                <span class="note">H1 + subhead + product mockup + live clinic count — no carousel, no hero image
+                    downloads.</span>
+            </div>
+            <div class="block">
+                <strong style="color: var(--ink);">2. One primary CTA per viewport</strong>
+                <span class="note">"Get your clinic onboarded" leads to the registration flow; secondary actions are
+                    clearly de-emphasized.</span>
+            </div>
+            <div class="block">
+                <strong style="color: var(--ink);">3. Authentic social proof</strong>
+                <span class="note">Real, API-driven clinic directory + live count — replaces fabricated star ratings
+                    and fake quotes from the previous design.</span>
+            </div>
+            <div class="block">
+                <strong style="color: var(--ink);">4. Objection handling</strong>
+                <span class="note">Pricing is one flat card; FAQ sits directly after testimonials to catch late-stage
+                    objections; security badges anchor the pricing section.</span>
+            </div>
+            <div class="block">
+                <strong style="color: var(--ink);">5. Persistent navigation</strong>
+                <span class="note">Sticky header with sign-in + CTA at every scroll position; hamburger exposes the
+                    same links on mobile.</span>
+            </div>
+            <div class="block">
+                <strong style="color: var(--ink);">6. Accessibility by default</strong>
+                <span class="note">Skip link, landmarks, 44px targets, AA contrast, native &lt;details&gt; FAQ, and
+                    reduced-motion fallbacks throughout.</span>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

@@ -30,6 +30,10 @@ async function fetchAvailableTimes(selectedDate, timeSelect, dentistSelect) {
   if (!dentistId || dentistId === "") {
     timeSelect.innerHTML = `<option value="" disabled selected>Please select a dentist first...</option>`;
     timeSelect.disabled = true;
+    const fullyBookedNotice = document.getElementById("fully-booked-notice");
+    const afterHoursNotice = document.getElementById("after-hours-notice");
+    if (fullyBookedNotice) fullyBookedNotice.classList.add("hidden");
+    if (afterHoursNotice) afterHoursNotice.classList.add("hidden");
     window.isFetchingSlots = false;
     return;
   }
@@ -65,6 +69,14 @@ async function fetchAvailableTimes(selectedDate, timeSelect, dentistSelect) {
       data.slots || (data.data && data.data.slots) || data.availableSlots || [];
     const bookedArray =
       data.bookedSlots || (data.data && data.data.bookedSlots) || [];
+    const availableSlots = data.availableSlots || [];
+    const fullyBooked =
+      data.fullyBooked === true ||
+      (data.data && data.data.fullyBooked === true) ||
+      (Array.isArray(slotsArray) &&
+        slotsArray.length > 0 &&
+        Array.isArray(availableSlots) &&
+        availableSlots.length === 0);
 
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -72,7 +84,31 @@ async function fetchAvailableTimes(selectedDate, timeSelect, dentistSelect) {
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
 
+    const fullyBookedNotice = document.getElementById("fully-booked-notice");
+    const afterHoursNotice = document.getElementById("after-hours-notice");
+    if (fullyBookedNotice) fullyBookedNotice.classList.add("hidden");
+    if (afterHoursNotice) afterHoursNotice.classList.add("hidden");
+
     timeSelect.innerHTML = `<option value="" disabled selected>-- Select a Time --</option>`;
+
+    // 🚫 FULLY BOOKED: Show every generated slot as unavailable so the patient
+    // can immediately see there are no free slots for this doctor on this date.
+    if (fullyBooked && Array.isArray(slotsArray) && slotsArray.length > 0) {
+      slotsArray.forEach((slotItem) => {
+        let timeString =
+          typeof slotItem === "object" ? slotItem.time : slotItem;
+        const formatted12h = formatTo12Hour(timeString);
+
+        const option = document.createElement("option");
+        option.value = timeString;
+        option.textContent = `${formatted12h} (Booked)`;
+        option.disabled = true;
+        timeSelect.appendChild(option);
+      });
+      timeSelect.disabled = true;
+      if (fullyBookedNotice) fullyBookedNotice.classList.remove("hidden");
+      return;
+    }
 
     if (Array.isArray(slotsArray) && slotsArray.length > 0) {
       slotsArray.forEach((slotItem) => {
@@ -118,6 +154,9 @@ async function fetchAvailableTimes(selectedDate, timeSelect, dentistSelect) {
         timeSelect.appendChild(option);
       });
       timeSelect.disabled = false;
+    } else if (fullyBookedNotice) {
+      // No generated slots at all — likely a clinic closed day or empty schedule
+      if (afterHoursNotice) afterHoursNotice.classList.remove("hidden");
     }
   } catch (err) {
     console.error("Slot fetch error:", err);

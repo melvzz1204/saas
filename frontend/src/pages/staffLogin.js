@@ -16,27 +16,43 @@ document.addEventListener("DOMContentLoaded", () => {
     errorBox.classList.add("hidden");
     errorBox.textContent = "";
 
-    const email = document.getElementById("staff-email").value.trim();
-    const pin = document.getElementById("staff-pin").value.trim();
+    const emailInput = document.getElementById("staff-email");
+    const pinInput = document.getElementById("staff-pin");
+    const email = emailInput.value.trim();
+    const pin = pinInput.value.trim();
+    const submitBtn = loginForm.querySelector("button[type='submit']");
 
-    // Structural validation sanity checks before transmission
-    if (!email || !pin) {
-      showError("Authentication values cannot be empty entries.");
+    if (!email) {
+      AppFeedback.showFieldError(emailInput, "Enter your workspace email.");
+      emailInput.focus();
       return;
     }
+    if (!emailInput.checkValidity()) {
+      AppFeedback.showFieldError(emailInput, "Enter a valid email address.");
+      emailInput.focus();
+      return;
+    }
+    if (!pin) {
+      AppFeedback.showFieldError(pinInput, "Enter your access PIN.");
+      pinInput.focus();
+      return;
+    }
+    AppFeedback.clearFieldError(emailInput);
+    AppFeedback.clearFieldError(pinInput);
+    submitBtn.disabled = true;
+    submitBtn.setAttribute("aria-busy", "true");
+    submitBtn.textContent = "Signing in…";
 
     try {
       // 🚀 LINKED: Points directly to your active Port 5000 login node layout
-      const response = await fetch("http://localhost:5000/api/v1/staff/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const { response, data } = await AppFeedback.request(
+        "http://localhost:5000/api/v1/staff/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, accessPin: pin }),
         },
-        // Passing accessPin key name to match your backend expectations
-        body: JSON.stringify({ email, accessPin: pin }),
-      });
-
-      const data = await response.json();
+      );
 
       if (!response.ok) {
         throw new Error(
@@ -111,11 +127,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // =============================================================
     } catch (err) {
-      console.error("Staff login intercept error:", err);
+      console.error("Staff login request failed", err);
       showError(
-        err.message ||
-          "Network system timed out. Please contact system administrator.",
+        AppFeedback.safeMessage(
+          err,
+          err.status ? { status: err.status } : null,
+        ),
       );
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.removeAttribute("aria-busy");
+      submitBtn.textContent = "Enter Duty Station";
     }
   });
 

@@ -1,5 +1,16 @@
 import User from "../models/userModel.js";
+import Clinic from "../models/clinicModel.js";
 import jwt from "jsonwebtoken";
+
+// Single shared dev fallback so tokens issued by one guard verify in another.
+// Production MUST set JWT_SECRET (see warn below).
+const FALLBACK_JWT_SECRET = "fallback_saas_secret_key";
+if (!process.env.JWT_SECRET) {
+  console.warn(
+    "⚠️ [AUTH] JWT_SECRET is not set — using insecure dev fallback. Set JWT_SECRET in production.",
+  );
+}
+const jwtSecret = () => process.env.JWT_SECRET || FALLBACK_JWT_SECRET;
 
 // 1. Generic Token Authentication Guard (Resilient Hybrid Fallback)
 export const protectRoute = async (req, res, next) => {
@@ -21,10 +32,7 @@ export const protectRoute = async (req, res, next) => {
     }
 
     // Verify JWT Signature
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || "fallback_saas_secret_key",
-    );
+    const decoded = jwt.verify(token, jwtSecret());
 
     // Extract ID from any common key name
     const targetId = decoded.id || decoded._id || decoded.userId;
@@ -77,6 +85,33 @@ export const protectAdminRoute = (req, res, next) => {
         message: "Forbidden: Restricted to administrative personnel.",
       });
     }
+    if (userRole === "CLINIC_ADMIN") {
+      Clinic.findById(req.user.clinicId)
+        .select("applicationStatus")
+        .lean()
+        .then((clinic) => {
+          if (["Rejected", "Pending"].includes(clinic?.applicationStatus)) {
+            return res.status(423).json({
+              success: false,
+              code: "CLINIC_APPLICATION_LOCKED",
+              applicationStatus: clinic.applicationStatus,
+              message:
+                clinic.applicationStatus === "Rejected"
+                  ? "Your clinic application was rejected. Resubmit both verification documents to continue."
+                  : "Your clinic application is pending review.",
+            });
+          }
+          next();
+        })
+        .catch((error) => {
+          console.error("Clinic application status check failed:", error);
+          return res.status(503).json({
+            success: false,
+            message: "Unable to verify clinic application status.",
+          });
+        });
+      return;
+    }
     next();
   });
 };
@@ -124,10 +159,7 @@ export const protectSaasAdminRoute = async (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || "fallback-secret-key",
-    );
+    const decoded = jwt.verify(token, jwtSecret());
 
     const user = await User.findById(decoded.id || decoded._id).select(
       "-password",
@@ -171,12 +203,18 @@ export const authorize = (...allowedRoles) => {
       req.user?.type ||
       req.user?.roleName;
 
-    // If no role exists in JWT, but user is authenticated via protectRoute, permit access
-    if (!rawRole && req.user) {
+    // Deny by default: a missing role must never satisfy a role gate.
+    if (!rawRole) {
       console.warn(
-        "⚠️ [AUTH WARNING] No role found in req.user, permitting authenticated request.",
+        "🔒 [ACCESS DENIED] No role found in req.user | Required: [" +
+          targetRoles.join(", ") +
+          "]",
       );
-      return next();
+      return res.status(403).json({
+        success: false,
+        message:
+          "Access denied: You do not have permission to perform this action.",
+      });
     }
 
     const userRole = String(rawRole).toUpperCase().trim();

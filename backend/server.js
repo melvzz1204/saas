@@ -1,6 +1,7 @@
 import app from "./src/app.js";
 import connectDB from "./src/config/db.js";
 import { seedDefaultServices } from "./src/services/defaultService.js";
+import { seedPlans } from "./src/scripts/seedBilling.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
@@ -41,6 +42,13 @@ io.on("connection", (socket) => {
     );
   });
 
+  // 🎯 Clinic admins join their clinic room to receive testimonial updates
+  socket.on("join_clinic_room", (clinicId) => {
+    if (!clinicId) return;
+    socket.join(`clinic-${clinicId}`);
+    console.log(`🏥 Client joined clinic live room: clinic-${clinicId}`);
+  });
+
   socket.on("disconnect", () => {
     console.log("❌ Client disconnected from server socket instance.");
   });
@@ -56,6 +64,10 @@ const startServer = async () => {
 
     // 2. Automatically seed default clinic treatments if missing
     await seedDefaultServices();
+
+    // 2b. Ensure simulated subscription plans exist.
+    await seedPlans();
+    console.log("💳 Subscription plans ready (simulated payment environment).");
 
     // 3. Listen using httpServer (HTTP + WebSockets)
     server = httpServer.listen(PORT, () => {

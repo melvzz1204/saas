@@ -11,6 +11,10 @@ let activePatientIntake = null;
 let latestQueue = []; // Last-known dentist queue snapshot (for the queue modal)
 const API_BASE_URL = "http://localhost:5000";
 
+// Non-blocking feedback (falls back to alert only if the shared UI is absent).
+const notify = (message, type = "info") =>
+  window.DashboardUI ? window.DashboardUI.toast(message, type) : window.alert(message);
+
 function readStoredUser() {
   try {
     return JSON.parse(localStorage.getItem("user") || "{}");
@@ -468,7 +472,7 @@ async function fetchPatientIntake(patientId) {
             : "Not provided",
       ),
       item("Sex", personal.sex),
-      item("Mobile", personal.cellMobileNo || patient.phone),
+      item("Contact Number", personal.cellMobileNo || patient.phone),
       item("Reason for consultation", personal.reasonForConsultation, true),
       item("General health", yes(questionnaire.isInGoodHealth)),
       item(
@@ -521,7 +525,7 @@ function bindPatientIntakeReview() {
   intakeButton?.addEventListener("click", (event) => {
     event.preventDefault();
     if (!activePatientId) {
-      alert("Select an active patient before opening Patient Intake.");
+      notify("Select an active patient before opening Patient Intake.", "warning");
       return;
     }
     openPatientIntakeModal();
@@ -601,8 +605,9 @@ function bindProcedureSubmission() {
     e.preventDefault();
 
     if (!activeSessionId || !activePatientId) {
-      alert(
-        "Operational pipeline exception: No patient loaded into active chair station context.",
+      notify(
+        "No patient is loaded in the active chair. Seat a patient first.",
+        "error",
       );
       return;
     }
@@ -678,7 +683,7 @@ function bindProcedureSubmission() {
           statusData.message || "Failed to finalize appointment status.",
         );
 
-      alert("🎉 Procedure completed! Clinical note saved to medical history.");
+      notify("Procedure completed. Clinical note saved to medical history.", "success");
 
       // ✅ ADDED THIS HERE: Instantly clear all input fields in the form!
       if (typeof clearClinicalNoteForm === "function") {
@@ -693,7 +698,7 @@ function bindProcedureSubmission() {
 
       await fetchClinicalQueue();
     } catch (err) {
-      alert(`Pipeline update failure: ${err.message}`);
+      notify(`Update failed: ${err.message}`, "error");
     } finally {
       submitBtn.disabled = false;
       submitBtn.innerHTML = "Complete Procedure & Release Patient ✅";
@@ -927,8 +932,9 @@ function bindXrayReferral() {
 
   openButton.addEventListener("click", () => {
     if (!activePatientId) {
-      alert(
+      notify(
         "Start an active patient treatment before creating an X-ray referral.",
+        "warning",
       );
       return;
     }
@@ -1034,8 +1040,9 @@ function bindXrayReferral() {
 function downloadReferralPdf(values) {
   const JsPdf = window.jspdf?.jsPDF;
   if (!JsPdf) {
-    alert(
+    notify(
       "PDF download is unavailable. Please refresh the page and try again.",
+      "error",
     );
     return;
   }

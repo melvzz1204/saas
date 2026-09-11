@@ -8,6 +8,15 @@ if (!globalToken || globalToken === "null" || globalToken === "undefined") {
   window.location.replace("/staffLogin.html");
 }
 
+// Non-blocking feedback helpers (fall back to native dialogs if the shared UI
+// hasn't loaded). DashboardUI is provided globally by /src/util/dashboardUI.js.
+const notify = (message, type = "info") =>
+  window.DashboardUI ? window.DashboardUI.toast(message, type) : window.alert(message);
+const confirmDialog = (opts) =>
+  window.DashboardUI
+    ? window.DashboardUI.confirm(opts)
+    : Promise.resolve(window.confirm(typeof opts === "string" ? opts : opts.body));
+
 document.addEventListener("DOMContentLoaded", () => {
   // --- 1. DOM Elements ---
   const clinicTitle = document.getElementById("clinic-branch-title");
@@ -285,7 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnConfirmCheckout) {
       btnConfirmCheckout.onclick = async () => {
         if (!window.activeCheckoutAppointmentId) {
-          alert("Error: No patient selected for checkout.");
+          notify("No patient selected for checkout.", "error");
           return;
         }
 
@@ -321,7 +330,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (!response.ok)
             throw new Error(data.message || "Failed to process payment.");
 
-          alert(`✅ ${data.message || "Payment captured successfully!"}`);
+          notify(data.message || "Payment captured successfully!", "success");
 
           closeCheckoutModal();
 
@@ -330,7 +339,7 @@ document.addEventListener("DOMContentLoaded", () => {
             await fetchDailyQueue();
           }
         } catch (err) {
-          alert(`Billing Error: ${err.message}`);
+          notify(`Billing error: ${err.message}`, "error");
         } finally {
           btnConfirmCheckout.disabled = false;
           btnConfirmCheckout.innerHTML = "Confirm Payment 💵";
@@ -546,7 +555,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <span class="text-[9px] font-mono font-bold text-slate-400">${transactionTime}</span>
           </div>
           <p class="text-[11px] font-semibold text-emerald-700">Paid Amount: ${finalPaymentAmount}</p>
-          <button class="w-full mt-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 font-bold text-[10px] py-1.5 rounded-lg uppercase tracking-wider transition-all cursor-pointer shadow-2xs" onclick="alert('Printing document route... #PT-${shortId}')">
+          <button class="w-full mt-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 font-bold text-[10px] py-1.5 rounded-lg uppercase tracking-wider transition-all cursor-pointer shadow-2xs"           onclick="window.DashboardUI&&window.DashboardUI.toast('Printing receipt · #PT-${shortId}','info')">
             Print Receipt 📄
           </button>`;
         }
@@ -607,9 +616,11 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           return;
         } else if (actionType === "complete") {
-          const confirmComplete = confirm(
-            "Is the treatment finished? Send patient to billing queue?",
-          );
+          const confirmComplete = await confirmDialog({
+            title: "Complete treatment",
+            body: "Is the treatment finished? Send this patient to the billing queue?",
+            confirmLabel: "Send to billing",
+          });
           if (confirmComplete) {
             await window.executeStatusTransition(
               appointmentId,
@@ -629,12 +640,13 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         const chosenDentistId = dentistDropdown?.value;
         if (!chosenDentistId) {
-          alert("Please select a Doctor from the dropdown before confirming.");
+          notify("Please select a doctor from the dropdown before confirming.", "warning");
           return;
         }
         if (!window.activeTargetAppointmentId) {
-          alert(
-            "Error: Lost track of patient context tracking signature. Please re-open.",
+          notify(
+            "Lost track of the patient context. Please re-open the assignment dialog.",
+            "error",
           );
           return;
         }
@@ -798,7 +810,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       await fetchDailyQueue();
     } catch (err) {
-      alert(`Network Sync Error: ${err.message}`);
+      notify(`Network sync error: ${err.message}`, "error");
     }
   }
 
@@ -811,8 +823,9 @@ document.addEventListener("DOMContentLoaded", () => {
       (a) => (a._id || a.id) === appointmentId,
     );
     if (!targetApp) {
-      alert(
-        "Record instance out of sync. Force refresh dashboard configuration.",
+      notify(
+        "Record out of sync. Please refresh the dashboard and try again.",
+        "error",
       );
       return;
     }
@@ -838,7 +851,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const methodInput = document.getElementById("modal-checkout-method");
 
     if (!appIdInput || !amountInput || !methodInput) {
-      alert("Billing DOM elements missing. Cannot complete transaction.");
+      notify("Billing fields are missing. Cannot complete the transaction.", "error");
       return;
     }
 
@@ -870,12 +883,13 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error(data.message || "Settlement processing failure.");
 
       window.closeCheckoutModal();
-      alert(
-        `🎉 Invoice settled via ${methodInput.value}! Status upgraded to completed archive logs.`,
+      notify(
+        `Invoice settled via ${methodInput.value}. Marked as completed.`,
+        "success",
       );
       await fetchDailyQueue();
     } catch (err) {
-      alert(`Billing Engine Exception: ${err.message}`);
+      notify(`Billing engine error: ${err.message}`, "error");
     }
   };
 
@@ -911,7 +925,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       await fetchDailyQueue();
     } catch (err) {
-      alert(`Check-in pipeline failure: ${err.message}`);
+      notify(`Check-in failed: ${err.message}`, "error");
     }
   };
 
@@ -963,7 +977,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Refresh the board to show the new patient!
         if (typeof fetchDailyQueue === "function") await fetchDailyQueue();
       } catch (err) {
-        alert(`Error: ${err.message}`);
+        notify(`Error: ${err.message}`, "error");
       } finally {
         submitBtn.innerText = "Seat in Lobby 🛋️";
         submitBtn.disabled = false;
@@ -971,8 +985,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   // 🆕 NEW: Define the logout logic
-  function handleShiftExit() {
-    const confirmLogout = confirm("Are you sure you want to log out?");
+  async function handleShiftExit() {
+    const confirmLogout = await confirmDialog({
+      title: "Log out",
+      body: "Are you sure you want to log out of this shift?",
+      confirmLabel: "Log out",
+      danger: true,
+    });
     if (confirmLogout) {
       // Wipe the sensitive data from the browser
       localStorage.removeItem("token");
@@ -1065,7 +1084,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnConfirmCheckout) {
       btnConfirmCheckout.onclick = async () => {
         if (!window.activeCheckoutAppointmentId) {
-          alert("Error: No patient selected for checkout.");
+          notify("No patient selected for checkout.", "error");
           return;
         }
 
@@ -1104,7 +1123,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (!response.ok)
             throw new Error(data.message || "Failed to process payment.");
 
-          alert(`✅ Payment captured successfully via ${selectedMethod}!`);
+          notify(`Payment captured successfully via ${selectedMethod}.`, "success");
 
           closeCheckoutModal();
 
@@ -1115,7 +1134,7 @@ document.addEventListener("DOMContentLoaded", () => {
             await fetchDailyQueue();
           }
         } catch (err) {
-          alert(`Billing Error: ${err.message}`);
+          notify(`Billing error: ${err.message}`, "error");
         } finally {
           btnConfirmCheckout.disabled = false;
           btnConfirmCheckout.innerHTML = "Confirm Payment 💵";

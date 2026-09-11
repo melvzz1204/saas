@@ -11,6 +11,10 @@ import initAppointmentCleanupJob from "./utils/appointmentCleanup.js";
 import treatmentRoutes from "./routes/treatmentRoutes.js";
 import saasAdminRoutes from "./routes/saasAdminRoutes.js";
 import clinicalNoteRoutes from "./routes/clinicalNoteRoutes.js";
+import testimonialRoutes from "./routes/testimonialRoutes.js";
+import landingRoutes from "./routes/landingRoutes.js";
+import billingRoutes from "./routes/billingRoutes.js";
+import initBillingJobs from "./utils/billingCron.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -20,6 +24,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config();
 const app = express();
 initAppointmentCleanupJob();
+initBillingJobs();
 
 // Configure CORS before JSON parsing and routes. Explicitly handling the
 // preflight avoids browsers receiving a bare 204 without CORS headers.
@@ -93,6 +98,9 @@ app.use("/api/v1/treatments", treatmentRoutes);
 app.use("/api/v1/dental-price", dentalServicePrice);
 app.use("/api/v1/saas-admin", saasAdminRoutes);
 app.use("/api/v1/clinical-notes", clinicalNoteRoutes);
+app.use("/api/v1/clinics", testimonialRoutes);
+app.use("/api/v1/landing", landingRoutes);
+app.use("/api/v1/billing", billingRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "Server is running smoothly" });

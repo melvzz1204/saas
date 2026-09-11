@@ -16,7 +16,7 @@ const clinicalNoteSchema = new mongoose.Schema(
     },
     dentistId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Staff", // Links to the Staff model (dentists/clinical staff authenticate against Staff)
       required: true,
     },
     appointmentId: {

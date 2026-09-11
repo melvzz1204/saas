@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Registration Real-Flow Probe</title>
+</head>
+
+<body>
+    <!-- Mirror of the real modal markup (ids required by patientRegistrationForm.js) -->
+    <div id="register-modal">
+        <h1 id="modal-clinic-title">Clinic Registration</h1>
+        <div id="registration-status-banner" class="hidden"></div>
+        <form id="registration-form">
+            <input type="text" id="firstName" required value="ProbeReal" />
+            <input type="text" id="lastName" required value="Flow" />
+            <input type="email" id="email" required />
+            <input type="tel" id="phone" required value="09170000000" />
+            <input type="date" id="dateOfBirth" required value="1990-01-01" />
+            <input type="password" id="password" required value="password123" />
+            <button type="submit" id="submit-btn">Register Account</button>
+        </form>
+    </div>
+
+    <script src="/src/util/feedback.js"></script>
+    <script>
+        window.__probeReady = new Promise((resolve) => {
+            // Wait a beat for tenant slug resolution in the real module before filling email.
+            setTimeout(resolve, 1800);
+        });
+    </script>
+    <script type="module">
+        // Import the REAL registration controller (it reads ?clinic= from the URL)
+        await import("/src/pages/patientRegistrationForm.js");
+
+        // Let the module's DOMContentLoaded handler resolve the tenant + bind submit
+        await window.__probeReady;
+        await new Promise((r) => setTimeout(r, 2500));
+
+        const banner = document.getElementById("registration-status-banner");
+        const form = document.getElementById("registration-form");
+        const email = document.getElementById("email");
+
+        // Watch banner text and echo to console for capture
+        const origObserver = new MutationObserver(() => {
+            console.log("[PROBE-BANNER]", JSON.stringify(banner.textContent), "classes:", banner.className);
+        });
+        origObserver.observe(banner, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class"] });
+
+        // Intercept console.error from the module's catch handler
+        const origErr = console.error;
+        console.error = (...args) => {
+            origErr.apply(console, ["[PROBE-CAPTURED-ERROR]", ...args.map((a) => (a instanceof Error ? `${a.message} | status=${a.status} | data=${JSON.stringify(a.data)}` : a))]);
+        };
+
+        // Scenario A: completely fresh email
+        email.value = `realflow${Date.now()}@example.com`;
+        console.log("[PROBE] Dispatching submit with fresh email", email.value);
+        form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+        await new Promise((r) => setTimeout(r, 2000));
+
+        // Scenario B: now submit the SAME email again (duplicate simulation)
+        console.log("[PROBE] Dispatching submit again with SAME email (duplicate path)");
+        form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+        await new Promise((r) => setTimeout(r, 2000));
+
+        console.log("[PROBE-DONE] final banner:", JSON.stringify(banner.textContent));
+    </script>
+</body>
+
+</html>

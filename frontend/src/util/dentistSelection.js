@@ -3,6 +3,10 @@
 // 🚨 1. Define the missing backend base URL (adjust if your backend is hosted elsewhere)
 const API_BASE_URL = "http://localhost:5000";
 
+// Non-blocking feedback (falls back to alert only if the shared UI is absent).
+const notify = (message, type = "info") =>
+  window.DashboardUI ? window.DashboardUI.toast(message, type) : window.alert(message);
+
 // 2. Fetch available operators directly from backend API
 async function fetchAvailableDentists() {
   const dentistDropdown = document.getElementById("modal-dentist-dropdown");
@@ -124,13 +128,14 @@ function bindCardActions() {
     btnConfirm.onclick = async () => {
       const chosenDentistId = dentistDropdown?.value;
       if (!chosenDentistId) {
-        alert("Please select an operator to handle this case matrix.");
+        notify("Please select an operator to handle this case.", "warning");
         return;
       }
 
       if (!window.activeTargetAppointmentId) {
-        alert(
-          "Error: Loss of appointment tracking context signatures. Please close and re-seat.",
+        notify(
+          "Lost track of the appointment context. Please close and re-seat the patient.",
+          "error",
         );
         return;
       }
@@ -184,7 +189,7 @@ async function executeStatusTransition(
       await window.fetchDailyAppointments();
     }
   } catch (err) {
-    alert(`Network Sync Error: ${err.message}`);
+    notify(`Network sync error: ${err.message}`, "error");
   }
 }
 async function processCheckout(appointmentId, totalAmount) {
@@ -215,13 +220,13 @@ async function processCheckout(appointmentId, totalAmount) {
       throw new Error(data.message || "Checkout failed.");
     }
 
-    alert(`✅ Payment of ${totalAmount} via ${paymentChannel} successful!`);
+    notify(`Payment of ${totalAmount} via ${paymentChannel} successful.`, "success");
 
     // Close the modal and refresh the dashboard queues here
     // closeModal();
     // fetchDailyQueue();
   } catch (err) {
-    alert(`Billing Error: ${err.message}`);
+    notify(`Billing error: ${err.message}`, "error");
   }
 }
 window.bindCardActions = bindCardActions;

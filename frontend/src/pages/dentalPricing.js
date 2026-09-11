@@ -1,6 +1,12 @@
 const API_BASE_URL = "http://localhost:5000/api/v1/dental-price";
 const ADMIN_ID_DEFAULT = "admin_climen_master";
 
+// Non-blocking feedback (falls back to alert only if the shared UI is absent).
+const notifyPricing = (message, type = "info") =>
+  window.DashboardUI
+    ? window.DashboardUI.toast(message, type)
+    : window.alert(message);
+
 document.addEventListener("DOMContentLoaded", () => {
   // DOM Elements - Table
   const pricingTableBody = document.getElementById("pricing-table-body");
@@ -69,11 +75,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!response.ok)
           throw new Error(data.message || "Failed execution loop.");
 
-        alert(`🎉 ${data.message}`);
+        notifyPricing(data.message, "success");
         addPriceForm.reset();
         loadDentalServices(); // Instant runtime synchronization refresh
       } catch (error) {
-        alert(`❌ Action Rejected: ${error.message}`);
+        notifyPricing(`Action rejected: ${error.message}`, "error");
       }
     });
   }
@@ -102,11 +108,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!response.ok)
           throw new Error(data.message || "Failed execution loop.");
 
-        alert(`✅ ${data.message}`);
+        notifyPricing(data.message, "success");
         editPriceForm.reset();
         loadDentalServices(); // Instant runtime synchronization refresh
       } catch (error) {
-        alert(`❌ Modification Fault: ${error.message}`);
+        notifyPricing(`Modification failed: ${error.message}`, "error");
       }
     });
   }
@@ -234,7 +240,7 @@ function attachToggleEventListeners() {
         }
       } catch (err) {
         console.error("Toggle error:", err);
-        alert(`⚠️ ${err.message}`);
+        notifyPricing(err.message, "warning");
         e.target.checked = !newStatus; // Revert switch if error
       }
     });
@@ -322,12 +328,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Validation
     if (!slug) {
-      alert("⚠️ Please select a service track first by clicking 'Edit Rate'.");
+      notifyPricing("Select a service track first by clicking 'Edit Rate'.", "warning");
       return;
     }
 
     if (isNaN(newPrice) || newPrice < 0) {
-      alert("⚠️ Please enter a valid price amount.");
+      notifyPricing("Please enter a valid price amount.", "warning");
       return;
     }
 
@@ -361,25 +367,27 @@ document.addEventListener("DOMContentLoaded", () => {
       const result = await response.json();
 
       if (response.ok && (result.success || result.data)) {
-        alert(
-          `✅ Success! Rate for '${slug}' updated to ₱${newPrice.toLocaleString(
-            "en-US",
-            { minimumFractionDigits: 2 },
-          )}`,
+        notifyPricing(
+          `Rate for '${slug}' updated to ₱${newPrice.toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+          })}`,
+          "success",
         );
 
-        // 🎯 REFRESH PAGE TO REFLECT NEW PRICE EVERYWHERE
-        window.location.reload();
+        // 🎯 Let the confirmation render before refreshing everywhere.
+        setTimeout(() => window.location.reload(), 900);
       } else {
-        alert(
-          `❌ Update Failed: ${
-            result.message || "Could not update service rate."
-          }`,
+        notifyPricing(
+          `Update failed: ${result.message || "Could not update service rate."}`,
+          "error",
         );
       }
     } catch (error) {
       console.error("Error updating service rate:", error);
-      alert("❌ Network Error: Failed to connect to server backend.");
+      notifyPricing(
+        "Network error: failed to connect to the server.",
+        "error",
+      );
     }
   });
 });

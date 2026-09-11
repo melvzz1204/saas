@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Billing Admin Console (Simulated)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <div class="mb-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5 text-amber-800 text-sm font-semibold flex items-center gap-2">
+            <span>🧪</span> SIMULATED PAYMENT ENVIRONMENT — mock provider, mock transaction IDs (<code>*_test_*</code>). No real charges.
+        </div>
+
+        <header class="flex items-center justify-between mb-5 flex-wrap gap-3">
+            <div>
+                <h1 class="text-2xl font-extrabold text-slate-900">Billing Admin Console</h1>
+                <p id="who" class="text-sm text-slate-500">…</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="/saasAdminDashboard.html" class="text-sm font-bold text-indigo-600 hover:underline">← SaaS Dashboard</a>
+            </div>
+        </header>
+
+        <div id="auth-warning" class="hidden rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-rose-700 text-sm font-semibold mb-6"></div>
+        <div id="toast" class="hidden fixed top-4 right-4 z-50 rounded-xl px-4 py-3 text-sm font-bold shadow-lg"></div>
+
+        <!-- Simulation controls -->
+        <section class="bg-white rounded-xl border border-slate-200 p-4 mb-5">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+                <div class="text-sm">
+                    <span class="text-slate-400 font-semibold">Simulated clock:</span>
+                    <span id="sim-now" class="font-bold text-slate-900">…</span>
+                    <span id="clock-offset" class="text-xs text-slate-400"></span>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button data-adv="1" class="adv bg-slate-100 hover:bg-slate-200 text-xs font-bold px-2.5 py-1.5 rounded-lg">+1d</button>
+                    <button data-adv="7" class="adv bg-slate-100 hover:bg-slate-200 text-xs font-bold px-2.5 py-1.5 rounded-lg">+7d</button>
+                    <button data-adv="30" class="adv bg-slate-100 hover:bg-slate-200 text-xs font-bold px-2.5 py-1.5 rounded-lg">+30d</button>
+                    <button data-adv="365" class="adv bg-slate-100 hover:bg-slate-200 text-xs font-bold px-2.5 py-1.5 rounded-lg">+1yr</button>
+                    <button id="clock-reset" class="bg-slate-100 hover:bg-slate-200 text-xs font-bold px-2.5 py-1.5 rounded-lg">Reset clock</button>
+                    <button id="run-cycle" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg">▶ Run billing cycle now</button>
+                    <button id="seed-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg">Seed sample data</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Create subscription (moved here from the SaaS ops console) -->
+        <details class="bg-white rounded-xl border border-slate-200 px-4 py-3 mb-5 text-sm">
+            <summary class="font-bold text-slate-900 cursor-pointer">Create subscription for a clinic (test)</summary>
+            <div class="flex flex-wrap items-end gap-2 mt-3">
+                <label class="text-xs font-semibold text-slate-500">Clinic ID
+                    <input id="c-clinicId" placeholder="24-char clinic id"
+                        class="block bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm mt-1 w-56" />
+                </label>
+                <label class="text-xs font-semibold text-slate-500">Cycle
+                    <select id="c-cycle" class="block bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm mt-1">
+                        <option value="monthly">Monthly · ₱3,000</option>
+                        <option value="yearly">Yearly · ₱25,000</option>
+                    </select>
+                </label>
+                <button id="c-create" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-3 py-1.5 rounded-lg">Create Professional sub</button>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-2">Uses a succeeding test card. Clinics normally subscribe themselves from their dashboard.</p>
+        </details>
+
+        <!-- Overview -->
+        <section id="overview" class="grid grid-cols-2 md:grid-cols-6 gap-3 mb-5"></section>
+
+        <!-- Tabs -->
+        <div class="flex gap-1 border-b border-slate-200 mb-4 overflow-x-auto">
+            <button data-tab="subscriptions" class="tab px-4 py-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600">Subscriptions</button>
+            <button data-tab="invoices" class="tab px-4 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500">Invoices</button>
+            <button data-tab="payment-attempts" class="tab px-4 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500">Payment Attempts</button>
+            <button data-tab="refunds" class="tab px-4 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500">Refunds</button>
+            <button data-tab="notifications" class="tab px-4 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500">Notifications</button>
+            <button data-tab="webhooks" class="tab px-4 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500">Webhooks</button>
+            <button data-tab="audit" class="tab px-4 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500">Audit Log</button>
+        </div>
+
+        <!-- Filters -->
+        <section id="filters" class="flex flex-wrap items-end gap-2 mb-4"></section>
+
+        <section class="bg-white rounded-xl border border-slate-200 overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead id="thead" class="bg-slate-50 text-left text-xs font-bold uppercase tracking-wider text-slate-500"></thead>
+                <tbody id="tbody"></tbody>
+            </table>
+            <p id="empty" class="hidden text-center text-slate-400 text-sm py-10">No records.</p>
+        </section>
+    </div>
+
+    <script src="/src/util/toast.js"></script>
+    <script type="module">
+        const API = "http://localhost:5000/api/v1/billing";
+        const token = localStorage.getItem("saasAdminToken");
+        let meta = null, tab = "subscriptions", filters = {};
+
+        const headers = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${token}` });
+        const peso = (n, c = "PHP") => n == null ? "—" : (c === "PHP" ? "₱" : "$") + Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const fmt = (d) => (d ? new Date(d).toLocaleDateString() : "—");
+        const short = (id) => (id ? String(id).slice(-6) : "—");
+        const pill = (txt, cls) => `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${cls}">${String(txt).replace(/_/g, " ")}</span>`;
+        const STATUS = { active: "bg-emerald-100 text-emerald-700", paid: "bg-emerald-100 text-emerald-700", succeeded: "bg-emerald-100 text-emerald-700", trialing: "bg-blue-100 text-blue-700", pending: "bg-slate-100 text-slate-600", processing: "bg-slate-100 text-slate-600", open: "bg-amber-100 text-amber-700", past_due: "bg-amber-100 text-amber-700", payment_failed: "bg-rose-100 text-rose-700", failed: "bg-rose-100 text-rose-700", unpaid: "bg-rose-100 text-rose-700", paused: "bg-violet-100 text-violet-700", canceled: "bg-slate-200 text-slate-600", expired: "bg-slate-200 text-slate-600", refunded: "bg-slate-200 text-slate-600", partially_refunded: "bg-sky-100 text-sky-700" };
+        const sc = (s) => STATUS[s] || "bg-slate-100 text-slate-600";
+
+        function toast(msg, ok = true) {
+            // Delegates to the global toast system (src/util/toast.js).
+            if (window.Toast) return window.Toast.show(msg, ok ? "success" : "error");
+            const t = document.getElementById("toast");
+            t.textContent = msg;
+            t.className = `fixed top-4 right-4 z-50 rounded-xl px-4 py-3 text-sm font-bold shadow-lg ${ok ? "bg-emerald-600 text-white" : "bg-rose-600 text-white"}`;
+            t.classList.remove("hidden");
+            setTimeout(() => t.classList.add("hidden"), 4500);
+        }
+        async function api(path, opts = {}) {
+            const res = await fetch(`${API}${path}`, { headers: headers(), ...opts });
+            const out = await res.json().catch(() => ({}));
+            if (!res.ok || out.success === false) throw new Error(out.message || `Request failed (${res.status})`);
+            return out;
+        }
+
+        if (!token) {
+            const w = document.getElementById("auth-warning");
+            w.classList.remove("hidden");
+            w.innerHTML = 'Not signed in as a SaaS admin. <a class="underline" href="/saasAdminLogin.html">Sign in here</a>.';
+        } else {
+            document.getElementById("who").textContent = "SaaS administrator · billing console";
+            boot();
+        }
+
+        async function boot() {
+            meta = (await (await fetch(`${API}/meta`)).json()).data;
+            document.querySelectorAll(".tab").forEach((b) => b.addEventListener("click", () => { tab = b.dataset.tab; filters = {}; setActiveTab(); renderFilters(); loadTable(); }));
+            document.querySelectorAll(".adv").forEach((b) => b.addEventListener("click", () => advance(Number(b.dataset.adv))));
+            document.getElementById("clock-reset").addEventListener("click", async () => { await api("/admin/clock/reset", { method: "POST", body: "{}" }); toast("Clock reset."); refreshClock(); loadTable(); });
+            document.getElementById("c-create").addEventListener("click", async () => {
+                const clinicId = document.getElementById("c-clinicId").value.trim();
+                const billingCycle = document.getElementById("c-cycle").value;
+                if (!clinicId) { toast("Enter a clinic ID.", false); return; }
+                try {
+                    await api("/admin/subscriptions", { method: "POST", body: JSON.stringify({ clinicId, planKey: "pro", billingCycle, testToken: "tok_test_visa", autoRenew: true }) });
+                    toast("Professional subscription created."); loadAll();
+                } catch (e) { toast(e.message, false); }
+            });
+            document.getElementById("run-cycle").addEventListener("click", runCycle);
+            document.getElementById("seed-btn").addEventListener("click", async () => { if (!confirm("Seed/refresh simulated sample data?")) return; const r = await api("/admin/seed", { method: "POST", body: JSON.stringify({ reset: false }) }); toast("Sample data ready."); loadAll(); });
+            renderFilters(); loadAll();
+        }
+        function loadAll() { refreshClock(); loadOverview(); loadTable(); }
+
+        async function refreshClock() {
+            const { data } = await api("/admin/clock");
+            document.getElementById("sim-now").textContent = new Date(data.simulatedNow).toLocaleString();
+            document.getElementById("clock-offset").textContent = data.offsetMs ? `(offset +${Math.round(data.offsetMs / 86400000)}d)` : "(real time)";
+        }
+        async function advance(days) { await api("/admin/clock/advance", { method: "POST", body: JSON.stringify({ days }) }); toast(`Advanced ${days} day(s).`); refreshClock(); loadOverview(); }
+        async function runCycle() {
+            const { data } = await api("/admin/run-cycle", { method: "POST", body: "{}" });
+            const parts = Object.entries(data).filter(([k, v]) => typeof v === "number" && v > 0).map(([k, v]) => `${k}:${v}`);
+            toast("Cycle run. " + (parts.join(", ") || "no changes"));
+            loadAll();
+        }
+
+        async function loadOverview() {
+            const { data } = await api("/admin/overview");
+            const subMap = Object.fromEntries(data.subscriptions.map((s) => [s._id, s.count]));
+            const totalSubs = data.subscriptions.reduce((a, s) => a + s.count, 0);
+            const paid = data.invoices.find((i) => i._id === "paid") || { count: 0, amount: 0 };
+            const open = data.invoices.find((i) => i._id === "open") || { count: 0, amount: 0 };
+            const cards = [
+                ["Subscriptions", totalSubs, "text-slate-900"],
+                ["Active", subMap.active || 0, "text-emerald-600"],
+                ["Trialing", subMap.trialing || 0, "text-blue-600"],
+                ["Past due / unpaid", (subMap.past_due || 0) + (subMap.unpaid || 0) + (subMap.payment_failed || 0), "text-amber-600"],
+                ["Revenue (paid)", peso(paid.amount), "text-emerald-700"],
+                ["Refunded", peso(data.refunds.amount), "text-rose-600"],
+            ];
+            document.getElementById("overview").innerHTML = cards.map(([label, val, cls]) => `
+                <div class="bg-white rounded-xl border border-slate-200 p-3">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">${label}</p>
+                    <p class="text-xl font-black ${cls} mt-1">${val}</p>
+                </div>`).join("");
+        }
+
+        function setActiveTab() {
+            document.querySelectorAll(".tab").forEach((b) => b.className = "tab px-4 py-2 text-sm font-bold border-b-2 " + (b.dataset.tab === tab ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500"));
+        }
+
+        function renderFilters() {
+            const el = document.getElementById("filters");
+            const input = (id, ph) => `<input id="f-${id}" placeholder="${ph}" class="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm" />`;
+            const sel = (id, opts, ph) => `<select id="f-${id}" class="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm"><option value="">${ph}</option>${opts.map((o) => `<option value="${o}">${o}</option>`).join("")}</select>`;
+            let controls = [input("clinicId", "Clinic ID")];
+            if (tab === "subscriptions") controls.push(sel("status", meta.enums.subscriptionStatuses, "Any status"));
+            if (tab === "invoices") controls.push(sel("status", meta.enums.invoiceStatuses, "Any status"));
+            if (tab === "payment-attempts") controls.push(sel("status", ["succeeded", "failed", "pending", "processing"], "Any status"), sel("outcome", meta.enums.paymentOutcomes, "Any outcome"));
+            if (tab === "notifications") controls.push(sel("type", meta.enums.notificationTypes, "Any type"));
+            controls.push(`<input id="f-from" type="date" class="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-sm" />`);
+            controls.push(`<input id="f-to" type="date" class="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-sm" />`);
+            controls.push(`<button id="apply" class="bg-slate-800 text-white text-sm font-bold px-3 py-1.5 rounded-lg">Filter</button>`);
+            controls.push(`<button id="clear" class="text-slate-500 text-sm font-bold px-2">Clear</button>`);
+            el.innerHTML = controls.join("");
+            document.getElementById("apply").addEventListener("click", () => {
+                filters = {};
+                ["clinicId", "status", "plan", "outcome", "type", "from", "to"].forEach((k) => { const i = document.getElementById(`f-${k}`); if (i && i.value) filters[k] = i.value; });
+                loadTable();
+            });
+            document.getElementById("clear").addEventListener("click", () => { filters = {}; renderFilters(); loadTable(); });
+        }
+
+        const COLS = {
+            subscriptions: ["Clinic", "Plan", "Cycle", "Amount", "Status", "Next renewal", "Trial ends", "Actions"],
+            invoices: ["Number", "Clinic", "Amount", "Paid", "Refunded", "Status", "Due", "Actions"],
+            "payment-attempts": ["Charge", "Amount", "Status", "Outcome", "Failure", "When", "Method"],
+            refunds: ["Refund", "Amount", "Type", "Status", "Reason", "When"],
+            notifications: ["Type", "Clinic", "Message", "Amount", "Status", "When"],
+            webhooks: ["Event", "Type", "Status", "Processed", "Actions"],
+            audit: ["Action", "Actor", "Entity", "Summary", "When"],
+        };
+
+        async function loadTable() {
+            const qs = new URLSearchParams(filters).toString();
+            const { data } = await api(`/admin/${tab}?${qs}`);
+            document.getElementById("thead").innerHTML = `<tr>${COLS[tab].map((c) => `<th class="px-4 py-2.5">${c}</th>`).join("")}</tr>`;
+            const tb = document.getElementById("tbody");
+            document.getElementById("empty").classList.toggle("hidden", data.length > 0);
+            tb.innerHTML = data.map((r) => `<tr class="border-t border-slate-100 hover:bg-slate-50">${rowFor(tab, r)}</tr>`).join("");
+            tb.querySelectorAll("[data-act]").forEach((b) => b.addEventListener("click", () => rowAction(b.dataset.act, b.dataset.id, b.dataset.extra)));
+        }
+
+        function rowFor(t, r) {
+            const td = (x) => `<td class="px-4 py-2.5">${x}</td>`;
+            if (t === "subscriptions") return [
+                td(`<span class="font-semibold">${r.clinicName || short(r.clinicId)}</span>`), td(r.planName), td(r.billingCycle),
+                td(peso(r.amount, r.currency)), td(pill(r.status, sc(r.status))), td(fmt(r.nextRenewalDate)), td(fmt(r.trialEndsAt)),
+                td(subActions(r)),
+            ].join("");
+            if (t === "invoices") return [
+                td(`<span class="font-mono text-xs">${r.number}</span>`), td(short(r.clinicId)), td(peso(r.amountDue, r.currency)),
+                td(peso(r.amountPaid, r.currency)), td(peso(r.amountRefunded, r.currency)), td(pill(r.status, sc(r.status))), td(fmt(r.dueDate)),
+                td(invActions(r)),
+            ].join("");
+            if (t === "payment-attempts") return [
+                td(`<span class="font-mono text-xs">${r.providerRef}</span>`), td(peso(r.amount, r.currency)), td(pill(r.status, sc(r.status))),
+                td(r.outcome), td(r.failureMessage || "—"), td(fmt(r.createdAt)), td(`${r.method?.type === "gcash" ? "GCash" : r.method?.type === "paymaya" ? "PayMaya" : r.method?.type === "grab_pay" ? "GrabPay" : r.method?.type === "bank" ? (r.method?.brand || "Bank") : (r.method?.brand || "")} •••• ${r.method?.last4 || ""} <span class="text-[9px] text-slate-400 font-mono">${r.providerRef || ""}</span>`),
+            ].join("");
+            if (t === "refunds") return [
+                td(`<span class="font-mono text-xs">${r.providerRef}</span>`), td(peso(r.amount, r.currency)), td(r.type), td(pill(r.status, sc(r.status))), td(r.reason || "—"), td(fmt(r.createdAt)),
+            ].join("");
+            if (t === "notifications") return [
+                td(`<span class="font-semibold">${String(r.type).replace(/_/g, " ")}</span>`), td(r.clinicName || short(r.clinicId)),
+                td(`<span class="text-xs text-slate-500">${r.message}</span>`), td(peso(r.amount, r.currency)), td(pill(r.subscriptionStatus || "—", sc(r.subscriptionStatus))), td(new Date(r.createdAt).toLocaleString()),
+            ].join("");
+            if (t === "webhooks") return [
+                td(`<span class="font-mono text-xs">${r.eventId}</span>`), td(`<span class="font-semibold">${r.type}</span>`), td(pill(r.status, sc(r.status))), td(fmt(r.processedAt)),
+                td(`<button data-act="replay" data-id="${r.eventId}" class="text-indigo-600 font-bold text-xs">Replay</button>`),
+            ].join("");
+            if (t === "audit") return [
+                td(`<span class="font-semibold">${r.action}</span>`), td(`${r.actorType}${r.actorEmail ? " · " + r.actorEmail : ""}`), td(`${r.entityType} ${short(r.entityId)}`), td(`<span class="text-xs text-slate-500">${r.summary}</span>`), td(new Date(r.createdAt).toLocaleString()),
+            ].join("");
+            return "";
+        }
+
+        const btn = (act, id, label, cls, extra = "") => `<button data-act="${act}" data-id="${id}" data-extra="${extra}" class="${cls} text-white text-[11px] font-bold px-2 py-1 rounded-md mr-1 mb-1">${label}</button>`;
+        function subActions(r) {
+            let b = "";
+            if (r.status === "paused") b += btn("s-resume", r._id, "Resume", "bg-emerald-600");
+            if (!["canceled", "expired"].includes(r.status)) b += btn("s-cancel", r._id, "Cancel", "bg-rose-600");
+            if (r.status === "trialing") b += btn("s-trial", r._id, "Extend", "bg-blue-600");
+            b += btn("s-outcome", r._id, "Next outcome", "bg-slate-700");
+            return b;
+        }
+        function invActions(r) {
+            let b = "";
+            if (r.status === "open") { b += btn("i-retry", r._id, "Retry", "bg-indigo-600"); b += btn("i-paid", r._id, "Mark paid", "bg-emerald-600"); }
+            if (["paid", "partially_refunded"].includes(r.status)) b += btn("i-refund", r._id, "Refund", "bg-rose-600");
+            return b || "—";
+        }
+
+        async function rowAction(act, id) {
+            try {
+                if (act === "replay") { const r = await api(`/admin/webhooks/${id}/replay`, { method: "POST", body: "{}" }); toast(r.alreadyProcessed ? "Already processed (idempotent)." : "Processed."); return; }
+                if (act === "s-cancel") { if (!confirm("Cancel subscription?")) return; await api(`/admin/subscriptions/${id}/cancel`, { method: "POST", body: JSON.stringify({ atPeriodEnd: false }) }); }
+                if (act === "s-resume") await api(`/admin/subscriptions/${id}/resume`, { method: "POST", body: "{}" });
+                if (act === "s-trial") { const d = prompt("Extend trial by how many days?", "7"); if (!d) return; await api(`/admin/subscriptions/${id}/extend-trial`, { method: "POST", body: JSON.stringify({ days: Number(d) }) }); }
+                if (act === "s-outcome") { const o = prompt("Force NEXT payment outcome (blank=default): success, declined, insufficient_funds, expired_card, delayed", ""); await api(`/admin/subscriptions/${id}/next-outcome`, { method: "POST", body: JSON.stringify({ outcome: o || "" }) }); }
+                if (act === "i-retry") { const o = prompt("Force outcome for this retry (blank=use card): success, declined, insufficient_funds", ""); const r = await api(`/admin/invoices/${id}/retry`, { method: "POST", body: JSON.stringify({ forcedOutcome: o || "" }) }); toast("Retry: " + r.data.outcome); }
+                if (act === "i-paid") await api(`/admin/invoices/${id}/mark-paid`, { method: "POST", body: "{}" });
+                if (act === "i-refund") { const a = prompt("Refund amount (blank = full):", ""); await api(`/admin/invoices/${id}/refund`, { method: "POST", body: JSON.stringify({ amount: a ? Number(a) : undefined, reason: "Admin refund" }) }); }
+                toast("Done.");
+                loadAll();
+            } catch (e) { toast(e.message, false); }
+        }
+    </script>
+</body>
+
+</html>

@@ -85,10 +85,63 @@ export const getPatientAppointments = async (req, res) => {
       patientId: new mongoose.Types.ObjectId(String(patientId).trim()),
     })
       .populate("clinicId", "name slug address phone")
-      .populate("dentistId", "fullName specialization")
+      .populate("dentistId", "fullName specialization role")
       .sort({ createdAt: -1 });
 
-    return res.status(200).json({ success: true, data: appointments });
+    // Attach lightweight billing context so the patient dashboard can surface
+    // balance / payment status without extra round-trips.
+    const appointmentIds = appointments
+      .map((a) => a._id)
+      .filter(Boolean);
+    const treatments = appointmentIds.length
+      ? await Treatment.find({
+          appointmentId: { $in: appointmentIds },
+        })
+          .select("appointmentId billingAmount status procedureName")
+          .lean()
+      : [];
+    const treatmentByAppointment = {};
+    treatments.forEach((t) => {
+      if (t.appointmentId) {
+        treatmentByAppointment[String(t.appointmentId)] = t;
+      }
+    });
+
+    const serviceNames = [
+      ...new Set(
+        appointments.map((a) => a.service).filter(Boolean),
+      ),
+    ];
+    const services = serviceNames.length
+      ? await DentalService.find({ name: { $in: serviceNames } })
+          .select("name basePricePhp")
+          .lean()
+      : [];
+    const priceByService = {};
+    services.forEach((s) => {
+      priceByService[s.name] = s.basePricePhp;
+    });
+
+    const data = appointments.map((a) => {
+      const raw = a.toJSON();
+      const tx = treatmentByAppointment[String(a._id)];
+      const txPendingBill =
+        tx && String(tx.status || "").toUpperCase() === "COMPLETED_PENDING_BILL";
+      const requiresPayment = Boolean(txPendingBill);
+      const amount = Number(
+        tx?.billingAmount ?? priceByService[a.service] ?? 0,
+      );
+      return {
+        ...raw,
+        billing: {
+          amount,
+          status: requiresPayment ? "unpaid" : "settled",
+          treatmentStatus: tx?.status || null,
+        },
+      };
+    });
+
+    return res.status(200).json({ success: true, data });
   } catch (error) {
     console.error("❌ Exception inside getPatientAppointments:", error.message);
     return res.status(500).json({ success: false, message: error.message });
@@ -684,14 +737,212 @@ export const getAvailableSlots = async (req, res) => {
     const existingAppointments = await Appointment.find(query);
     const bookedTimes = existingAppointments.map((appt) => appt.time);
 
-    // 7. Return configured slots and booked times
+    // 🆕 NEW: Compute which generated slots are still free
+    const availableSlots = generatedSlots.filter(
+      (slot) => !bookedTimes.includes(slot),
+    );
+
+    // 🆕 NEW: Flag that lets the calendar view immediately show
+    // "Fully Booked" when this doctor has no free slots on this date.
+    const fullyBooked =
+      generatedSlots.length > 0 && availableSlots.length === 0;
+
+    // 7. Return configured slots, booked times, and availability flags
     return res.status(200).json({
       success: true,
       slots: generatedSlots,
       bookedSlots: bookedTimes,
+      availableSlots,
+      fullyBooked,
+      message: fullyBooked
+        ? "This doctor is fully booked for the selected date."
+        : undefined,
     });
   } catch (error) {
     console.error("❌ Error generating slots:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// PATIENT SELF-SERVICE: Reschedule / Cancel
+// ────────────────────────────────────────────────────────────
+// Resolves the authenticated patient's id from the token/user doc
+// so ownership checks never trust unverified client inputs.
+function resolveRequestingPatientId(user) {
+  const id = user?._id || user?.id || user?.userId;
+  if (!id || !mongoose.Types.ObjectId.isValid(String(id))) return null;
+  return new mongoose.Types.ObjectId(String(id));
+}
+
+const CANCELLABLE_STATUSES = [
+  "Pending",
+  "Approved",
+  "checked-in",
+  "waiting",
+  "in-treatment",
+  "treatment",
+];
+
+// 12. Reschedule Appointment (Patient Self-Service)
+export const rescheduleAppointment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { date, time, dentistId } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res
+        .status(422)
+        .json({ success: false, message: "Malformed appointment ID format." });
+    }
+
+    if (!date || !time) {
+      return res
+        .status(400)
+        .json({ success: false, message: "A new date and time are required." });
+    }
+
+    const patientId = resolveRequestingPatientId(req.user);
+    if (!patientId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Unable to verify patient identity." });
+    }
+
+    const appointment = await Appointment.findById(id);
+    if (!appointment) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Appointment not found." });
+    }
+
+    if (
+      String(appointment.patientId) !== String(patientId)
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to reschedule this appointment.",
+      });
+    }
+
+    const currentStatus = String(appointment.status || "").toLowerCase();
+    if (["completed", "done", "cancelled", "missed"].includes(currentStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "This appointment can no longer be rescheduled.",
+      });
+    }
+
+    const updatePayload = {
+      date,
+      time,
+      status: "Pending",
+      notes: appointment.notes
+        ? `${appointment.notes} · Rescheduled to ${date} at ${time}`
+        : `Rescheduled to ${date} at ${time}`,
+    };
+    if (
+      dentistId &&
+      mongoose.Types.ObjectId.isValid(String(dentistId))
+    ) {
+      updatePayload.dentistId = new mongoose.Types.ObjectId(String(dentistId));
+    }
+
+    const updated = await Appointment.findByIdAndUpdate(id, updatePayload, {
+      new: true,
+      runValidators: true,
+    })
+      .populate("clinicId", "name slug address phone")
+      .populate("dentistId", "fullName specialization role");
+
+    const ioInstance = global.io;
+    if (ioInstance) {
+      ioInstance.emit("pipeline-update", {
+        message: `Appointment ${id} was rescheduled by the patient.`,
+        appointmentId: id,
+        rescheduled: true,
+      });
+      ioInstance.to(String(patientId)).emit("status_updated", {
+        appointmentId: id,
+        status: "Pending",
+        rescheduled: true,
+        date,
+        time,
+      });
+    }
+
+    return res.status(200).json({ success: true, data: updated });
+  } catch (error) {
+    console.error("❌ rescheduleAppointment Error:", error.message);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 13. Cancel Appointment (Patient Self-Service)
+export const cancelAppointment = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res
+        .status(422)
+        .json({ success: false, message: "Malformed appointment ID format." });
+    }
+
+    const patientId = resolveRequestingPatientId(req.user);
+    if (!patientId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Unable to verify patient identity." });
+    }
+
+    const appointment = await Appointment.findById(id);
+    if (!appointment) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Appointment not found." });
+    }
+
+    if (String(appointment.patientId) !== String(patientId)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to cancel this appointment.",
+      });
+    }
+
+    const currentStatus = String(appointment.status || "").toLowerCase();
+    if (["completed", "done", "cancelled", "missed"].includes(currentStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "This appointment has already been finalized and cannot be cancelled.",
+      });
+    }
+
+    const updated = await Appointment.findByIdAndUpdate(
+      id,
+      { status: "cancelled" },
+      { new: true, runValidators: true },
+    )
+      .populate("clinicId", "name slug address phone")
+      .populate("dentistId", "fullName specialization role");
+
+    const ioInstance = global.io;
+    if (ioInstance) {
+      ioInstance.emit("pipeline-update", {
+        message: `Appointment ${id} was cancelled by the patient.`,
+        appointmentId: id,
+        cancelled: true,
+      });
+      ioInstance.to(String(patientId)).emit("status_updated", {
+        appointmentId: id,
+        status: "cancelled",
+        cancelled: true,
+      });
+    }
+
+    return res.status(200).json({ success: true, data: updated });
+  } catch (error) {
+    console.error("❌ cancelAppointment Error:", error.message);
     return res.status(500).json({ success: false, message: error.message });
   }
 };

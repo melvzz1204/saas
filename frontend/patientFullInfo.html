@@ -168,9 +168,9 @@
                     </div>
                     <div class="sm:col-span-4 flex flex-col">
                         <label for="pi_cellMobileNo"
-                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Cell/Mobile
-                            No. <span class="text-rose-500">*</span></label>
-                        <input type="tel" id="pi_cellMobileNo" required
+                            class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Contact
+                            Number <span class="text-rose-500">*</span></label>
+                        <input type="tel" id="pi_cellMobileNo" required aria-label="Contact Number"
                             class="w-full text-sm bg-white border border-slate-200 text-slate-900 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
                     </div>
 
@@ -697,6 +697,7 @@
         </form>
     </main>
 
+    <script src="src/util/toast.js"></script>
     <script src="src/pages/patientFullInfo.js"></script>
 </body>
 

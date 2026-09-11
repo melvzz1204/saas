@@ -44,7 +44,7 @@
             class="hidden p-3.5 rounded-xl text-xs font-bold text-center bg-rose-950/50 border border-rose-800/80 text-rose-300 tracking-wide">
         </div>
 
-        <form id="saas-admin-login-form" class="space-y-4">
+        <form id="saas-admin-login-form" class="space-y-4" novalidate>
             <div>
                 <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Master
                     Email</label>
@@ -89,6 +89,8 @@
         </div>
     </div>
 
+    <script src="/src/util/toast.js"></script>
+    <script src="/src/util/feedback.js"></script>
     <script src="/src/pages/saasAdminLogin.js"></script>
     <!-- 🔑 AUTO SHOW/HIDE PASSWORD TOGGLE -->
     <script src="/src/util/passwordToggle.js"></script>

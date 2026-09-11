@@ -96,10 +96,10 @@ export const loginTenantController = async (req, res) => {
         .json({ success: false, message: "Invalid email or password." });
     }
 
-    // Generate SaaS Access Token
+    // Generate SaaS Access Token (same fallback as auth guards; JWT_SECRET required in prod)
     const token = jwt.sign(
       { id: user._id, role: user.role, clinicId: user.clinicId },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || "fallback_saas_secret_key",
       { expiresIn: "1d" },
     );
 

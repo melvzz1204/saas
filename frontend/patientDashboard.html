@@ -4,58 +4,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Manage your dental appointments, view clinical records, and share feedback with your clinic.">
     <title>Patient Dashboard | Clinic Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+        /* Cleaner scrollbars + focus states for an accessible, modern feel */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        :focus-visible {
+            outline: 2px solid #0d9488;
+            outline-offset: 2px;
+            border-radius: 6px;
+        }
+        .btn-base {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            line-height: 1.25rem;
+            transition: all .15s ease-in-out;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+            border-radius: .75rem;
+        }
+        .btn-base:active { transform: scale(.98); }
+        .btn-base:disabled { opacity: .5; cursor: not-allowed; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    </style>
 </head>
 
 <body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-teal-500/10 selection:text-teal-700">
 
     <div class="flex h-screen overflow-hidden">
 
-        <!-- ========================================== -->
-        <!-- ========================================== -->
-        <!-- 1. LEFT SIDENAV NAVIGATION                -->
-        <!-- ========================================== -->
+        <!-- ============================================ -->
+        <!-- 1. LEFT SIDENAV (Desktop) / Drawer (Mobile)  -->
+        <!-- ============================================ -->
         <aside id="sidebar"
-            class="w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between fixed lg:relative inset-y-0 left-0 z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out">
+            class="w-72 bg-white border-r border-slate-200/80 flex flex-col justify-between fixed lg:relative inset-y-0 left-0 z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out shadow-2xl lg:shadow-none">
             <div>
                 <!-- Clinic Logo Header -->
-                <div class="h-16 px-6 flex items-center border-b border-slate-100">
-                    <div class="flex items-center space-x-3 group">
+                <div class="h-20 px-6 flex items-center border-b border-slate-100">
+                    <div class="flex items-center space-x-3">
                         <div
-                            class="flex items-center justify-center w-9 h-9 bg-teal-50 border border-teal-100 rounded-xl text-lg shadow-xs">
+                            class="flex items-center justify-center w-11 h-11 bg-gradient-to-br from-teal-500 to-indigo-500 text-white rounded-2xl text-xl shadow-sm shadow-teal-900/20">
                             🦷
                         </div>
-                        <div class="flex flex-col">
+                        <div class="flex flex-col min-w-0">
                             <span id="clinic-name-heading"
-                                class="font-black text-sm tracking-tight text-slate-900 uppercase truncate max-w-[140px]">Loading...</span>
-                            <span class="text-[9px] capitalize text-teal-600 font-bold tracking-widest -mt-0.5">Dental
+                                class="font-black text-sm tracking-tight text-slate-900 uppercase truncate max-w-[170px]">Loading...</span>
+                            <span class="text-[10px] capitalize text-teal-600 font-bold tracking-widest -mt-0.5">Dental
                                 Clinic</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Nav Menu Links (Our Dentists tab removed) -->
-                <nav class="p-4 space-y-1">
+                <!-- Nav Menu -->
+                <nav class="p-4 space-y-1.5" aria-label="Dashboard navigation">
                     <button onclick="switchTab('tab-overview')" id="nav-tab-overview"
-                        class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold rounded-xl transition-all bg-teal-50 text-teal-700 border border-teal-100 shadow-2xs">
-                        <span>📊</span> Overview
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-xs font-bold rounded-xl transition-all bg-teal-50 text-teal-700 border border-teal-100 shadow-xs">
+                        <span class="text-base" aria-hidden="true">📊</span> Overview
                     </button>
 
                     <button onclick="switchTab('tab-book')" id="nav-tab-book"
-                        class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
-                        <span>✨</span> Book Appointment
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
+                        <span class="text-base" aria-hidden="true">✨</span> Book Appointment
                     </button>
 
                     <button onclick="switchTab('tab-appointments')" id="nav-tab-appointments"
-                        class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
-                        <span>📋</span> My Appointments
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
+                        <span class="text-base" aria-hidden="true">📋</span> My Appointments
                     </button>
 
                     <button onclick="switchTab('tab-history')" id="nav-tab-history"
-                        class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
-                        <span>📂</span> Clinical Records
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
+                        <span class="text-base" aria-hidden="true">📂</span> Clinical Records
+                    </button>
+
+                    <button onclick="switchTab('tab-reviews')" id="nav-tab-reviews"
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
+                        <span class="text-base" aria-hidden="true">⭐</span> Share Your Review
                     </button>
                 </nav>
             </div>
@@ -63,13 +95,12 @@
             <!-- Sidebar Footer / Profile Completion Callout -->
             <div class="p-4 border-t border-slate-100">
                 <a href="patientFullInfo.html"
-                    class="block bg-amber-50/80 hover:bg-amber-100/80 border border-amber-200/70 rounded-xl p-3 transition-all group">
-                    <div class="flex items-center gap-2.5">
-                        <span class="text-base">📋</span>
-                        <div>
-                            <p class="text-[10px] font-black uppercase text-amber-900 tracking-wide">Complete Profile
-                            </p>
-                            <p class="text-[9px] font-medium text-amber-700">Update personal info & history →</p>
+                    class="block bg-amber-50/80 hover:bg-amber-100/80 border border-amber-200/70 rounded-xl p-3.5 transition-all group">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xl" aria-hidden="true">📋</span>
+                        <div class="min-w-0">
+                            <p class="text-[11px] font-black uppercase text-amber-900 tracking-wide">Complete Profile</p>
+                            <p class="text-[10px] font-medium text-amber-700 truncate">Update personal info &amp; history →</p>
                         </div>
                     </div>
                 </a>
@@ -77,60 +108,58 @@
         </aside>
 
         <!-- Sidebar Overlay for Mobile -->
-        <div id="sidebar-overlay" onclick="toggleMobileSidebar()"
-            class="fixed inset-0 bg-slate-900/20 backdrop-blur-xs z-40 hidden lg:hidden"></div>
+        <div id="sidebar-overlay" onclick="toggleMobileSidebar()" aria-hidden="true"
+            class="fixed inset-0 bg-slate-900/25 backdrop-blur-sm z-40 hidden lg:hidden"></div>
 
-        <!-- ========================================== -->
-        <!-- 2. MAIN CONTENT AREA                       -->
-        <!-- ========================================== -->
+        <!-- ============================================ -->
+        <!-- 2. MAIN CONTENT AREA                        -->
+        <!-- ============================================ -->
         <div class="flex-1 flex flex-col overflow-y-auto">
 
             <!-- Top Header -->
             <header
-                class="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-4 sm:px-8 flex items-center justify-between">
+                class="h-16 lg:h-20 bg-white/85 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-4 sm:px-8 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <button onclick="toggleMobileSidebar()"
-                        class="lg:hidden text-slate-500 hover:text-slate-800 p-2 rounded-lg border border-slate-200">
-                        ☰
+                    <button onclick="toggleMobileSidebar()" aria-label="Open navigation menu"
+                        class="lg:hidden text-slate-500 hover:text-slate-800 p-2.5 rounded-lg border border-slate-200 bg-white shadow-xs">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                        </svg>
                     </button>
-                    <h1 id="active-tab-title" class="text-xs font-black text-slate-800 uppercase tracking-wider">
-                        Dashboard Overview</h1>
+                    <div>
+                        <h1 id="active-tab-title" class="text-sm font-black text-slate-800 uppercase tracking-wider">
+                            Dashboard Overview</h1>
+                        <p class="text-[11px] text-slate-400 hidden sm:block -mt-0.5">Manage your dental care in one place</p>
+                    </div>
                 </div>
 
-                <div class="flex items-center gap-4">
-                    <span id="user-greeting" class="text-xs font-bold text-slate-800 hidden sm:inline">Loading
-                        user...</span>
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <span id="user-greeting" class="hidden sm:inline text-xs font-bold text-slate-700">Loading user...</span>
                     <button id="auth-btn"
-                        class="inline-flex items-center justify-center px-4 py-2 text-xs font-bold rounded-xl tracking-wide transition-all uppercase cursor-pointer shadow-xs active:scale-[0.98]">
+                        class="inline-flex items-center justify-center px-4 py-2 min-h-[40px] text-xs font-bold rounded-xl tracking-wide transition-all uppercase cursor-pointer shadow-xs active:scale-[0.98]">
                     </button>
                 </div>
             </header>
 
-            <main class="p-4 sm:p-8 max-w-7xl w-full mx-auto space-y-6">
+            <main class="p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
 
-                <!-- TAB 1: OVERVIEW -->
+                <!-- ============================= -->
+                <!-- TAB 1: OVERVIEW                -->
+                <!-- ============================= -->
                 <section id="tab-overview" class="tab-content space-y-6">
-                    <!-- ========================================== -->
-                    <!-- 🎉 PAYMENT SUCCESSFUL BANNER              -->
-                    <!-- ========================================== -->
+                    <!-- Live status tracker banner -->
                     <div id="live-status-tracker"
-                        class="hidden transition-all duration-300 ease-out opacity-0 transform -translate-y-2 relative overflow-hidden bg-gradient-to-r from-emerald-50 via-white to-teal-50 border border-emerald-200/80 rounded-2xl p-4 sm:p-5 shadow-sm shadow-emerald-900/5 mb-6">
+                        class="hidden transition-all duration-300 ease-out opacity-0 transform -translate-y-2 relative overflow-hidden bg-gradient-to-r from-emerald-50 via-white to-teal-50 border border-emerald-200/80 rounded-2xl p-4 sm:p-5 shadow-sm shadow-emerald-900/5">
 
                         <div class="flex items-center justify-between gap-4 relative z-10">
-                            <!-- Left: Status Indicator & Text -->
-                            <div class="flex items-center gap-3.5">
-                                <!-- Pulsing Green Dot -->
-                                <span class="relative flex h-3 w-3 shrink-0">
-                                    <span
-                                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                    <span
-                                        class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 shadow-xs shadow-emerald-500/50"></span>
+                            <div class="flex items-start gap-3.5">
+                                <span class="relative flex h-3 w-3 shrink-0 mt-1.5" aria-hidden="true">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 shadow-xs shadow-emerald-500/50"></span>
                                 </span>
-
                                 <div class="space-y-0.5">
-                                    <span
-                                        class="inline-flex items-center gap-1 text-emerald-800 text-[10px] font-black uppercase tracking-wider">
-                                        ✨ Payment Confirmed
+                                    <span class="inline-flex items-center gap-1 text-emerald-800 text-[10px] font-black uppercase tracking-wider">
+                                        ✨ Live Update
                                     </span>
                                     <p id="live-status-message"
                                         class="text-xs sm:text-sm font-medium text-slate-800 leading-relaxed">
@@ -138,272 +167,236 @@
                                     </p>
                                 </div>
                             </div>
-
-                            <!-- Right: Close (X) Button -->
-                            <button onclick="dismissLiveTracker()"
-                                class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer shrink-0"
-                                title="Dismiss notice">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5"
-                                    viewBox="0 0 24 24">
+                            <button onclick="dismissLiveTracker()" aria-label="Dismiss notice"
+                                class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
                     </div>
+
                     <!-- Stats Grid -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
                         <div
-                            class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-slate-300 transition-colors">
-                            <div class="space-y-2">
-                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Next
-                                    Confirmed Visit</div>
-                                <div id="stat-next-visit" class="text-base font-black text-slate-800">None Scheduled
-                                </div>
+                            class="bg-white p-5 lg:p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-teal-200 transition-colors">
+                            <div class="space-y-1.5">
+                                <div class="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Next Confirmed Visit</div>
+                                <div id="stat-next-visit" class="text-sm lg:text-base font-black text-slate-800 leading-snug">None Scheduled</div>
                             </div>
-                            <div
-                                class="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-lg text-slate-400">
+                            <div class="w-11 h-11 bg-teal-50 border border-teal-100 rounded-xl flex items-center justify-center text-xl text-teal-600">
                                 📅</div>
                         </div>
 
                         <div
-                            class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-slate-300 transition-colors">
+                            class="bg-white p-5 lg:p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-amber-200 transition-colors">
                             <div class="space-y-1">
-                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Pending
-                                    Approvals</div>
-                                <div id="stat-pending" class="text-3xl font-black text-amber-500 tracking-tight">0</div>
+                                <div class="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Pending Approvals</div>
+                                <div id="stat-pending" class="text-3xl font-black text-amber-600 tracking-tight">0</div>
                             </div>
-                            <div
-                                class="w-10 h-10 bg-amber-50 border border-amber-100 rounded-xl flex items-center justify-center text-lg text-amber-500 animate-pulse">
+                            <div class="w-11 h-11 bg-amber-50 border border-amber-100 rounded-xl flex items-center justify-center text-xl text-amber-500 animate-pulse">
                                 ⏳</div>
                         </div>
 
                         <div
-                            class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-slate-300 transition-colors">
-                            <div class="space-y-2">
-                                <div class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Account
-                                    Diagnostics</div>
-                                <div
-                                    class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/50 text-[11px] font-bold uppercase tracking-wide">
-                                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                            class="bg-white p-5 lg:p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-indigo-200 transition-colors">
+                            <div class="space-y-1">
+                                <div class="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Outstanding Balance</div>
+                                <div id="stat-balance" class="text-2xl font-black text-indigo-600 tracking-tight">₱0.00</div>
+                            </div>
+                            <div class="w-11 h-11 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center text-xl text-indigo-600">
+                                💳</div>
+                        </div>
+
+                        <div
+                            class="bg-white p-5 lg:p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between group hover:border-emerald-200 transition-colors">
+                            <div class="space-y-1">
+                                <div class="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Account Status</div>
+                                <div class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/70 text-[11px] font-bold uppercase tracking-wide">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
                                     <span>Active Patient</span>
                                 </div>
                             </div>
-                            <div
-                                class="w-10 h-10 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-center text-lg text-emerald-600">
+                            <div class="w-11 h-11 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-center text-xl text-emerald-600">
                                 🛡️</div>
                         </div>
                     </div>
 
                     <!-- Quick Call to Action Banner -->
                     <div
-                        class="bg-linear-to-r from-teal-600 to-sky-600 rounded-2xl p-6 text-white shadow-md flex justify-between items-center flex-wrap gap-4">
+                        class="bg-gradient-to-r from-teal-600 to-indigo-600 rounded-2xl p-6 lg:p-7 text-white shadow-md flex justify-between items-center flex-wrap gap-4">
                         <div>
                             <h3 class="text-base font-black uppercase tracking-tight">Need Dental Care?</h3>
-                            <p class="text-xs text-teal-100 mt-1">Book an appointment online with our verified dental
-                                providers.</p>
+                            <p class="text-xs text-teal-100 mt-1">Book an appointment online with our verified dental providers.</p>
                         </div>
                         <button onclick="switchTab('tab-book')"
-                            class="bg-white text-teal-800 text-xs font-bold px-5 py-2.5 rounded-xl uppercase tracking-wider hover:bg-teal-50 transition-colors cursor-pointer shadow-xs">
+                            class="btn-base bg-white text-teal-800 text-xs font-bold px-6 py-3 rounded-xl uppercase tracking-wider hover:bg-teal-50 shadow-xs">
                             Book Session Now ✨
                         </button>
                     </div>
 
-                    <!-- AVAILABLE DENTISTS SECTION IN OVERVIEW -->
-                    <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
-                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <h2
-                                class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                                <span class="text-teal-600">👨‍⚕️</span>
+                    <!-- AVAILABLE DENTISTS SECTION -->
+                    <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                            <h2 class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                                <span class="text-teal-600" aria-hidden="true">👨‍⚕️</span>
                                 <span>Available Dental Providers</span>
                             </h2>
                         </div>
-                        <div id="dentist-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div id="dentist-cards-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                             <!-- Cards populate automatically via /src/util/dentistCardInfo.js -->
                         </div>
                     </div>
                 </section>
 
-                <!-- TAB 2: BOOK APPOINTMENT -->
-                <section id="tab-book" class="tab-content hidden space-y-6 max-w-2xl mx-auto">
+                <!-- ============================= -->
+                <!-- TAB 2: BOOK APPOINTMENT        -->
+                <!-- ============================= -->
+                <section id="tab-book" class="tab-content hidden space-y-6 max-w-2xl mx-auto w-full">
                     <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
-                        <div class="p-5 border-b border-slate-100 bg-linear-to-b from-slate-50/50 to-white">
-                            <h2
-                                class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                        <div class="p-5 lg:p-6 border-b border-slate-100 bg-slate-50/60">
+                            <h2 class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                                <span aria-hidden="true">✨</span>
                                 <span>Request Booking</span>
                             </h2>
+                            <p class="text-xs text-slate-500 mt-1">Choose a provider, service, and preferred time to get started.</p>
                         </div>
 
-                        <form id="booking-form" class="p-6 space-y-4">
+                        <form id="booking-form" class="p-5 lg:p-6 space-y-5">
                             <!-- DENTIST SELECTION -->
-                            <div class="mb-4">
-                                <label
-                                    class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Select
-                                    Dental
-                                    Provider</label>
+                            <div>
+                                <label for="booking-dentist" class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Select Dental Provider</label>
                                 <select id="booking-dentist" required
-                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-1 focus:ring-teal-500/20 transition-all cursor-pointer">
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-sm font-medium text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20 transition-all cursor-pointer">
                                     <option value="" disabled selected>Loading providers...</option>
                                 </select>
                             </div>
+
+                            <!-- SERVICE -->
                             <div>
-                                <label
-                                    class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Select
-                                    Service</label>
+                                <label for="booking-service" class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Select Service</label>
                                 <select id="booking-service" required onchange="updateFormPriceIndicator(this)"
-                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-1 focus:ring-teal-500/20 transition-all cursor-pointer">
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-sm font-medium text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20 transition-all cursor-pointer">
                                     <option value="" disabled selected>Retrieving treatments...</option>
                                 </select>
                             </div>
 
-                            <div
-                                class="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3 flex justify-between items-center text-xs">
-                                <span
-                                    class="font-bold text-indigo-900/60 uppercase text-[10px] tracking-wide">Price:</span>
-                                <span id="form-price-indicator" class="font-black text-indigo-600 text-sm">₱0.00</span>
+                            <!-- PRICE INDICATOR -->
+                            <div class="bg-indigo-50/70 border border-indigo-100 rounded-xl p-3.5 flex justify-between items-center text-sm">
+                                <span class="font-bold text-indigo-800/80 uppercase text-[10px] tracking-wider">Price:</span>
+                                <span id="form-price-indicator" class="font-black text-indigo-700 text-base">₱0.00</span>
                             </div>
 
+                            <!-- DATE + TIME -->
                             <div>
-                                <label
-                                    class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Preferred
-                                    Target Date</label>
+                                <span class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">Preferred Target Date</span>
                                 <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
                                     <div class="flex justify-between items-center px-1">
-                                        <span id="calendar-month-year"
-                                            class="text-xs font-black text-slate-800 uppercase tracking-wide">August
-                                            2026</span>
+                                        <span id="calendar-month-year" class="text-sm font-black text-slate-800 uppercase tracking-wide">August 2026</span>
                                         <div class="flex space-x-1">
-                                            <button type="button" id="prev-month-btn"
-                                                class="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                    stroke-width="2.5" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M15.75 19.5L8.25 12l7.5-7.5" />
+                                            <button type="button" id="prev-month-btn" aria-label="Previous month"
+                                                class="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                                                 </svg>
                                             </button>
-                                            <button type="button" id="next-month-btn"
-                                                class="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                    stroke-width="2.5" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                                            <button type="button" id="next-month-btn" aria-label="Next month"
+                                                class="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                                                 </svg>
                                             </button>
                                         </div>
                                     </div>
 
-                                    <div
-                                        class="grid grid-cols-7 gap-1 text-center text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">
-                                        <div>Su</div>
-                                        <div>Mo</div>
-                                        <div>Tu</div>
-                                        <div>We</div>
-                                        <div>Th</div>
-                                        <div>Fr</div>
-                                        <div>Sa</div>
+                                    <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                                        <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
                                     </div>
-                                    <div id="calendar-days-grid" class="grid grid-cols-7 gap-1 text-center text-xs">
-                                    </div>
+                                    <div id="calendar-days-grid" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
                                 </div>
 
-                                <input type="date" id="booking-date" required class="hidden" />
+                                <input type="date" id="booking-date" required class="sr-only" tabindex="-1" />
 
                                 <div class="mt-4">
-                                    <label
-                                        class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Preferred
-                                        Time</label>
-                                    <div id="time-select-container" class="block">
+                                    <label for="booking-time" class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Preferred Time</label>
+                                    <div id="time-select-container">
                                         <select id="booking-time" required disabled
-                                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-1 focus:ring-teal-500/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-sm font-medium text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                                             <option value="" disabled selected>Please select a date first...</option>
                                         </select>
                                     </div>
 
-                                    <div id="after-hours-notice"
-                                        class="hidden bg-amber-50/80 border border-amber-200/70 rounded-xl p-3.5 text-amber-900 space-y-1 text-xs mt-2">
+                                    <div id="after-hours-notice" role="status"
+                                        class="hidden bg-amber-50/90 border border-amber-200/80 rounded-xl p-3.5 text-amber-900 space-y-1 text-xs mt-3">
                                         <div class="flex items-center space-x-1.5 font-bold">
-                                            <span>⏰</span>
+                                            <span aria-hidden="true">⏰</span>
                                             <span>Clinic Hours Concluded or Unavailable</span>
                                         </div>
                                         <p class="text-amber-700 text-[11px] leading-relaxed">
-                                            There are no available time slots for this date. Please select a different
-                                            future date on the calendar matrix grid above.
+                                            There are no available time slots for this date. Please select a different future date.
+                                        </p>
+                                    </div>
+
+                                    <div id="fully-booked-notice" role="status"
+                                        class="hidden bg-rose-50 border border-rose-200 rounded-xl p-3.5 text-rose-900 space-y-1 text-xs mt-3">
+                                        <div class="flex items-center space-x-1.5 font-bold">
+                                            <span aria-hidden="true">🚫</span>
+                                            <span>Fully Booked</span>
+                                        </div>
+                                        <p id="fully-booked-message" class="text-rose-700 text-[11px] leading-relaxed">
+                                            This doctor has no remaining slots for the selected date. Please choose a different date or dentist.
                                         </p>
                                     </div>
                                 </div>
                             </div>
 
                             <button type="submit" id="book-btn"
-                                class="w-full bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold py-3.5 rounded-xl shadow-lg shadow-teal-900/10 transition-all uppercase tracking-wider mt-2 cursor-pointer active:scale-[0.99]">
+                                class="btn-base w-full bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold py-3.5 rounded-xl shadow-lg shadow-teal-900/10 uppercase tracking-wider mt-2 min-h-[48px]">
                                 Submit Booking Request
                             </button>
                         </form>
                     </div>
                 </section>
 
-                <!-- TAB 3: APPOINTMENTS & PRICING -->
+                <!-- ============================= -->
+                <!-- TAB 3: APPOINTMENTS           -->
+                <!-- ============================= -->
                 <section id="tab-appointments" class="tab-content hidden space-y-8">
-                    <!-- Scheduled Sessions -->
+                    <!-- Scheduled Sessions (rendered as cards) -->
                     <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
-                        <div
-                            class="p-5 border-b border-slate-100 bg-linear-to-b from-slate-50/50 to-white flex justify-between items-center">
-                            <h2
-                                class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-                                <span class="text-indigo-500">📋</span>
+                        <div class="p-5 lg:p-6 border-b border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                            <h2 class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                                <span class="text-indigo-500" aria-hidden="true">📋</span>
                                 <span>Scheduled Sessions</span>
                             </h2>
                         </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse">
-                                <thead>
-                                    <tr
-                                        class="border-b border-slate-100 bg-slate-50/70 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                                        <th class="py-3.5 px-6">Service Category</th>
-                                        <th class="py-3.5 px-6">Allocated Schedule</th>
-                                        <th class="py-3.5 px-6 text-right">Verification Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="bookings-table-body"
-                                    class="divide-y divide-slate-100 text-xs font-medium text-slate-700">
-                                    <tr class="hover:bg-slate-50/50 transition-colors">
-                                        <td colspan="3" class="py-12 text-center text-slate-400 italic">
-                                            <div class="flex flex-col items-center justify-center space-y-2">
-                                                <div
-                                                    class="w-5 h-5 border-2 border-teal-500/30 border-t-teal-600 rounded-full animate-spin">
-                                                </div>
-                                                <span class="text-xs font-medium text-slate-400 mt-2">Assembling clinic
-                                                    care matrix tables...</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div id="appointments-cards" class="p-5 lg:p-6 space-y-4">
+                            <!-- Populated by patientDashboard.js -->
+                            <div id="bookings-table-body" class="hidden"></div>
                         </div>
                     </div>
 
                     <!-- Pricing Catalogue -->
                     <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
-                        <div class="p-5 border-b border-slate-100 bg-linear-to-b from-slate-50/50 to-white">
-                            <h2
-                                class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-                                <span class="text-teal-600">🏷️</span>
+                        <div class="p-5 lg:p-6 border-b border-slate-100 bg-slate-50/60">
+                            <h2 class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                                <span class="text-teal-600" aria-hidden="true">🏷️</span>
                                 <span>Treatment Pricing Ledger</span>
                             </h2>
+                            <p class="text-xs text-slate-500 mt-1">Transparent pricing for the services we offer.</p>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse">
                                 <thead>
-                                    <tr
-                                        class="border-b border-slate-100 bg-slate-50/70 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                                        <th class="py-3 px-5">Service Type</th>
-                                        <th class="py-3 px-5">Clinical Treatment</th>
-                                        <th class="py-3 px-5 text-right">Price</th>
+                                    <tr class="border-b border-slate-100 bg-slate-50/70 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                                        <th class="py-3.5 px-5 lg:px-6">Service Type</th>
+                                        <th class="py-3.5 px-5 lg:px-6">Clinical Treatment</th>
+                                        <th class="py-3.5 px-5 lg:px-6 text-right">Price</th>
                                     </tr>
                                 </thead>
-                                <tbody id="pricing-ledger-body"
-                                    class="divide-y divide-slate-100 text-xs font-medium text-slate-700">
+                                <tbody id="pricing-ledger-body" class="divide-y divide-slate-100 text-sm font-medium text-slate-700">
                                     <tr>
-                                        <td colspan="3" class="py-8 text-center text-slate-400 italic">Syncing live
-                                            treatment catalogue matrix...</td>
+                                        <td colspan="3" class="py-8 text-center text-slate-400 italic">Syncing live treatment catalogue...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -411,11 +404,98 @@
                     </div>
                 </section>
 
-                <!-- TAB 4: CLINICAL RECORDS -->
-                <section id="tab-history" class="tab-content hidden space-y-4">
-                    <div class="bg-white rounded-xl shadow-sm p-6">
-                        <h2 class="text-lg font-bold mb-4">My Clinical History</h2>
-                        <div id="my-history-container" class="space-y-4"></div>
+                <!-- ============================= -->
+                <!-- TAB 4: CLINICAL RECORDS       -->
+                <!-- ============================= -->
+                <section id="tab-history" class="tab-content hidden space-y-6 max-w-5xl mx-auto w-full">
+                    <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+                        <div class="p-5 lg:p-6 border-b border-slate-100 bg-slate-50/60">
+                            <h2 class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                                <span class="text-teal-600" aria-hidden="true">📂</span>
+                                <span>My Clinical History</span>
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-1">Review your past treatments and care notes.</p>
+                        </div>
+                        <div class="p-5 lg:p-6">
+                            <div id="my-history-container" class="space-y-4"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================= -->
+                <!-- TAB 5: SHARE YOUR REVIEW      -->
+                <!-- ============================= -->
+                <section id="tab-reviews" class="tab-content hidden space-y-6 max-w-3xl mx-auto w-full">
+                    <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+                        <div class="p-5 lg:p-6 border-b border-slate-100 bg-slate-50/60">
+                            <h2 class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                                <span aria-hidden="true">⭐</span>
+                                <span>Share Your Experience</span>
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-1.5">
+                                Let us know how your visit went. Your feedback helps us improve the care we provide.
+                            </p>
+                        </div>
+
+                        <!-- Existing submission status card -->
+                        <div id="review-existing-card" class="hidden p-6 border-b border-slate-100 space-y-3"></div>
+
+                        <form id="review-form" class="p-6 space-y-5">
+                            <!-- Rating Input -->
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">Your Rating</label>
+                                <div id="review-star-input" class="flex items-center gap-1.5" role="radiogroup"
+                                    aria-label="Rate your experience from 1 to 5 stars">
+                                    <button type="button" data-rating="1" aria-label="1 star"
+                                        class="review-star text-3xl leading-none text-slate-300 hover:text-amber-400 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-md p-0.5">☆</button>
+                                    <button type="button" data-rating="2" aria-label="2 stars"
+                                        class="review-star text-3xl leading-none text-slate-300 hover:text-amber-400 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-md p-0.5">☆</button>
+                                    <button type="button" data-rating="3" aria-label="3 stars"
+                                        class="review-star text-3xl leading-none text-slate-300 hover:text-amber-400 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-md p-0.5">☆</button>
+                                    <button type="button" data-rating="4" aria-label="4 stars"
+                                        class="review-star text-3xl leading-none text-slate-300 hover:text-amber-400 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-md p-0.5">☆</button>
+                                    <button type="button" data-rating="5" aria-label="5 stars"
+                                        class="review-star text-3xl leading-none text-slate-300 hover:text-amber-400 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-md p-0.5">☆</button>
+                                </div>
+                                <input type="hidden" id="review-rating" value="" />
+                                <p id="review-rating-hint" class="mt-1.5 text-[11px] font-semibold text-slate-500">Tap a star to rate your visit</p>
+                            </div>
+
+                            <!-- Review Text -->
+                            <div>
+                                <label for="review-text" class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">Your Testimonial</label>
+                                <textarea id="review-text" name="reviewText" rows="4" minlength="10" maxlength="1000"
+                                    placeholder="Tell us about your experience — e.g., the treatment you received, the staff, and the overall atmosphere..."
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20 transition-all resize-y"></textarea>
+                                <p class="mt-1.5 text-[11px] font-semibold text-slate-500 flex justify-between">
+                                    <span id="review-char-counter">0 / 1000 characters</span>
+                                    <span>Minimum 10 characters</span>
+                                </p>
+                            </div>
+
+                            <!-- Anonymous Consent / Privacy -->
+                            <div class="bg-slate-50/80 border border-slate-200/70 rounded-xl p-4 space-y-2">
+                                <label for="review-anonymous" class="flex items-start gap-3 cursor-pointer select-none">
+                                    <input type="checkbox" id="review-anonymous"
+                                        class="mt-0.5 w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 cursor-pointer" />
+                                    <span class="text-xs leading-relaxed text-slate-600">
+                                        <span class="font-bold text-slate-800 block">Submit anonymously</span>
+                                        Your name will not appear alongside this review on the clinic's public page. We will only show "Anonymous" as the reviewer.
+                                    </span>
+                                </label>
+                                <p class="text-[11px] leading-relaxed text-slate-500">
+                                    🔒 <strong>Privacy notice:</strong> If you leave this unchecked, only your first name and last initial may be shown publicly (e.g., "Maria S."). Your full name, email, and contact details are never published.
+                                </p>
+                            </div>
+
+                            <!-- Form Feedback -->
+                            <div id="review-form-feedback" class="hidden" role="alert"></div>
+
+                            <button type="submit" id="review-submit-btn"
+                                class="btn-base w-full bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold py-3.5 rounded-xl shadow-lg shadow-teal-900/10 uppercase tracking-wider mt-2 min-h-[48px]">
+                                Submit Review
+                            </button>
+                        </form>
                     </div>
                 </section>
 
@@ -427,34 +507,33 @@
     <!-- Tab Switcher Script -->
     <script>
         function switchTab(tabId) {
-            // Hide all tab contents
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
 
-            // Show target tab
             const target = document.getElementById(tabId);
             if (target) target.classList.remove('hidden');
 
-            // Reset navigation styles
             document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.className = "nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all";
+                btn.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all";
             });
 
-            // Highlight active button
             const activeBtn = document.getElementById(`nav-${tabId}`);
             if (activeBtn) {
-                activeBtn.className = "nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold rounded-xl transition-all bg-teal-50 text-teal-700 border border-teal-100 shadow-2xs";
+                activeBtn.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 text-xs font-bold rounded-xl transition-all bg-teal-50 text-teal-700 border border-teal-100 shadow-xs";
             }
 
-            // Update top bar heading text
             const titleMap = {
                 'tab-overview': 'Dashboard Overview',
                 'tab-book': 'Request Session Entry',
                 'tab-appointments': 'My Scheduled Sessions',
-                'tab-history': 'Clinical History Records'
+                'tab-history': 'Clinical History Records',
+                'tab-reviews': 'Share Your Review'
             };
             document.getElementById('active-tab-title').textContent = titleMap[tabId] || 'Dashboard';
 
-            // Close mobile sidebar if open
+            if (tabId === 'tab-reviews' && typeof loadPatientReviewModule === 'function') {
+                loadPatientReviewModule();
+            }
+
             if (window.innerWidth < 1024) toggleMobileSidebar();
         }
 
@@ -464,6 +543,12 @@
             sidebar.classList.toggle('-translate-x-full');
             overlay.classList.toggle('hidden');
         }
+
+        (function () {
+            if (window.location.hash === '#reviews' && typeof switchTab === 'function') {
+                switchTab('tab-reviews');
+            }
+        })();
 
         (function () {
             const token = localStorage.getItem("token");
@@ -478,21 +563,10 @@
             const price = selectedOption.getAttribute('data-price') || "₱0.00";
             document.getElementById('form-price-indicator').textContent = price;
         }
-
-        (function () {
-            const dateInput = document.getElementById("booking-date");
-            if (dateInput) {
-                const today = new Date();
-                const year = today.getFullYear();
-                const month = String(today.getMonth() + 1).padStart(2, '0');
-                const day = String(today.getDate()).padStart(2, '0');
-                const minDateString = `${year}-${month}-${day}`;
-                dateInput.setAttribute("min", minDateString);
-                dateInput.value = minDateString;
-            }
-        })();
     </script>
 
+    <script src="/src/util/toast.js"></script>
+    <script src="/src/util/feedback.js"></script>
     <script type="module" src="/src/pages/patientDashboard.js"></script>
     <script type="module" src="/src/util/clinicalNote.js"></script>
     <script type="module" src="/src/util/calendar.js"></script>

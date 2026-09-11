@@ -1,4 +1,5 @@
 // src/controllers/staffController.js
+import mongoose from "mongoose";
 import Staff from "../models/staffModel.js";
 
 import jwt from "jsonwebtoken";
@@ -275,17 +276,23 @@ export const resetStaffPin = async (req, res) => {
 export const getClinicDentists = async (req, res) => {
   try {
     const { clinicId } = req.query;
+    const normalizedClinicId = String(clinicId || "").trim();
 
-    if (!clinicId) {
+    if (
+      !normalizedClinicId ||
+      normalizedClinicId.toLowerCase() === "null" ||
+      normalizedClinicId.toLowerCase() === "undefined" ||
+      !mongoose.Types.ObjectId.isValid(normalizedClinicId)
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Clinic ID is required to fetch dentists.",
+        message: "A valid clinic ID is required to fetch dentists.",
       });
     }
 
     // Find all active Dentists for this specific clinic
     const dentists = await Staff.find({
-      clinicId: clinicId,
+      clinicId: new mongoose.Types.ObjectId(normalizedClinicId),
       role: "Dentist",
       status: "Active",
     }).select("-accessPin -__v -createdAt -updatedAt"); // Exclude sensitive fields

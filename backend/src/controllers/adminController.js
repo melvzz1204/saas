@@ -166,7 +166,7 @@ export const loginAdmin = async (req, res) => {
       });
     }
 
-    // 4. Generate JWT Token
+    // 4. Generate JWT Token (shared fallback; JWT_SECRET required in prod)
     const token = jwt.sign(
       {
         id: accountUser._id,
@@ -176,6 +176,11 @@ export const loginAdmin = async (req, res) => {
       process.env.JWT_SECRET || "fallback_saas_secret_key",
       { expiresIn: "1d" },
     );
+    if (!process.env.JWT_SECRET) {
+      console.warn(
+        "⚠️ [AUTH] JWT_SECRET is not set — using insecure dev fallback. Set JWT_SECRET in production.",
+      );
+    }
 
     const sanitizedUser = {
       _id: accountUser._id,
@@ -218,7 +223,7 @@ export const login = async (req, res) => {
     if (user.role === "SAAS_ADMIN") {
       const token = jwt.sign(
         { id: user._id, role: user.role },
-        process.env.JWT_SECRET || "fallback-secret-key",
+        process.env.JWT_SECRET || "fallback_saas_secret_key",
         { expiresIn: "1d" },
       );
 

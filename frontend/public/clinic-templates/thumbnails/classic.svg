@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" role="img" aria-label="Classic layout preview">
+  <rect width="320" height="200" fill="#f8fafc"/>
+  <!-- header -->
+  <rect x="0" y="0" width="320" height="26" fill="#ffffff"/>
+  <rect x="16" y="9" width="46" height="8" rx="4" fill="#0f766e"/>
+  <rect x="210" y="10" width="30" height="6" rx="3" fill="#cbd5e1"/>
+  <rect x="248" y="10" width="30" height="6" rx="3" fill="#cbd5e1"/>
+  <rect x="286" y="7" width="20" height="12" rx="6" fill="#14b8a6"/>
+  <!-- centered hero -->
+  <rect x="90" y="44" width="140" height="12" rx="6" fill="#0f172a"/>
+  <rect x="110" y="62" width="100" height="7" rx="3.5" fill="#94a3b8"/>
+  <rect x="126" y="74" width="68" height="7" rx="3.5" fill="#cbd5e1"/>
+  <rect x="132" y="90" width="56" height="14" rx="7" fill="#0f766e"/>
+  <!-- 3 service cards -->
+  <rect x="24" y="128" width="80" height="52" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+  <rect x="120" y="128" width="80" height="52" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+  <rect x="216" y="128" width="80" height="52" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+  <circle cx="40" cy="144" r="7" fill="#ccfbf1"/>
+  <circle cx="136" cy="144" r="7" fill="#ccfbf1"/>
+  <circle cx="232" cy="144" r="7" fill="#ccfbf1"/>
+  <rect x="34" y="160" width="52" height="5" rx="2.5" fill="#cbd5e1"/>
+  <rect x="130" y="160" width="52" height="5" rx="2.5" fill="#cbd5e1"/>
+  <rect x="226" y="160" width="52" height="5" rx="2.5" fill="#cbd5e1"/>
+</svg>

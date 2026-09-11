@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novaclinic UI Style Guide &amp; Component Library</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="./src/style/landing.css">
+
+    <style>
+        /* Docs-only layout (not part of the design system) */
+        .sg {
+            --doc-bg: #0d151d;
+        }
+
+        .sg-body {
+            background: var(--doc-bg);
+        }
+
+        .sg-header {
+            border-bottom: 1px solid var(--border);
+            background: var(--bg);
+            padding-block: var(--sp-12);
+        }
+
+        .sg-main {
+            padding-block: var(--sp-12) var(--sp-20);
+        }
+
+        .sg-section {
+            margin-top: var(--sp-12);
+        }
+
+        .sg-section h2 {
+            font-size: var(--fs-2xl);
+            padding-bottom: var(--sp-3);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: var(--sp-6);
+            display: flex;
+            align-items: center;
+            gap: var(--sp-3);
+        }
+
+        .sg-section h2 code {
+            font-size: var(--fs-xs);
+            color: var(--text-3);
+            font-weight: 600;
+        }
+
+        .sg-grid {
+            display: grid;
+            gap: var(--sp-5);
+            grid-template-columns: 1fr;
+        }
+
+        @media (min-width: 768px) {
+            .sg-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .sg-demo {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: var(--sp-6);
+            display: grid;
+            gap: var(--sp-4);
+            align-content: start;
+        }
+
+        .sg-demo.full {
+            grid-column: 1 / -1;
+        }
+
+        .sg-demo h3 {
+            font-size: var(--fs-sm);
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .sg-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: var(--sp-3);
+        }
+
+        .sg-swatch {
+            border: 1px solid var(--border);
+            border-radius: var(--r-md);
+            overflow: hidden;
+            background: var(--surface);
+        }
+
+        .sg-swatch .swatch {
+            height: 64px;
+        }
+
+        .sg-swatch .meta {
+            padding: var(--sp-2) var(--sp-3);
+            font-size: var(--fs-xs);
+            color: var(--text-2);
+            font-weight: 600;
+            font-family: ui-monospace, monospace;
+        }
+
+        .sg-swatch .meta small {
+            display: block;
+            color: var(--text-3);
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        .type-row {
+            display: grid;
+            gap: var(--sp-1);
+            padding-block: var(--sp-3);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .type-row:last-child {
+            border-bottom: none;
+        }
+
+        .type-row .spec {
+            font-size: var(--fs-xs);
+            color: var(--text-3);
+            font-family: ui-monospace, monospace;
+        }
+
+        pre {
+            background: #0a0f14;
+            border: 1px solid var(--border);
+            border-radius: var(--r-md);
+            padding: var(--sp-4);
+            font-size: var(--fs-xs);
+            line-height: 1.7;
+            overflow-x: auto;
+            color: #9fe8dc;
+            font-family: ui-monospace, "Cascadia Code", monospace;
+        }
+
+        pre .c {
+            color: #6b7d8c;
+        }
+
+        pre .t {
+            color: #7dd3fc;
+        }
+
+        pre .s {
+            color: #a7f3d0;
+        }
+
+        .sg-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--fs-sm);
+        }
+
+        .sg-table th,
+        .sg-table td {
+            text-align: left;
+            padding: var(--sp-3);
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        .sg-table th {
+            color: var(--text-3);
+            text-transform: uppercase;
+            font-size: var(--fs-xs);
+            letter-spacing: 0.08em;
+        }
+
+        .sg-table td {
+            color: var(--text-2);
+            font-family: ui-monospace, monospace;
+            font-size: var(--fs-xs);
+        }
+
+        .sg-table td:first-child {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .sg-note {
+            background: rgba(45, 212, 191, 0.08);
+            border: 1px solid rgba(45, 212, 191, 0.3);
+            border-radius: var(--r-md);
+            padding: var(--sp-4);
+            font-size: var(--fs-sm);
+            color: var(--text-2);
+            line-height: 1.7;
+        }
+
+        .sg-note strong {
+            color: var(--accent);
+        }
+    </style>
+</head>
+
+<body class="sg-body">
+    <a class="skip-link" href="#sg-main">Skip to content</a>
+
+    <header class="sg-header">
+        <div class="container">
+            <span class="badge"><span class="dot" aria-hidden="true"></span> Design System v1.0</span>
+            <h1 class="hero-title" style="margin-top: var(--sp-4);">Novaclinic <span class="gradient-text">UI Style Guide</span></h1>
+            <p class="lead">Tokens, type, color, and the reusable component library that powers the landing page.
+                Source of truth: <code style="color: var(--accent);">frontend/src/style/landing.css</code> — copy it
+                into any project to inherit the whole system.</p>
+        </div>
+    </header>
+
+    <main id="sg-main" class="sg-main">
+        <div class="container">
+
+            <!-- ============================================================
+                 COLORS
+                 ============================================================ -->
+            <section class="sg-section">
+                <h2>01 · Color tokens <code>--accent · --surface · --text…</code></h2>
+                <div class="sg-grid">
+                    <div class="sg-swatch"><div class="swatch" style="background:#0a0f14;"></div><div class="meta">--bg <small>#0a0f14 · page background</small></div></div>
+                    <div class="sg-swatch"><div class="swatch" style="background:#111b24;"></div><div class="meta">--surface <small>#111b24 · cards, inputs</small></div></div>
+                    <div class="sg-swatch"><div class="swatch" style="background:#18242f;"></div><div class="meta">--surface-2 <small>#18242f · hover, nested fills</small></div></div>
+                    <div class="sg-swatch"><div class="swatch" style="background:#243340;"></div><div class="meta">--border <small>#243340 · hairline borders</small></div></div>
+                    <div class="sg-swatch"><div class="swatch" style="background:#eef3f8;"></div><div class="meta">--text <small>#eef3f8 · headings (18.4:1)</small></div></div>
+                    <div class="sg-swatch"><div class="swatch" style="background:#b9c6d2;"></div><div class="meta">--text-2 <small>#b9c6d2 · body (≈10:1)</small></div></div>
+                    <div class="sg-swatch"><div class="swatch" style="background:#93a4b4;"></div><div class="meta">--text-3 <small>#93a4b4 · meta, 14px+ (≈6:1)</small></div></div>
+                    <div class="sg-swatch"><div class="swatch" style="background:#2dd4bf;"></div><div class="meta">--accent <small>#2dd4bf · links, accents (≈8:1)</small></div></div>
+                    <div class="sg-swatch"><div class="swatch" style="background:#14b8a6;"></div><div class="meta">--accent-strong <small>#14b8a6 · button fill</small></div></div>
+                    <div class="sg-swatch"><div class="swatch" style="background:#04211f;"></div><div class="meta">--accent-ink <small>#04211f · text on accent fills (13:1)</small></div></div>
+                    <div class="sg-swatch"><div class="swatch" style="background:#fbbf24;"></div><div class="meta">--amber <small>#fbbf24 · stars / ratings</small></div></div>
+                    <div class="sg-swatch"><div class="swatch" style="background:linear-gradient(135deg,#2dd4bf,#34d399);"></div><div class="meta">--gradient <small>135° teal → emerald</small></div></div>
+                </div>
+                <div class="sg-note" style="margin-top: var(--sp-5);">
+                    <strong>Contrast policy (WCAG 2.1 AA):</strong> body text uses <code>--text-2</code> (≥ 7:1);
+                    interactive accents use <code>--accent</code> (≥ 4.5:1); <code>--text-3</code> is reserved for
+                    14px+ bold meta and never for paragraphs. Accent fills always carry <code>--accent-ink</code> text.
+                </div>
+            </section>
+
+            <!-- ============================================================
+                 TYPOGRAPHY
+                 ============================================================ -->
+            <section class="sg-section">
+                <h2>02 · Typography scale <code>Plus Jakarta Sans · 400–800</code></h2>
+                <div class="sg-demo full">
+                    <div class="type-row">
+                        <span class="hero-title">Display / Hero — clamp(2.4rem → 4rem)</span>
+                        <span class="spec">--fs-hero · clamp(2.4rem, 6vw, 4rem) · 800 · -0.03em · 1.05</span>
+                    </div>
+                    <div class="type-row">
+                        <h2 class="section-title">Section title — 1.875rem → 2.25rem</h2>
+                        <span class="spec">--fs-3xl / --fs-4xl · 800 · -0.02em</span>
+                    </div>
+                    <div class="type-row">
+                        <h3 style="font-size: var(--fs-lg);">Card heading — 1.125rem</h3>
+                        <span class="spec">--fs-lg · 800</span>
+                    </div>
+                    <div class="type-row">
+                        <p style="font-size: var(--fs-lg); color: var(--text-2);">Lead paragraph — 1.125rem body copy</p>
+                        <span class="spec">--fs-lg · 400 · max-width 56ch</span>
+                    </div>
+                    <div class="type-row">
+                        <p style="color: var(--text-2);">Body text — 1rem · #b9c6d2 · line-height 1.6. The default for
+                            all paragraphs and supporting copy.</p>
+                        <span class="spec">--fs-base · 400 · 1.6</span>
+                    </div>
+                    <div class="type-row">
+                        <span class="eyebrow">Eyebrow label</span>
+                        <span class="spec">--fs-xs · 700 · 0.14em uppercase · accent</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================
+                 BUTTONS
+                 ============================================================ -->
+            <section class="sg-section">
+                <h2>03 · Buttons <code>.btn .btn-primary .btn-secondary .btn-ghost</code></h2>
+                <div class="sg-grid">
+                    <div class="sg-demo">
+                        <h3>Variants</h3>
+                        <div class="sg-row">
+                            <a class="btn btn-primary" href="#sg-main">Primary</a>
+                            <a class="btn btn-secondary" href="#sg-main">Secondary</a>
+                            <a class="btn btn-ghost" href="#sg-main">Ghost link</a>
+                        </div>
+                        <pre><span class="c">&lt;!-- gradient fill, dark ink text, hover lift --&gt;</span>
+<span class="t">&lt;a</span> <span class="t">class</span>=<span class="s">"btn btn-primary"</span> <span class="t">href</span>=<span class="s">"/index.html?auth=register"</span><span class="t">&gt;</span>Get started<span class="t">&lt;/a&gt;</span></pre>
+                    </div>
+                    <div class="sg-demo">
+                        <h3>Sizes &amp; block</h3>
+                        <div class="sg-row">
+                            <a class="btn btn-primary btn-lg" href="#sg-main">Large 54px</a>
+                            <a class="btn btn-secondary" href="#sg-main">Default 48px</a>
+                        </div>
+                        <a class="btn btn-primary btn-block" href="#sg-main">Block / full width (mobile)</a>
+                        <pre><span class="c">&lt;!-- min-height 44–54px · 44px+ tap targets --&gt;</span>
+<span class="t">&lt;a</span> <span class="t">class</span>=<span class="s">"btn btn-primary btn-lg btn-block"</span><span class="t">&gt;</span>…<span class="t">&lt;/a&gt;</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================
+                 BADGES · CHIPS · AVATARS
+                 ============================================================ -->
+            <section class="sg-section">
+                <h2>04 · Badges, chips &amp; avatars</h2>
+                <div class="sg-grid">
+                    <div class="sg-demo">
+                        <h3>Badges</h3>
+                        <div class="sg-row">
+                            <span class="badge"><span class="dot"></span> Built for clinics</span>
+                            <span class="badge badge-emerald">✓ Verified</span>
+                        </div>
+                    </div>
+                    <div class="sg-demo">
+                        <h3>Chips (pills)</h3>
+                        <div class="sg-row">
+                            <span class="chip">✓ Fewer no-shows</span>
+                            <span class="chip">🔒 Encrypted</span>
+                            <span class="chip">6 active clinics</span>
+                        </div>
+                    </div>
+                    <div class="sg-demo">
+                        <h3>Avatars (gradient initials)</h3>
+                        <div class="sg-row">
+                            <span class="avatar">RD</span>
+                            <span class="avatar lg">PO</span>
+                        </div>
+                        <pre><span class="t">&lt;span</span> <span class="t">class</span>=<span class="s">"avatar"</span> <span class="t">aria-hidden</span>=<span class="s">"true"</span><span class="t">&gt;</span>RD<span class="t">&lt;/span&gt;</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================
+                 CARDS & DATA DISPLAY
+                 ============================================================ -->
+            <section class="sg-section">
+                <h2>05 · Cards &amp; data display</h2>
+                <div class="sg-grid">
+                    <div class="sg-demo">
+                        <h3>Feature card</h3>
+                        <article class="card feature-card">
+                            <span class="feature-icon" aria-hidden="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                                </svg>
+                            </span>
+                            <h3>Online booking &amp; reminders</h3>
+                            <p>Patients book into the slots your schedule allows — fewer no-shows, less phone tag.</p>
+                        </article>
+                    </div>
+                    <div class="sg-demo">
+                        <h3>Step card</h3>
+                        <article class="step card">
+                            <span class="step-num" aria-hidden="true">1</span>
+                            <h3>Register your clinic</h3>
+                            <p>Create your workspace with business and medical licenses.</p>
+                        </article>
+                    </div>
+                    <div class="sg-demo">
+                        <h3>Stat</h3>
+                        <div class="sg-row" style="gap: var(--sp-6);">
+                            <div class="stat">
+                                <span class="stat-value accent">6+</span>
+                                <span class="stat-label">clinics onboarded</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-value">₱1.5k</span>
+                                <span class="stat-label">per branch / month</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sg-demo">
+                        <h3>Testimonial</h3>
+                        <article class="testimonial">
+                            <p class="stars" aria-label="5 out of 5 stars">★★★★★</p>
+                            <blockquote>“Patients love booking online and seeing prices before they come in.”</blockquote>
+                            <div class="testimonial-meta">
+                                <span class="avatar" aria-hidden="true">PO</span>
+                                <div>
+                                    <strong>Practice owner</strong>
+                                    <span>2-branch clinic</span>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================
+                 NAVIGATION
+                 ============================================================ -->
+            <section class="sg-section">
+                <h2>06 · Navigation <code>.nav .menu-toggle .mobile-menu</code></h2>
+                <div class="sg-demo full" style="padding: 0; overflow: hidden;">
+                    <div style="border-bottom: 1px solid var(--border); padding: var(--sp-4) var(--sp-5); display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4);">
+                        <a class="brand" href="#sg-main"><span class="brand-mark" aria-hidden="true">+</span><span>Novaclinic<small>SaaS</small></span></a>
+                        <span style="display: none; gap: var(--sp-5); align-items: center;" class="sg-nav-desktop">
+                            <a class="nav-link" href="#sg-main">Product</a>
+                            <a class="nav-link" href="#sg-main">Pricing</a>
+                            <a class="nav-link" href="#sg-main">FAQ</a>
+                        </span>
+                        <span style="display: inline-flex; gap: var(--sp-3); align-items: center;">
+                            <a class="btn btn-primary" href="#sg-main" style="min-height: 42px; padding-block: 0.5rem;">Get started</a>
+                            <span class="menu-toggle" style="cursor: default;"><span></span><span></span><span></span></span>
+                        </span>
+                    </div>
+                    <div style="padding: var(--sp-4) var(--sp-5);">
+                        <pre><span class="c">&lt;!-- Sticky, blur backdrop, 68px tall. Links collapse &lt; 1024px --&gt;</span>
+<span class="t">&lt;header</span> <span class="t">class</span>=<span class="s">"nav"</span><span class="t">&gt;</span>
+  <span class="t">&lt;div</span> <span class="t">class</span>=<span class="s">"container nav-inner"</span><span class="t">&gt;</span>
+    <span class="t">&lt;a</span> <span class="t">class</span>=<span class="s">"brand"</span><span class="t">&gt;</span>…<span class="t">&lt;/a&gt;</span>
+    <span class="t">&lt;nav</span> <span class="t">class</span>=<span class="s">"nav-links"</span><span class="t">&gt;</span>…<span class="t">&lt;/nav&gt;</span>
+    <span class="t">&lt;div</span> <span class="t">class</span>=<span class="s">"nav-actions"</span><span class="t">&gt;</span>…<span class="t">&lt;/div&gt;</span>
+  <span class="t">&lt;/div&gt;</span>
+<span class="t">&lt;/header&gt;</span></pre>
+                        <p class="sg-note" style="margin-top: var(--sp-4);">
+                            <strong>Behavior:</strong> the hamburger (<code>aria-expanded</code> + <code>aria-controls</code>)
+                            toggles <code>.mobile-menu.open</code>; Escape closes it and returns focus. The header gains
+                            <code>.scrolled</code> shadow past 8px of scroll.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================
+                 FORMS
+                 ============================================================ -->
+            <section class="sg-section">
+                <h2>07 · Form fields <code>.input</code></h2>
+                <div class="sg-grid">
+                    <div class="sg-demo">
+                        <h3>Text field</h3>
+                        <label class="sr-only" for="sg-email">Email</label>
+                        <input class="input" id="sg-email" type="email" placeholder="admin@clinic.com">
+                        <p style="font-size: var(--fs-xs); color: var(--text-3);">48px min-height · visible labels required ·
+                            focus ring = <code>--ring</code> (3px teal @ 40%).</p>
+                    </div>
+                    <div class="sg-demo">
+                        <h3>Usage</h3>
+                        <pre><span class="t">&lt;label</span> <span class="t">for</span>=<span class="s">"email"</span><span class="t">&gt;</span>Work email<span class="t">&lt;/label&gt;</span>
+<span class="t">&lt;input</span> <span class="t">class</span>=<span class="s">"input"</span> <span class="t">id</span>=<span class="s">"email"</span>
+       <span class="t">type</span>=<span class="s">"email"</span> <span class="t">autocomplete</span>=<span class="s">"email"</span><span class="t">&gt;</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================
+                 FAQ
+                 ============================================================ -->
+            <section class="sg-section">
+                <h2>08 · FAQ accordion <code>.faq-item</code> — native &lt;details&gt;</h2>
+                <div class="sg-demo full">
+                    <details class="faq-item">
+                        <summary>How long does clinic approval take?</summary>
+                        <div class="faq-body"><p>Usually within 24 hours after documents are submitted.</p></div>
+                    </details>
+                    <details class="faq-item">
+                        <summary>Is patient data secure?</summary>
+                        <div class="faq-body"><p>Encrypted, per-clinic isolated, role-based access, daily backups.</p></div>
+                    </details>
+                    <pre style="margin-top: var(--sp-4);"><span class="c">&lt;!-- zero JavaScript: keyboard, screen reader &amp; reduced-motion safe --&gt;</span>
+<span class="t">&lt;details</span> <span class="t">class</span>=<span class="s">"faq-item"</span><span class="t">&gt;</span>
+  <span class="t">&lt;summary&gt;</span>Question…<span class="t">&lt;/summary&gt;</span>
+  <span class="t">&lt;div</span> <span class="t">class</span>=<span class="s">"faq-body"</span><span class="t">&gt;</span><span class="t">&lt;p&gt;</span>Answer…<span class="t">&lt;/p&gt;&lt;/div&gt;</span>
+<span class="t">&lt;/details&gt;</span></pre>
+                </div>
+            </section>
+
+            <!-- ============================================================
+                 LAYOUT & MOTION
+                 ============================================================ -->
+            <section class="sg-section">
+                <h2>09 · Layout, spacing &amp; motion</h2>
+                <div class="sg-grid">
+                    <div class="sg-demo">
+                        <h3>Spacing scale (rem)</h3>
+                        <table class="sg-table">
+                            <thead><tr><th>Token</th><th>Value</th><th>Use</th></tr></thead>
+                            <tbody>
+                                <tr><td>--sp-1 … --sp-4</td><td>0.25–1rem</td><td>inner gaps, icons</td></tr>
+                                <tr><td>--sp-5 … --sp-8</td><td>1.25–2rem</td><td>card padding, stacks</td></tr>
+                                <tr><td>--sp-10 … --sp-20</td><td>2.5–5rem</td><td>section rhythm</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="sg-demo">
+                        <h3>Radii &amp; elevation</h3>
+                        <table class="sg-table">
+                            <thead><tr><th>Token</th><th>Value</th><th>Use</th></tr></thead>
+                            <tbody>
+                                <tr><td>--r-sm</td><td>8px</td><td>inputs, rows</td></tr>
+                                <tr><td>--r-md</td><td>12px</td><td>buttons, chips</td></tr>
+                                <tr><td>--r-lg</td><td>16px</td><td>cards</td></tr>
+                                <tr><td>--r-xl</td><td>24px</td><td>mockup, hero panels</td></tr>
+                                <tr><td>--shadow-lg</td><td>24px 60px</td><td>hero mockup</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="sg-demo full">
+                        <h3>Motion policy</h3>
+                        <p style="font-size: var(--fs-sm); color: var(--text-2);">
+                            Micro-interactions are limited to <strong>transform/opacity only</strong> (GPU-cheap, no
+                            layout thrash): button lift on hover/active, card lift with border glow, floating mockup
+                            chips (6–7s), pulse dots, and one-shot scroll-reveal via <code>.reveal → .visible</code>.
+                            A global <code>@media (prefers-reduced-motion: reduce)</code> rule zeroes every animation
+                            and transition and force-reveals content, and the reveal observer is never attached for
+                            reduced-motion users.
+                        </p>
+                        <pre><span class="c">&lt;!-- Add to any element to fade it in on scroll --&gt;</span>
+<span class="t">&lt;div</span> <span class="t">class</span>=<span class="s">"reveal"</span><span class="t">&gt;</span>…<span class="t">&lt;/div&gt;</span>
+<span class="c">&lt;!-- landing.js adds .visible when it enters the viewport --&gt;</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================
+                 TOAST NOTIFICATIONS (global system)
+                 ============================================================ -->
+            <section class="sg-section">
+                <h2>10 · Toast notifications <code>window.Toast</code> — global success/error feedback</h2>
+                <div class="sg-grid">
+                    <div class="sg-demo">
+                        <h3>Trigger examples (live)</h3>
+                        <div class="sg-row">
+                            <button type="button" class="btn btn-primary" data-toast-demo="success">Success</button>
+                            <button type="button" class="btn btn-secondary" data-toast-demo="error">Error</button>
+                            <button type="button" class="btn btn-ghost" data-toast-demo="warning">Warning</button>
+                            <button type="button" class="btn btn-ghost" data-toast-demo="info">Info</button>
+                        </div>
+                        <p style="font-size: var(--fs-sm); color: var(--text-2); margin-top: var(--sp-3);">
+                            Toasts float near the bottom of the viewport, auto-dismiss after
+                            5s (errors 7s), pause on hover, and stack newest-last. Loaded on
+                            every page via <code>/src/util/toast.js</code>.
+                        </p>
+                    </div>
+                    <div class="sg-demo">
+                        <h3>Options demo</h3>
+                        <div class="sg-row">
+                            <button type="button" class="btn btn-secondary" data-toast-demo-options>Sticky error + custom title</button>
+                            <button type="button" class="btn btn-ghost" data-toast-demo-storm>Toast storm (5)</button>
+                            <button type="button" class="btn btn-ghost" data-toast-demo-dismiss-all>Dismiss all</button>
+                        </div>
+                        <pre><span class="t">&lt;script</span> <span class="t">src</span>=<span class="s">"/src/util/toast.js"</span><span class="t">&gt;&lt;/script&gt;</span>
+<span class="c">&lt;!-- then in any page script: --&gt;</span>
+Toast.success(&quot;Saved.&quot;);
+Toast.error(&quot;Payment failed.&quot;, { duration: 0 });</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================
+                 IMPLEMENTATION
+                 ============================================================ -->
+            <section class="sg-section">
+                <h2>11 · Implementation checklist</h2>
+                <div class="sg-demo full">
+                    <ol style="display: grid; gap: var(--sp-3); font-size: var(--fs-sm); color: var(--text-2); padding-left: 1.2rem; line-height: 1.7;">
+                        <li><strong style="color: var(--text);">Tokens first:</strong> define <code>:root</code> custom
+                            properties exactly as in <code>landing.css</code> §1 — colors, type scale, spacing, radii,
+                            shadows.</li>
+                        <li><strong style="color: var(--text);">Fonts:</strong> load <em>Plus Jakarta Sans</em>
+                            400–800 with <code>preconnect</code> + <code>display=swap</code>.</li>
+                        <li><strong style="color: var(--text);">No framework required:</strong> the system is plain
+                            CSS. If Tailwind is present, treat tokens as the palette source and avoid hardcoded colors.</li>
+                        <li><strong style="color: var(--text);">Accessibility:</strong> one <code>&lt;h1&gt;</code> per
+                            page, landmarks, skip link, visible <code>:focus-visible</code> rings, 44px targets, labels
+                            on every input, and semantic <code>&lt;details&gt;</code> for FAQ.</li>
+                        <li><strong style="color: var(--text);">Performance:</strong> no runtime CSS compilation, no
+                            hero raster images (mockups are CSS), <code>defer</code> scripts, IntersectionObserver
+                            guarded by <code>prefers-reduced-motion</code>.</li>
+                    </ol>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="footer" style="padding-block: var(--sp-8);">
+        <div class="container footer-bottom" style="border-top: none; padding-top: 0;">
+            <p>© 2026 Novaclinic Inc. — Style guide v1.0</p>
+            <p><a href="/">← Back to landing page</a></p>
+        </div>
+    </footer>
+
+    <style>
+        @media (min-width: 768px) {
+            .sg-nav-desktop {
+                display: flex !important;
+            }
+        }
+    </style>
+
+    <script src="./src/util/toast.js"></script>
+    <script>
+        (function () {
+            "use strict";
+            if (!window.Toast) return;
+
+            const DEMO_MESSAGES = {
+                success: {
+                    title: "Changes saved",
+                    message: "Clinic profile updated successfully.",
+                },
+                error: {
+                    title: "Action failed",
+                    message: "We couldn't reach the server. Please try again.",
+                },
+                warning: {
+                    title: "Check your input",
+                    message: "Both license uploads are required to continue.",
+                },
+                info: {
+                    title: "Tip",
+                    message: "Use the calendar to pick the next available slot.",
+                },
+            };
+
+            document.querySelectorAll("[data-toast-demo]").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const type = btn.getAttribute("data-toast-demo");
+                    const preset = DEMO_MESSAGES[type];
+                    window.Toast.show(preset.message, type, {
+                        title: preset.title,
+                        duration: type === "error" ? 7000 : 5000,
+                    });
+                });
+            });
+
+            document
+                .querySelectorAll("[data-toast-demo-options]")
+                .forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        window.Toast.error(
+                            "This notification stays until dismissed.",
+                            {
+                                title: "Payment failed",
+                                duration: 0,
+                            },
+                        );
+                    });
+                });
+
+            document
+                .querySelectorAll("[data-toast-demo-storm]")
+                .forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        for (let i = 1; i <= 5; i += 1) {
+                            window.Toast.info(
+                                `Simultaneous toast #${i} — the stack caps at 4.`,
+                            );
+                        }
+                    });
+                });
+
+            document
+                .querySelectorAll("[data-toast-demo-dismiss-all]")
+                .forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        window.Toast.dismissAll();
+                    });
+                });
+        })();
+    </script>
+</body>
+
+</html>

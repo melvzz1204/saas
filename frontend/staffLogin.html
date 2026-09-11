@@ -35,7 +35,7 @@
             class="hidden p-3.5 rounded-lg text-xs font-bold text-center bg-rose-50 border border-rose-200 text-rose-600 tracking-wide">
         </div>
 
-        <form id="staff-login-form" class="space-y-4">
+        <form id="staff-login-form" class="space-y-4" novalidate>
 
             <div>
                 <label class="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -87,6 +87,8 @@
         </div>
     </div>
 
+    <script src="/src/util/toast.js"></script>
+    <script src="/src/util/feedback.js"></script>
     <script type="module" src="/src/pages/staffLogin.js"></script>
     <!-- 🔑 AUTO SHOW/HIDE PASSWORD TOGGLE -->
     <script src="/src/util/passwordToggle.js"></script>

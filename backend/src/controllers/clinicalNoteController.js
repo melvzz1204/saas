@@ -59,7 +59,7 @@ export const createClinicalNote = async (req, res) => {
 
     // 3. Populate dentist & patient details for immediate UI rendering
     const populatedNote = await newNote.populate([
-      { path: "dentistId", select: "firstName lastName specialization email" },
+      { path: "dentistId", select: "fullName specialization email" },
       { path: "patientId", select: "firstName lastName email" },
     ]);
 
@@ -93,7 +93,7 @@ export const getPatientHistoryForDentist = async (req, res) => {
     }
 
     const notes = await ClinicalNote.find({ patientId, clinicId })
-      .populate("dentistId", "firstName lastName fullName specialization")
+      .populate("dentistId", "fullName specialization")
       .populate("appointmentId", "date time status")
       .sort({ createdAt: -1 }); // Newest first
 
@@ -126,7 +126,7 @@ export const getMyClinicalNotes = async (req, res) => {
     const notes = await ClinicalNote.find(query)
       .populate(
         "dentistId",
-        "firstName lastName fullName specialization profileImage",
+        "fullName specialization profileImage",
       )
       .sort({ createdAt: -1 });
 

@@ -37,43 +37,100 @@
         </div>
     </header>
 
+    <!-- 🧭 SaaS navbar: switch between console areas without losing context -->
+    <nav class="border-b border-slate-800 bg-slate-900/60 sticky top-16 z-20" aria-label="SaaS sections">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-1 overflow-x-auto" role="tablist">
+            <button type="button" data-saas-tab="overview" role="tab" aria-selected="true"
+                class="saas-tab whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wider text-white border-b-2 border-indigo-500">Overview</button>
+            <button type="button" data-saas-tab="applications" role="tab" aria-selected="false"
+                class="saas-tab whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white border-b-2 border-transparent">Applications</button>
+            <button type="button" data-saas-tab="tenants" role="tab" aria-selected="false"
+                class="saas-tab whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white border-b-2 border-transparent">Tenants</button>
+            <button type="button" data-saas-tab="subscriptions" role="tab" aria-selected="false"
+                class="saas-tab whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white border-b-2 border-transparent">Subscriptions <span id="nav-sub-alert" class="hidden ml-1 bg-amber-500 text-slate-950 text-[10px] font-black px-1.5 py-0.5 rounded-full"></span></button>
+            <button type="button" data-saas-tab="billing" role="tab" aria-selected="false"
+                class="saas-tab whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white border-b-2 border-transparent">Billing &amp; Audit</button>
+        </div>
+    </nav>
+
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
 
+        <div data-saas-panel="overview" class="space-y-8">
         <!-- 📊 Section 1: Platform Overview Cards -->
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <section aria-label="Platform key metrics" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-2">
                 <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Clinics</p>
                 <div class="flex items-baseline justify-between">
-                    <span id="stat-total-clinics" class="text-3xl font-black text-white">--</span>
-                    <span class="text-indigo-400 text-xs font-semibold">Registered</span>
+                    <span id="stat-total-clinics" class="text-3xl font-black text-white tabular-nums">--</span>
+                    <span id="delta-clinics" class="text-xs font-semibold text-slate-500">—</span>
                 </div>
+                <p class="text-[10px] text-slate-500">New clinics vs previous 30 days</p>
             </div>
 
             <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-2">
                 <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Tenants</p>
                 <div class="flex items-baseline justify-between">
-                    <span id="stat-active-clinics" class="text-3xl font-black text-emerald-400">--</span>
-                    <span class="text-emerald-500/80 text-xs font-semibold">Live</span>
+                    <span id="stat-active-clinics" class="text-3xl font-black text-emerald-400 tabular-nums">--</span>
+                    <span id="stat-active-share" class="text-emerald-500/80 text-xs font-semibold">Live</span>
                 </div>
+                <p class="text-[10px] text-slate-500">Currently live workspaces</p>
             </div>
 
             <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-2">
                 <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Patients</p>
                 <div class="flex items-baseline justify-between">
-                    <span id="stat-total-patients" class="text-3xl font-black text-sky-400">--</span>
-                    <span class="text-sky-500/80 text-xs font-semibold">Platform-wide</span>
+                    <span id="stat-total-patients" class="text-3xl font-black text-sky-400 tabular-nums">--</span>
+                    <span id="delta-patients" class="text-xs font-semibold text-slate-500">—</span>
                 </div>
+                <p class="text-[10px] text-slate-500">New patients vs previous 30 days</p>
             </div>
 
             <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-2">
                 <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Appointments</p>
                 <div class="flex items-baseline justify-between">
-                    <span id="stat-total-appointments" class="text-3xl font-black text-purple-400">--</span>
-                    <span class="text-purple-500/80 text-xs font-semibold">Booked</span>
+                    <span id="stat-total-appointments" class="text-3xl font-black text-purple-400 tabular-nums">--</span>
+                    <span id="delta-appointments" class="text-xs font-semibold text-slate-500">—</span>
+                </div>
+                <p class="text-[10px] text-slate-500">Booked vs previous 30 days</p>
+            </div>
+        </section>
+
+        <!-- 📊 Section 1b: Secondary signals + patient-flow funnel -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <!-- Needs attention feed -->
+            <div class="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div>
+                        <h2 class="text-base font-bold text-white uppercase tracking-wider">Needs attention</h2>
+                        <p class="text-xs text-slate-400">Exceptions across the platform, surfaced automatically.</p>
+                    </div>
+                    <span id="attention-count-badge"
+                        class="bg-amber-950 border border-amber-800 text-amber-300 text-xs font-bold px-3 py-1 rounded-full">0</span>
+                </div>
+                <div id="attention-feed" class="space-y-3" role="status" aria-live="polite">
+                    <div class="h-14 bg-slate-800/40 rounded-xl animate-pulse"></div>
+                    <div class="h-14 bg-slate-800/40 rounded-xl animate-pulse"></div>
+                </div>
+            </div>
+
+            <!-- Patient flow funnel -->
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
+                <div class="border-b border-slate-800 pb-3">
+                    <h2 class="text-base font-bold text-white uppercase tracking-wider">Patient flow</h2>
+                    <p class="text-xs text-slate-400">Platform-wide appointment states. No-show rate:
+                        <span id="stat-noshow-rate" class="font-bold text-amber-300">--</span>
+                    </p>
+                </div>
+                <div id="funnel-container" class="space-y-2.5">
+                    <div class="h-6 bg-slate-800/40 rounded animate-pulse"></div>
+                    <div class="h-6 bg-slate-800/40 rounded animate-pulse"></div>
+                    <div class="h-6 bg-slate-800/40 rounded animate-pulse"></div>
                 </div>
             </div>
         </section>
 
+        </div>
+        <div data-saas-panel="applications" class="space-y-8 hidden">
         <!-- 📋 Section 2: Pending Applications Review -->
         <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-6">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
@@ -93,34 +150,212 @@
             </div>
         </section>
 
+        </div>
+        <div data-saas-panel="tenants" class="space-y-8 hidden">
         <!-- 🏢 Section 3: All Tenants Directory -->
         <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
-            <div class="border-b border-slate-800 pb-4">
-                <h2 class="text-base font-bold text-white uppercase tracking-wider">Tenant Directory</h2>
-                <p class="text-xs text-slate-400">Manage all registered tenant workspaces on the platform.</p>
+            <div class="flex flex-col gap-4 border-b border-slate-800 pb-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <h2 class="text-base font-bold text-white uppercase tracking-wider">Tenant Directory</h2>
+                    <p class="text-xs text-slate-400">Manage all registered tenant workspaces on the platform.
+                        <span id="tenant-result-count" class="text-slate-500"></span>
+                    </p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <label for="tenant-search" class="sr-only">Search tenants</label>
+                    <input id="tenant-search" type="search" autocomplete="off" placeholder="Search name or code…"
+                        class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all w-full sm:w-56" />
+                    <label for="tenant-status-filter" class="sr-only">Filter by status</label>
+                    <select id="tenant-status-filter"
+                        class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 transition-all cursor-pointer">
+                        <option value="">All statuses</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                    <button id="export-tenants-btn" type="button"
+                        class="inline-flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold px-3.5 py-2 rounded-xl transition-all cursor-pointer">
+                        Export CSV
+                    </button>
+                </div>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs">
                     <thead class="text-[10px] uppercase text-slate-400 bg-slate-950/50 border-b border-slate-800">
                         <tr>
-                            <th class="p-3">Clinic Name</th>
+                            <th class="p-3">
+                                <button type="button" data-sort="name" class="tenant-sort inline-flex items-center gap-1 font-bold uppercase hover:text-white transition-colors cursor-pointer">Clinic Name <span class="sort-arrow text-slate-600"></span></button>
+                            </th>
                             <th class="p-3">Clinic Code</th>
-                            <th class="p-3">App Status</th>
+                            <th class="p-3">
+                                <button type="button" data-sort="applicationStatus" class="tenant-sort inline-flex items-center gap-1 font-bold uppercase hover:text-white transition-colors cursor-pointer">App Status <span class="sort-arrow text-slate-600"></span></button>
+                            </th>
                             <th class="p-3">Workspace</th>
+                            <th class="p-3">Subscription</th>
+                            <th class="p-3">
+                                <button type="button" data-sort="createdAt" class="tenant-sort inline-flex items-center gap-1 font-bold uppercase hover:text-white transition-colors cursor-pointer">Created <span class="sort-arrow text-slate-600"></span></button>
+                            </th>
                             <th class="p-3 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="tenants-table-body" class="divide-y divide-slate-800/60 text-slate-300">
                         <tr>
-                            <td colspan="5" class="text-center py-6 text-slate-500">Loading tenants...</td>
+                            <td colspan="7" class="text-center py-6 text-slate-500">Loading tenants...</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </section>
+        </div>
+
+        <div data-saas-panel="subscriptions" class="space-y-6 hidden">
+        <!-- 💳 Subscription management -->
+        <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-5">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                <div>
+                    <h2 class="text-base font-bold text-white uppercase tracking-wider">Subscriptions</h2>
+                    <p class="text-xs text-slate-400">Every clinic's plan, renewal health, and lifecycle actions. <span class="text-amber-300/80">🧪 Simulated billing — no real charges.</span> <a href="/billingAdmin.html" class="text-indigo-300 hover:underline">Simulation lab (clock, test outcomes, webhooks) →</a></p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button id="sub-run-cycle" type="button" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all cursor-pointer">▶ Run billing cycle</button>
+                    <button id="sub-refresh" type="button" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold px-3.5 py-2 rounded-xl transition-all cursor-pointer">Refresh</button>
+                </div>
+            </div>
+
+            <div id="sub-kpis" class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div class="h-20 bg-slate-800/40 rounded-xl animate-pulse"></div>
+                <div class="h-20 bg-slate-800/40 rounded-xl animate-pulse"></div>
+                <div class="h-20 bg-slate-800/40 rounded-xl animate-pulse"></div>
+                <div class="h-20 bg-slate-800/40 rounded-xl animate-pulse"></div>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-2">
+                <input id="sub-search" type="search" autocomplete="off" placeholder="Search clinic name or slug…"
+                    class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all flex-1" />
+                <select id="sub-status-filter" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer">
+                    <option value="">All statuses</option>
+                </select>
+                <span class="inline-flex items-center gap-2 text-xs text-slate-300 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2" title="One fixed plan for every clinic">Professional · fixed</span>
+                <label class="inline-flex items-center gap-2 text-xs text-slate-300 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 cursor-pointer">
+                    <input id="sub-expiring-only" type="checkbox" class="accent-amber-500" /> Expiring ≤ 7d
+                </label>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="text-[10px] uppercase text-slate-400 bg-slate-950/50 border-b border-slate-800">
+                        <tr>
+                            <th class="p-3">Clinic</th>
+                            <th class="p-3">Plan</th>
+                            <th class="p-3">Amount</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3">Renews / Ends</th>
+                            <th class="p-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="subs-table-body" class="divide-y divide-slate-800/60 text-slate-300">
+                        <tr><td colspan="6" class="text-center py-6 text-slate-500">Loading subscriptions...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        </div>
+
+        <div data-saas-panel="billing" class="space-y-6 hidden">
+        <!-- 🧾 Billing activity: invoices + notifications + audit -->
+        <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
+                <div>
+                    <h2 class="text-base font-bold text-white uppercase tracking-wider">Billing activity</h2>
+                    <p class="text-xs text-slate-400">Latest invoices, notifications sent to clinics, and audit trail.</p>
+                </div>
+                <button id="billing-refresh" type="button" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold px-3.5 py-2 rounded-xl transition-all cursor-pointer self-start">Refresh</button>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-4">
+                    <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">Latest invoices</h3>
+                    <div id="billing-invoices" class="space-y-2"><p class="text-xs text-slate-500">Loading…</p></div>
+                </div>
+                <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-4">
+                    <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">Notifications sent</h3>
+                    <div id="billing-notifs" class="space-y-2"><p class="text-xs text-slate-500">Loading…</p></div>
+                </div>
+            </div>
+            <p class="text-[11px] text-slate-500">Audit trail, webhooks, and simulation controls live in the <a href="/billingAdmin.html" class="text-indigo-300 hover:underline">Billing Admin Console</a>.</p>
+        </section>
+        </div>
 
     </main>
+
+    <!-- 🔍 Subscription detail drawer -->
+    <div id="sub-drawer" class="hidden fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="sub-drawer-title">
+        <div id="sub-drawer-backdrop" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"></div>
+        <div class="absolute right-0 top-0 h-full w-full max-w-lg bg-slate-900 border-l border-slate-800 p-6 overflow-y-auto shadow-2xl">
+            <div class="flex items-start justify-between gap-3 mb-4">
+                <div>
+                    <h3 id="sub-drawer-title" class="text-sm font-bold text-white uppercase tracking-wider">Subscription</h3>
+                    <p id="sub-drawer-sub" class="text-xs text-slate-400"></p>
+                </div>
+                <button id="sub-drawer-close" type="button" class="text-slate-400 hover:text-white text-lg px-2 cursor-pointer" aria-label="Close">×</button>
+            </div>
+            <div id="sub-drawer-body" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <!-- ✉️ Notify clinic modal -->
+    <div id="notify-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="notify-title">
+        <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-2xl">
+            <h3 id="notify-title" class="text-sm font-bold text-white uppercase tracking-wider">Warn clinic</h3>
+            <p id="notify-sub" class="text-xs text-slate-400"></p>
+            <label class="block text-xs text-slate-300 font-bold">Notice type
+                <select id="notify-kind" class="mt-1 w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer">
+                    <option value="expiring_soon">Expiring soon — renewal reminder</option>
+                    <option value="trial_ending">Trial ending</option>
+                    <option value="overdue">Payment overdue</option>
+                    <option value="custom">Custom message</option>
+                </select>
+            </label>
+            <label class="block text-xs text-slate-300 font-bold">Channel
+                <select id="notify-channel" class="mt-1 w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer">
+                    <option value="both">In-app + Email</option>
+                    <option value="inapp">In-app only</option>
+                    <option value="email">Email only</option>
+                </select>
+            </label>
+            <label class="block text-xs text-slate-300 font-bold">Message
+                <textarea id="notify-message" rows="4" maxlength="600" placeholder="Shown in-app and in the email…"
+                    class="mt-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500"></textarea>
+            </label>
+            <div class="flex items-center justify-end space-x-3 pt-2">
+                <button type="button" id="notify-cancel" class="text-xs font-bold text-slate-400 hover:text-white px-4 py-2 cursor-pointer">Cancel</button>
+                <button type="button" id="notify-send" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-4 py-2 rounded-xl transition-all cursor-pointer">Send warning</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔔 Toast notifications are rendered by the global system
+         (src/util/toast.js -> window.Toast); no static container is needed. -->
+
+    <!-- ⚠️ Generic confirmation dialog (destructive actions) -->
+    <div id="confirm-modal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+        role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+        <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-2xl">
+            <h3 id="confirm-title" class="text-sm font-bold text-white uppercase tracking-wider">Please confirm</h3>
+            <p id="confirm-body" class="text-xs text-slate-400"></p>
+            <div class="flex items-center justify-end space-x-3 pt-2">
+                <button type="button" id="confirm-cancel-btn"
+                    class="text-xs font-bold text-slate-400 hover:text-white px-4 py-2 transition-colors cursor-pointer">
+                    Cancel
+                </button>
+                <button type="button" id="confirm-accept-btn"
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all cursor-pointer">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- 🚫 Rejection Reason Modal -->
     <div id="rejection-modal"
@@ -147,6 +382,7 @@
         </div>
     </div>
 
+    <script src="/src/util/toast.js"></script>
     <script src="/src/pages/saasAdminDashboard.js"></script>
 </body>
 

@@ -1,6 +1,12 @@
 // 1. Renamed to APP_BASE_URL to avoid colliding with booking.js!
 const APP_BASE_URL = "http://localhost:5000";
 
+// Non-blocking feedback (falls back to alert only if the shared UI is absent).
+const notifyHours = (message, type = "info") =>
+  window.DashboardUI
+    ? window.DashboardUI.toast(message, type)
+    : window.alert(message);
+
 document.addEventListener("DOMContentLoaded", () => {
   initOperatingHoursModule();
 });
@@ -25,11 +31,11 @@ function initOperatingHoursModule() {
   }
 }
 
-// Helper: Safely resolve clinicId from both localStorage locations
+// Helper: Safely resolve the admin clinicId. Prefer the logged-in admin's
+// clinic (userData.clinicId) so the PATCH targets the clinic the token
+// actually authorizes, instead of the raw "clinicId" key that a patient
+// booking session may have primed with a different/a stale workspace ID.
 function getResolvedClinicId() {
-  const directId = localStorage.getItem("clinicId");
-  if (directId && directId !== "undefined") return directId;
-
   try {
     const userData = JSON.parse(localStorage.getItem("user") || "{}");
     if (userData.clinicId && userData.clinicId !== "undefined") {
@@ -38,6 +44,9 @@ function getResolvedClinicId() {
   } catch (e) {
     console.error("Error parsing user object from localStorage", e);
   }
+
+  const directId = localStorage.getItem("clinicId");
+  if (directId && directId !== "undefined") return directId;
   return "";
 }
 
@@ -124,7 +133,10 @@ async function saveClinicOperatingHours() {
   const saveBtn = document.getElementById("btn-save-hours");
 
   if (!clinicId) {
-    alert("❌ Save Error: Clinic ID is missing or invalid. Please re-login.");
+    notifyHours(
+      "Save error: Clinic ID is missing or invalid. Please re-login.",
+      "error",
+    );
     return;
   }
 
@@ -145,6 +157,7 @@ async function saveClinicOperatingHours() {
     saveBtn.disabled = true;
     saveBtn.innerHTML = "Saving... ⏳";
 
+    console.log("[OPERATING-HOURS-SAVE] clinicId=", clinicId, "| url=", `${APP_BASE_URL}/api/v1/tenants/${clinicId}`, "| storedUser.clinicId=", JSON.parse(localStorage.getItem("user") || "{}").clinicId, "| storedRawClinicId=", localStorage.getItem("clinicId"));
     // 🎯 Updated to use APP_BASE_URL
     const response = await fetch(`${APP_BASE_URL}/api/v1/tenants/${clinicId}`, {
       method: "PATCH",
@@ -172,9 +185,9 @@ async function saveClinicOperatingHours() {
     if (!response.ok)
       throw new Error(data.message || "Failed to save schedule.");
 
-    alert("✅ Operating hours and slot settings saved successfully!");
+    notifyHours("Operating hours and slot settings saved.", "success");
   } catch (err) {
-    alert(`Save Error: ${err.message}`);
+    notifyHours(`Save error: ${err.message}`, "error");
   } finally {
     saveBtn.disabled = false;
     saveBtn.innerHTML = `

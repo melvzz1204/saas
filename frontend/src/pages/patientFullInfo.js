@@ -36,7 +36,16 @@ const verifiedPatientId =
 
 const statusToast = document.getElementById("statusToast");
 
+// Delegate to the global toast system (src/util/toast.js -> window.Toast) so
+// this page matches every other dashboard. Legacy color names map to tones.
 function showToast(message, color) {
+  if (window.Toast) {
+    const tone =
+      color === "green" ? "success" : color === "orange" ? "warning" : "error";
+    window.Toast.show(message, tone);
+    return;
+  }
+  // Fallback to the original inline toast if toast.js is not loaded.
   if (!statusToast) return;
   statusToast.style.display = "block";
   statusToast.innerText = message;

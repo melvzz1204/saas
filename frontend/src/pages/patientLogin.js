@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (!clinicSlug) {
     showBanner(
-      "Access Terminated: Missing clinic workspace tracking parameter.",
+      "This clinic link is incomplete. Return to the clinic page and try again.",
       "error",
     );
     if (titleElement) titleElement.textContent = "Identity Error";
@@ -32,10 +32,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // 1. Fetch structural clinic metadata via your adaptive identity endpoint
   try {
-    const response = await fetch(
+    const { data: result } = await AppFeedback.request(
       `http://localhost:5000/api/v1/tenants/slug/${clinicSlug}`,
     );
-    const result = await response.json();
 
     if (result.success && result.data) {
       contextClinicId = result.data._id;
@@ -46,8 +45,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
     }
   } catch (error) {
-    showBanner(error.message, "error");
-    if (titleElement) titleElement.textContent = "Offline Portal Container";
+    console.error("Clinic context request failed", error);
+    showBanner(
+      AppFeedback.safeMessage(
+        error,
+        error.status ? { status: error.status } : null,
+      ),
+      "error",
+    );
+    if (titleElement) titleElement.textContent = "Clinic Portal";
     if (formElement) {
       formElement.style.pointerEvents = "none";
       formElement.style.opacity = "0.3";
@@ -63,6 +69,26 @@ document.addEventListener("DOMContentLoaded", async () => {
 // 🚀 Fixed & Consolidated Authentication Form Handler
 async function handlePatientLoginSubmit(e) {
   e.preventDefault();
+
+  const emailInput = document.getElementById("login-email");
+  const passwordInput = document.getElementById("login-password");
+  if (!emailInput.value.trim()) {
+    AppFeedback.showFieldError(emailInput, "Enter your email address.");
+    emailInput.focus();
+    return;
+  }
+  if (!emailInput.checkValidity()) {
+    AppFeedback.showFieldError(emailInput, "Enter a valid email address.");
+    emailInput.focus();
+    return;
+  }
+  if (!passwordInput.value) {
+    AppFeedback.showFieldError(passwordInput, "Enter your password.");
+    passwordInput.focus();
+    return;
+  }
+  AppFeedback.clearFieldError(emailInput);
+  AppFeedback.clearFieldError(passwordInput);
 
   const loginBtn = document.getElementById("login-btn");
   if (loginBtn) {
@@ -80,21 +106,19 @@ async function handlePatientLoginSubmit(e) {
 
   try {
     // 🔗 Hit the central authentication node and pass the critical tenant header context!
-    const response = await fetch(
+    const { response, data: result } = await AppFeedback.request(
       "http://localhost:5000/api/v1/patients/login",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-clinic-id": contextClinicId, // 👈 Keeps tenant workspace clean
+          "x-clinic-id": contextClinicId,
         },
         body: JSON.stringify(payload),
       },
     );
 
-    const result = await response.json();
-
-    if (response.ok && (result.success || result.token)) {
+    if (result && (result.success || result.token)) {
       console.log("📥 Clean Login Server Response:", result);
 
       // Extract properties checking both standard root structures and data objects safely
@@ -142,9 +166,17 @@ async function handlePatientLoginSubmit(e) {
       }
     }
   } catch (error) {
-    showBanner(error.message, "error");
+    console.error("Patient login request failed", error);
+    showBanner(
+      AppFeedback.safeMessage(
+        error,
+        error.status ? { status: error.status } : null,
+      ),
+      "error",
+    );
     if (loginBtn) {
       loginBtn.disabled = false;
+      loginBtn.removeAttribute("aria-busy");
       loginBtn.textContent = "Verify Secure Session";
     }
   }

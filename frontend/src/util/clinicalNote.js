@@ -22,19 +22,13 @@ function getDentistName(dentistId) {
     return "Clinical Provider";
   }
 
-  if (dentistId.firstName || dentistId.lastName) {
-    const name =
-      `${dentistId.firstName || ""} ${dentistId.lastName || ""}`.trim();
-    return name.toLowerCase().startsWith("dr.") ? name : `Dr. ${name}`;
-  }
+  const raw = dentistId.fullName || dentistId.name || "";
+  const split = raw
+    ? raw
+    : `${dentistId.firstName || ""} ${dentistId.lastName || ""}`.trim();
 
-  if (dentistId.name) {
-    return dentistId.name.toLowerCase().startsWith("dr.")
-      ? dentistId.name
-      : `Dr. ${dentistId.name}`;
-  }
-
-  return "Clinical Provider";
+  if (!split) return "Clinical Provider";
+  return split.toLowerCase().startsWith("dr.") ? split : `Dr. ${split}`;
 }
 
 function getSpecialization(dentistId) {
@@ -134,9 +128,7 @@ export function renderPatientHistoryUI(
         typeof note.dentistId === "object" && note.dentistId !== null
           ? note.dentistId
           : null;
-      const dentistName = dentistObj
-        ? `Dr. ${dentistObj.firstName || ""} ${dentistObj.lastName || ""}`.trim()
-        : "Clinical Provider";
+      const dentistName = dentistObj ? getDentistName(dentistObj) : "Clinical Provider";
       const specialization = dentistObj?.specialization || "General Dentistry";
 
       // 3. Treated Teeth (Supports `treatedTeeth` array [24, 38] or `teeth`)
