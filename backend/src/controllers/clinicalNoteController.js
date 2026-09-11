@@ -1,4 +1,4 @@
-import ClinicalNote from "../models/ClinicalNote.js";
+import ClinicalNote from "../models/clinicalNote.js";
 
 // controllers/clinicalNoteController.js
 export const createClinicalNote = async (req, res) => {
