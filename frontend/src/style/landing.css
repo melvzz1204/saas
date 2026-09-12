@@ -481,14 +481,18 @@ h4 {
 
 /* Mobile menu */
 .mobile-menu {
-  display: none;
-  border-top: 1px solid var(--border);
+  display: block;
+  max-height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  border-top: 0 solid transparent;
   background: var(--bg);
-  padding: var(--sp-4) var(--sp-5) var(--sp-6);
+  padding: 0 var(--sp-5);
 }
 
 .mobile-menu.open {
   display: block;
+  visibility: visible;
 }
 
 .mobile-menu a {
@@ -1951,3 +1955,532 @@ h4 {
 .mobile-menu .link-btn:hover {
   color: var(--accent);
 }
+
+/* ==========================================================================
+   17. MOBILE EXPERIENCE ENHANCEMENTS
+   --------------------------------------------------------------------------
+   Mobile-first refinements: compact nav, fluid hero, swipe-free stacked
+   product preview, full-width CTAs, roomy tap targets, and zero
+   horizontal overflow on 320–480px viewports.
+   ========================================================================== */
+
+/* --- Base mobile safeguards --- */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  -webkit-tap-highlight-color: rgba(45, 212, 191, 0.2);
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+@supports not (overflow: clip) {
+  body {
+    overflow-x: hidden;
+  }
+}
+
+/* Give small screens a touch more content width */
+@media (max-width: 639px) {
+  .container {
+    width: min(var(--container), 100% - 2rem);
+  }
+
+  .section {
+    padding-block: clamp(2.75rem, 12vw, 4rem);
+    overflow-x: clip;
+  }
+
+  /* Tighter section rhythm on phones */
+  .section-head {
+    margin-bottom: clamp(1.75rem, 7vw, 2.5rem);
+  }
+
+  .grid {
+    gap: var(--sp-4);
+  }
+
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    gap: var(--sp-4);
+  }
+
+  .lead {
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
+  .section-title {
+    font-size: clamp(1.5rem, 6.4vw, 1.875rem);
+    line-height: 1.15;
+  }
+
+  .eyebrow {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+  }
+}
+
+/* --- Navigation: compact brand, uncrowded actions --- */
+@media (max-width: 639px) {
+  :root {
+    --header-h: 3.75rem;
+  }
+
+  .nav-inner {
+    gap: var(--sp-2);
+  }
+
+  .brand {
+    font-size: 1rem;
+    gap: var(--sp-2);
+    min-width: 0;
+  }
+
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .brand small {
+    font-size: 0.5625rem;
+    letter-spacing: 0.14em;
+  }
+
+  .nav-actions {
+    gap: var(--sp-2);
+    margin-left: auto;
+  }
+
+  /* Keep the header to brand + hamburger on phones; CTA lives in menu */
+  .nav-actions .btn-primary {
+    display: none;
+  }
+
+  .menu-toggle {
+    width: 44px;
+    height: 44px;
+    touch-action: manipulation;
+  }
+}
+
+/* Ultra-compact phones: truncate brand subtitle instead of wrapping */
+@media (max-width: 359px) {
+  .brand small {
+    display: none;
+  }
+
+  .brand {
+    font-size: 0.95rem;
+  }
+}
+
+/* --- Polished mobile menu --- */
+.mobile-menu {
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 var(--sp-5);
+  border-top: 0 solid transparent;
+  transition: max-height 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+    padding 0.25s ease, border-color 0.25s ease;
+}
+
+.mobile-menu.open {
+  display: block;
+  max-height: calc(100dvh - var(--header-h));
+  max-height: calc(100vh - var(--header-h));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--sp-2) var(--sp-5)
+    calc(var(--sp-6) + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--border);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+}
+
+.mobile-menu a,
+.mobile-menu .link-btn {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  padding: var(--sp-3) var(--sp-1);
+}
+
+.mobile-menu a:active,
+.mobile-menu .link-btn:active {
+  color: var(--accent);
+  background: rgba(45, 212, 191, 0.06);
+  border-radius: var(--r-sm);
+}
+
+.mobile-menu .btn-block {
+  min-height: 52px;
+  margin-top: var(--sp-4);
+  font-size: var(--fs-base);
+}
+
+/* --- Hero: fluid type, full-width CTAs, calm stats --- */
+@media (max-width: 639px) {
+  .hero-title {
+    font-size: clamp(2rem, 9.5vw, 2.75rem);
+    line-height: 1.08;
+  }
+
+  .hero .badge {
+    max-width: 100%;
+    white-space: normal;
+    line-height: 1.4;
+    text-align: left;
+  }
+
+  .hero-copy {
+    max-width: 100%;
+  }
+
+  .hero-ctas {
+    grid-template-columns: 1fr;
+    gap: var(--sp-3);
+  }
+
+  .hero-ctas .btn {
+    width: 100%;
+    min-height: 54px;
+    font-size: var(--fs-base);
+    padding-inline: 1.25rem;
+  }
+
+  .hero-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-4) var(--sp-5);
+    margin-top: var(--sp-6);
+  }
+
+  .hero-stats .stat {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-1);
+  }
+
+  .hero-stats .stat-value {
+    font-size: clamp(1.5rem, 7vw, 1.875rem);
+  }
+
+  .hero-stats .stat-label {
+    font-size: var(--fs-xs);
+    line-height: 1.5;
+  }
+
+  /* Shrink the ambient glow so it never forces horizontal scroll */
+  .hero .glow {
+    width: min(640px, 130vw) !important;
+    height: min(640px, 130vw) !important;
+    top: -18vw !important;
+  }
+}
+
+/* --- Hero product preview: stack board, dock chips --- */
+@media (max-width: 639px) {
+  .hero-grid {
+    gap: var(--sp-8);
+  }
+
+  .hero-visual {
+    max-width: 100%;
+    padding: 0;
+    display: grid;
+    gap: var(--sp-3);
+    justify-items: center;
+  }
+
+  .mockup {
+    width: 100%;
+    transform: none;
+    border-radius: var(--r-lg);
+  }
+
+  .mockup:hover {
+    transform: none;
+  }
+
+  .mockup-bar {
+    padding: var(--sp-3) var(--sp-4);
+  }
+
+  .mockup-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  /* Board columns stack top-to-bottom on phones — no sideways scroll */
+  .mockup-body {
+    grid-template-columns: 1fr;
+    gap: var(--sp-3);
+    padding: var(--sp-3);
+  }
+
+  .mockup-col {
+    padding: var(--sp-3) var(--sp-3) var(--sp-2);
+  }
+
+  .mockup-row {
+    font-size: 0.8125rem;
+    padding: 0.65rem 0.75rem;
+    min-height: 44px;
+  }
+
+  /* Chips dock below the mockup instead of floating off-screen */
+  .mockup-chip {
+    position: static;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.45;
+    max-width: 100%;
+    justify-content: center;
+    animation: none;
+  }
+
+  .mockup-chip.top,
+  .mockup-chip.bottom {
+    top: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
+  }
+}
+
+/* Restore floating chips + tilt only where there is room */
+@media (min-width: 640px) {
+  .hero-visual {
+    padding-inline: var(--sp-4);
+  }
+}
+
+/* --- Cards, lists, and social proof on phones --- */
+@media (max-width: 639px) {
+  .card {
+    padding: var(--sp-5);
+    border-radius: var(--r-md);
+  }
+
+  /* Tap-friendly but not jumpy cards on touch devices */
+  .card:hover,
+  .clinic-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .card:active,
+  .clinic-card:active {
+    border-color: rgba(45, 212, 191, 0.45);
+  }
+
+  .feature-card h3 {
+    font-size: 1.05rem;
+  }
+
+  .check-list {
+    max-width: 100%;
+    gap: var(--sp-3);
+  }
+
+  .check-list .chip {
+    width: 100%;
+    justify-content: flex-start;
+    white-space: normal;
+    line-height: 1.5;
+    font-size: var(--fs-sm);
+  }
+
+  .toast-stack {
+    max-width: 100%;
+  }
+
+  .toast {
+    padding: var(--sp-4);
+    gap: var(--sp-3);
+  }
+
+  .toast .avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .testimonial {
+    padding: var(--sp-5);
+  }
+
+  .clinic-card {
+    gap: var(--sp-3);
+  }
+
+  .clinic-card-foot {
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+  }
+
+  .step {
+    padding: var(--sp-5);
+  }
+}
+
+/* --- Pricing + trust badges --- */
+@media (max-width: 639px) {
+  .pricing-card {
+    padding: var(--sp-6) var(--sp-5);
+  }
+
+  .price-line .stat-value {
+    font-size: clamp(2.25rem, 11vw, 2.75rem) !important;
+  }
+
+  .plan-list .chip {
+    white-space: normal;
+    line-height: 1.5;
+    align-items: flex-start;
+  }
+
+  .trust-row {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-3);
+  }
+
+  .trust-row .chip {
+    padding: 0.8rem 0.6rem;
+    font-size: var(--fs-xs);
+    line-height: 1.45;
+    text-align: center;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 399px) {
+  .trust-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- FAQ + final CTA + footer --- */
+@media (max-width: 639px) {
+  .faq-item summary {
+    padding: var(--sp-4);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    min-height: 56px;
+  }
+
+  .faq-item .faq-body {
+    padding: 0 var(--sp-4) var(--sp-4);
+  }
+
+  .cta-row {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+
+  .cta-row .btn {
+    width: 100%;
+    min-height: 54px;
+    white-space: normal;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  .final-cta .section-title {
+    font-size: clamp(1.625rem, 7.5vw, 2.25rem);
+  }
+
+  .footer {
+    padding-block: var(--sp-12) calc(var(--sp-8) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .footer-grid {
+    gap: var(--sp-6);
+    margin-bottom: var(--sp-8);
+  }
+
+  .footer-about p {
+    max-width: 100%;
+  }
+
+  .footer ul {
+    gap: var(--sp-2);
+  }
+
+  .footer ul a,
+  .footer .link-btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: var(--fs-base);
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-2);
+  }
+}
+
+/* --- Buttons: thumb-friendly targets on coarse pointers --- */
+@media (pointer: coarse) {
+  .btn {
+    min-height: 48px;
+  }
+
+  .btn-lg {
+    min-height: 54px;
+  }
+
+  .btn:active {
+    transform: scale(0.99);
+  }
+}
+
+/* --- Tiny phones (≤360px): prevent crowding --- */
+@media (max-width: 360px) {
+  .hero-ctas .btn-lg {
+    padding: 0.85rem 1rem;
+    font-size: 0.95rem;
+  }
+
+  .hero-stats {
+    gap: var(--sp-3);
+  }
+
+  .pricing-card .btn-lg {
+    padding-inline: 1rem;
+    font-size: 0.95rem;
+  }
+
+  .plan-list .chip {
+    font-size: var(--fs-xs);
+  }
+}
+
+/* --- Landscape phones: keep hero compact --- */
+@media (max-height: 500px) and (orientation: landscape) and (max-width: 900px) {
+  .section {
+    padding-block: 2.5rem;
+  }
+
+  .hero-title {
+    font-size: clamp(1.75rem, 5vw, 2.25rem);
+  }
+
+  .hero-stats {
+    margin-top: var(--sp-5);
+  }
+
+  .hero-visual {
+    max-width: 480px;
+  }
+}
+

@@ -10,30 +10,45 @@ document.addEventListener("DOMContentLoaded", () => {
   const menu = document.getElementById("mobile-menu");
 
   if (toggle && menu) {
-    toggle.addEventListener("click", () => {
-      const isOpen = menu.classList.toggle("open");
+    const setOpen = (isOpen) => {
+      menu.classList.toggle("open", isOpen);
       toggle.setAttribute("aria-expanded", String(isOpen));
       toggle.setAttribute(
         "aria-label",
         isOpen ? "Close navigation menu" : "Open navigation menu",
       );
+    };
+
+    toggle.addEventListener("click", () => {
+      setOpen(!menu.classList.contains("open"));
     });
 
-    // Close the menu after tapping any link inside it.
-    menu.querySelectorAll("a").forEach((link) => {
-      link.addEventListener("click", () => {
-        menu.classList.remove("open");
-        toggle.setAttribute("aria-expanded", "false");
-        toggle.setAttribute("aria-label", "Open navigation menu");
-      });
+    // Close the menu after tapping any link or button inside it.
+    menu.querySelectorAll("a, button").forEach((el) => {
+      el.addEventListener("click", () => setOpen(false));
     });
 
     // Close on Escape.
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && menu.classList.contains("open")) {
-        menu.classList.remove("open");
-        toggle.setAttribute("aria-expanded", "false");
+        setOpen(false);
         toggle.focus();
+      }
+    });
+
+    // Close when resizing up to desktop nav or tapping outside.
+    window.addEventListener("resize", () => {
+      if (window.innerWidth >= 1024 && menu.classList.contains("open")) {
+        setOpen(false);
+      }
+    });
+    document.addEventListener("click", (e) => {
+      if (
+        menu.classList.contains("open") &&
+        !menu.contains(e.target) &&
+        !toggle.contains(e.target)
+      ) {
+        setOpen(false);
       }
     });
   }
