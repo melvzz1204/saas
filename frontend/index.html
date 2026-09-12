@@ -107,11 +107,6 @@
                     <!-- Inline trust stats -->
                     <dl class="hero-stats">
                         <div class="stat">
-                            <dt class="sr-only">Clinics onboarded</dt>
-                            <dd class="stat-value accent" id="hero-clinic-count">—</dd>
-                            <dd class="stat-label">live clinics onboarded</dd>
-                        </div>
-                        <div class="stat">
                             <dt class="sr-only">Pricing</dt>
                             <dd class="stat-value">₱3,000</dd>
                             <dd class="stat-label">per branch / month</dd>
@@ -164,34 +159,6 @@
                         </svg>
                         Reminder sent to patient
                     </span>
-                </div>
-            </div>
-        </section>
-
-        <!-- ============================================================
-             SOCIAL PROOF — LIVE CLINIC NETWORK
-             ============================================================ -->
-        <section id="clinic-network" class="section-alt section" style="padding-block: clamp(3.5rem, 8vw, 5.5rem);">
-            <div class="container">
-                <div class="section-head">
-                    <span class="eyebrow">Trusted clinic network</span>
-                    <h2 class="section-title">Growing clinics already run on Novaclinic</h2>
-                    <p class="lead">
-                        Live directory of approved practices using a more connected way to manage patient care.
-                        <span id="clinic-network-count" class="chip" role="status"
-                            style="margin-left: var(--sp-2);">Loading network…</span>
-                    </p>
-                </div>
-
-                <div id="public-clinics-container" class="grid grid-3" style="gap: var(--sp-5);">
-                    <div class="clinic-card"
-                        style="grid-column: 1 / -1; align-items: center; justify-content: center; text-align: center; padding-block: var(--sp-10);">
-                        <p style="color: var(--text-3); font-size: var(--fs-sm);">Loading registered clinics…</p>
-                    </div>
-                </div>
-
-                <div style="text-align: center; margin-top: var(--sp-8);">
-                    <button type="button" class="btn btn-secondary" data-auth="register">Register your clinic</button>
                 </div>
             </div>
         </section>
@@ -587,7 +554,6 @@
                                     d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                             </svg>
                         </button>
-                        <a class="btn btn-secondary btn-lg" href="#clinic-network">Browse live clinic pages</a>
                     </div>
                 </div>
             </div>
@@ -623,7 +589,6 @@
                     <h4>Resources</h4>
                     <ul>
                         <li><a href="#faq">FAQ</a></li>
-                        <li><a href="#clinic-network">Clinic network</a></li>
                         <li><a href="/clinicHomePage.html?clinic=bright-teeth-dental-clinic">Live clinic demo</a></li>
                         <li><button type="button" class="link-btn" data-auth="login">Staff sign in</button></li>
                     </ul>
@@ -949,7 +914,6 @@
     <script src="./src/util/landing.js"></script>
     <script src="./src/components/paymongoCheckout.js"></script>
     <script src="./src/util/landingAuth.js"></script>
-    <script src="./src/pages/publicClinics.js"></script>
     <script src="./src/pages/landingTestimonials.js"></script>
 </body>
 
