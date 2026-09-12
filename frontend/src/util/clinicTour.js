@@ -42,14 +42,14 @@
       selector: "#kpi-stats",
       panel: null,
       title: "At-a-Glance Metrics",
-      body: "Your KPI strip shows today's appointments, this month's bookings, active staff, and pending requests — all updated in real time.",
+      body: "Your KPI strip shows today's appointments, this month's bookings, active staff, and pending requests, all updated in real time.",
       position: "bottom",
     },
     {
       selector: "#sidebar-nav",
       panel: null,
       title: "Navigation Sidebar",
-      body: "Switch between management panels from here. Each section — appointments, staff, pricing, and more — lives in its own tab.",
+      body: "Switch between management panels from here. Each section, appointments, staff, pricing, and more, lives in its own tab.",
       position: "right",
     },
     {
@@ -77,7 +77,7 @@
       selector: "#nav-pricing",
       panel: "panel-pricing",
       title: "Dental Pricing Menu",
-      body: "Set up and adjust treatment prices. Add new services, modify rates, and toggle availability — all reflected on the patient booking screen.",
+      body: "Set up and adjust treatment prices. Add new services, modify rates, and toggle availability, all reflected on the patient booking screen.",
       position: "right",
     },
     {
@@ -91,7 +91,7 @@
       selector: "#nav-landing",
       panel: "panel-landing",
       title: "Landing Page Builder",
-      body: "Customize your public clinic page — choose a template, set branding colors, edit content sections, and publish when ready.",
+      body: "Customize your public clinic page, choose a template, set branding colors, edit content sections, and publish when ready.",
       position: "right",
     },
     {
@@ -227,18 +227,25 @@
     tooltipEl.className = "clinic-tour-tooltip";
     tooltipEl.setAttribute("role", "document");
 
+    // Header (dark gradient band)
+    var headerEl = document.createElement("div");
+    headerEl.className = "clinic-tour-tooltip-header";
+
     // Title
     var titleEl = document.createElement("p");
     titleEl.className = "clinic-tour-tooltip-title";
     titleEl.id = "clinic-tour-tooltip-title";
 
-    // Body
-    var bodyEl = document.createElement("p");
-    bodyEl.className = "clinic-tour-tooltip-body";
-
     // Progress indicator
     progressEl = document.createElement("p");
     progressEl.className = "clinic-tour-tooltip-progress";
+
+    headerEl.appendChild(titleEl);
+    headerEl.appendChild(progressEl);
+
+    // Body
+    var bodyEl = document.createElement("p");
+    bodyEl.className = "clinic-tour-tooltip-body";
 
     // Button row
     var btnRow = document.createElement("div");
@@ -269,9 +276,8 @@
     btnRow.appendChild(skipBtn);
     btnRow.appendChild(navRow);
 
-    tooltipEl.appendChild(titleEl);
+    tooltipEl.appendChild(headerEl);
     tooltipEl.appendChild(bodyEl);
-    tooltipEl.appendChild(progressEl);
     tooltipEl.appendChild(btnRow);
 
     overlay.appendChild(spotlightEl);

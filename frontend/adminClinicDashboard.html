@@ -10,22 +10,52 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
     <style>
+        /* ── Design Tokens ── */
         :root {
-            --focus-ring: #4f46e5;
-            /* Shared status color tokens for consistent, WCAG-AA color coding */
+            --color-primary: #4f46e5;
+            --color-primary-light: #eef2ff;
+            --color-focus-ring: #4f46e5;
+            --color-bg-body: #f8fafc;
+            --color-surface: #ffffff;
+            --color-border: #e2e8f0;
+            --color-border-light: #f1f5f9;
+            --color-text-primary: #1e293b;
+            --color-text-secondary: #64748b;
+            --color-text-muted: #94a3b8;
+            --color-text-xs: 11px;
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 10px;
+            --radius-xl: 12px;
+            --radius-2xl: 16px;
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+            --font-body: 13px;
+            --line-body: 1.55;
+            /* Status tokens (WCAG-AA) */
             --status-critical: #e11d48;
             --status-warning: #b45309;
             --status-success: #047857;
             --status-info: #4f46e5;
         }
 
-        /* Keyboard-only skip link to the main content region */
+        /* ── Reset / Base ── */
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            background: var(--color-bg-body);
+            font-size: var(--font-body);
+            line-height: var(--line-body);
+        }
+
+        /* ── Skip Link ── */
         .skip-link {
             position: fixed;
             top: .5rem;
             left: .5rem;
             z-index: 60;
-            background: #4f46e5;
+            background: var(--color-primary);
             color: #fff;
             font-weight: 700;
             font-size: .75rem;
@@ -34,14 +64,13 @@
             transform: translateY(-160%);
             transition: transform .18s ease;
         }
-
         .skip-link:focus {
             transform: none;
             outline: 2px solid #fff;
             outline-offset: 2px;
         }
 
-        /* Consistent, visible focus indicator for all interactive elements */
+        /* ── Focus ── */
         a:focus-visible,
         button:focus-visible,
         input:focus-visible,
@@ -49,37 +78,333 @@
         textarea:focus-visible,
         [role="tab"]:focus-visible,
         [tabindex]:focus-visible {
-            outline: 2px solid var(--focus-ring);
+            outline: 2px solid var(--color-focus-ring);
             outline-offset: 2px;
             border-radius: 6px;
         }
+        .dashboard-panel:focus { outline: none; }
 
-        .dashboard-panel:focus {
-            outline: none;
-        }
+        /* ── Sidebar scroll lock ── */
+        body.sidebar-open { overflow: hidden; }
+        @media (min-width: 768px) { body.sidebar-open { overflow: auto; } }
 
-        /* Lock body scroll while the mobile nav drawer is open */
-        body.sidebar-open {
-            overflow: hidden;
-        }
-
-        @media (min-width: 768px) {
-            body.sidebar-open {
-                overflow: auto;
-            }
-        }
-
+        /* ── Reduced motion ── */
         @media (prefers-reduced-motion: reduce) {
-
-            *,
-            *::before,
-            *::after {
+            *, *::before, *::after {
                 transition-duration: .01ms !important;
                 animation-duration: .01ms !important;
             }
         }
 
-        /* Preset cards in the landing page builder */
+        /* ═══════════════════════════════════════════
+           Reusable Component Classes
+           ═══════════════════════════════════════════ */
+
+        /* Card */
+        .card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-xs);
+        }
+        .card-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--color-border-light);
+            background: rgba(248,250,252,.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-body { padding: 18px; }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            padding: 8px 14px;
+            border-radius: var(--radius-md);
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all .15s ease;
+            line-height: 1.4;
+        }
+        .btn-primary {
+            background: var(--color-primary);
+            color: #fff;
+            border-color: var(--color-primary);
+        }
+        .btn-primary:hover { background: #4338ca; border-color: #4338ca; }
+        .btn-secondary {
+            background: var(--color-surface);
+            color: var(--color-text-primary);
+            border-color: var(--color-border);
+        }
+        .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
+        .btn-success {
+            background: #059669;
+            color: #fff;
+            border-color: #059669;
+        }
+        .btn-success:hover { background: #047857; }
+        .btn-danger-outline {
+            background: transparent;
+            color: #e11d48;
+            border-color: #fecdd3;
+        }
+        .btn-danger-outline:hover { background: #fff1f2; border-color: #fda4af; }
+        .btn-ghost {
+            background: transparent;
+            color: var(--color-primary);
+            border-color: transparent;
+        }
+        .btn-ghost:hover { background: var(--color-primary-light); }
+        .btn-sm { font-size: 11px; padding: 5px 10px; border-radius: var(--radius-sm); }
+        .btn-xs { font-size: 10px; padding: 3px 8px; border-radius: var(--radius-sm); font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+
+        /* Form Inputs */
+        .form-label {
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 4px;
+        }
+        .form-input {
+            width: 100%;
+            background: #f8fafc;
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            font-size: var(--font-body);
+            color: var(--color-text-primary);
+            transition: all .15s ease;
+            line-height: 1.4;
+        }
+        .form-input::placeholder { color: var(--color-text-muted); }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+        }
+        .form-select {
+            width: 100%;
+            background: #f8fafc;
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            font-size: var(--font-body);
+            color: var(--color-text-primary);
+            cursor: pointer;
+            transition: all .15s ease;
+        }
+        .form-select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            padding: 3px 8px;
+            border-radius: 999px;
+            line-height: 1.3;
+        }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #ffe4e6; color: #9f1239; }
+        .badge-info { background: #e0e7ff; color: #3730a3; }
+        .badge-neutral { background: #f1f5f9; color: #475569; }
+
+        /* Panel Header */
+        .panel-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--color-border-light);
+            background: rgba(248,250,252,.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-header h3 {
+            font-size: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--color-text-primary);
+        }
+
+        /* Empty State */
+        .empty-state {
+            padding: 32px 16px;
+            text-align: center;
+            color: var(--color-text-muted);
+            font-style: italic;
+            font-weight: 500;
+        }
+
+        /* Data Table */
+        .data-table {
+            width: 100%;
+            text-align: left;
+            border-collapse: collapse;
+        }
+        .data-table thead tr {
+            background: #f8fafc;
+            border-bottom: 1px solid var(--color-border);
+        }
+        .data-table thead th {
+            padding: 10px 14px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            color: var(--color-text-muted);
+        }
+        .data-table thead th:first-child { padding-left: 18px; }
+        .data-table thead th:last-child { padding-right: 18px; text-align: right; }
+        .data-table tbody td {
+            padding: 12px 14px;
+            font-size: var(--font-body);
+            color: var(--color-text-primary);
+            border-bottom: 1px solid var(--color-border-light);
+        }
+        .data-table tbody td:first-child { padding-left: 18px; }
+        .data-table tbody td:last-child { padding-right: 18px; }
+        .data-table tbody tr:hover { background: rgba(248,250,252,.7); }
+        .data-table tbody tr:last-child td { border-bottom: none; }
+
+        /* Modal */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,.55);
+            backdrop-filter: blur(4px);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .modal-panel {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-2xl);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 420px;
+            padding: 24px;
+        }
+
+        /* KPI Cards */
+        .kpi-card {
+            border-radius: var(--radius-xl);
+            padding: 22px 24px;
+            position: relative;
+            overflow: hidden;
+            color: #fff;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            min-height: 110px;
+        }
+        .kpi-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,.15) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .kpi-card--indigo { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); box-shadow: 0 4px 14px rgba(79,70,229,.35); }
+        .kpi-card--emerald { background: linear-gradient(135deg, #059669 0%, #0d9488 100%); box-shadow: 0 4px 14px rgba(5,150,105,.35); }
+        .kpi-card--violet { background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); box-shadow: 0 4px 14px rgba(124,58,237,.35); }
+        .kpi-card--amber { background: linear-gradient(135deg, #d97706 0%, #ea580c 100%); box-shadow: 0 4px 14px rgba(217,119,6,.35); }
+        .kpi-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: rgba(255,255,255,.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+        }
+        .kpi-icon svg { width: 20px; height: 20px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .kpi-text { position: relative; z-index: 1; flex: 1; min-width: 0; }
+        .kpi-card .kpi-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255,255,255,.75);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+        }
+        .kpi-card .kpi-value {
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-top: 4px;
+            color: #fff;
+        }
+
+        /* Nav Section Label */
+        .nav-section-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            padding: 0 8px;
+            margin-bottom: 8px;
+            margin-top: 12px;
+        }
+
+        /* ── Gated takeover ── */
+        #gated-topbar { display: none; }
+        body.app-gated #clinic-sidebar,
+        body.app-gated #sidebar-backdrop,
+        body.app-gated #mobile-topbar { display: none !important; }
+        body.app-gated #main-content {
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 60rem;
+            width: 100%;
+        }
+        body.app-gated #dashboard-header,
+        body.app-gated #kpi-stats,
+        body.app-gated #dashboard-panels { display: none !important; }
+        body.app-gated #gated-topbar { display: flex !important; }
+        body.app-gated #application-review-panel,
+        body.app-gated #application-pending-panel {
+            max-width: 60rem;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        body.app-gated #application-review-panel,
+        body.app-gated #application-pending-panel {
+            animation: gatedPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes gatedPop {
+            from { opacity: 0; transform: translateY(10px) scale(0.99); }
+            to { opacity: 1; transform: none; }
+        }
+
+        /* ── Landing Builder Cards ── */
         .landing-preset-card {
             display: flex;
             flex-direction: column;
@@ -93,45 +418,35 @@
             transition: all 0.15s ease;
             min-width: 120px;
         }
-
         .landing-preset-card:hover {
             border-color: #94a3b8;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
-
         .landing-preset-active {
             border-color: #0f766e;
             box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.2);
             transform: translateY(-1px);
         }
-
-        .landing-preset-colors {
-            display: flex;
-            gap: 4px;
-        }
-
+        .landing-preset-colors { display: flex; gap: 4px; }
         .landing-preset-swatch {
             width: 20px;
             height: 20px;
             border-radius: 50%;
             border: 1px solid #e2e8f0;
         }
-
         .landing-preset-name {
             font-size: 11px;
             font-weight: 700;
             color: #334155;
             text-align: center;
         }
-
         .landing-preset-desc {
             font-size: 10px;
             color: #94a3b8;
             text-align: center;
         }
 
-        /* Template (whole-page layout) cards in the landing page builder */
         .landing-template-card {
             display: flex;
             flex-direction: column;
@@ -144,18 +459,15 @@
             text-align: left;
             transition: all 0.15s ease;
         }
-
         .landing-template-card:hover {
             border-color: #94a3b8;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
-
         .landing-template-active {
             border-color: #4f46e5;
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.18);
         }
-
         .landing-template-thumb {
             width: 100%;
             aspect-ratio: 16 / 10;
@@ -165,7 +477,6 @@
             background: #f8fafc;
             display: block;
         }
-
         .landing-template-name {
             font-size: 12px;
             font-weight: 700;
@@ -174,7 +485,6 @@
             align-items: center;
             gap: 6px;
         }
-
         .landing-template-badge {
             font-size: 9px;
             font-weight: 800;
@@ -185,138 +495,23 @@
             padding: 2px 6px;
             border-radius: 999px;
         }
-
         .landing-template-desc {
             font-size: 10.5px;
             line-height: 1.45;
             color: #94a3b8;
-        }
-
-        /* Keyboard-only skip link to the main content region */
-        .skip-link {
-            position: fixed;
-            top: .5rem;
-            left: .5rem;
-            z-index: 60;
-            background: #4f46e5;
-            color: #fff;
-            font-weight: 700;
-            font-size: .75rem;
-            padding: .6rem 1rem;
-            border-radius: .5rem;
-            transform: translateY(-160%);
-            transition: transform .18s ease;
-        }
-
-        .skip-link:focus {
-            transform: none;
-            outline: 2px solid #fff;
-            outline-offset: 2px;
-        }
-
-        /* Consistent, visible focus indicator for all interactive elements */
-        a:focus-visible,
-        button:focus-visible,
-        input:focus-visible,
-        select:focus-visible,
-        textarea:focus-visible,
-        [role="tab"]:focus-visible,
-        [tabindex]:focus-visible {
-            outline: 2px solid var(--focus-ring);
-            outline-offset: 2px;
-            border-radius: 6px;
-        }
-
-        .dashboard-panel:focus {
-            outline: none;
-        }
-
-        /* Lock body scroll while the mobile nav drawer is open */
-        body.sidebar-open {
-            overflow: hidden;
-        }
-
-        @media (min-width: 768px) {
-            body.sidebar-open {
-                overflow: auto;
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-
-            *,
-            *::before,
-            *::after {
-                transition-duration: .01ms !important;
-                animation-duration: .01ms !important;
-            }
-        }
-
-        /* Gated takeover: when the application is Rejected (or Pending), hide
-           the entire dashboard chrome and focus only on the required action. */
-        #gated-topbar {
-            display: none;
-        }
-
-        body.app-gated #clinic-sidebar,
-        body.app-gated #sidebar-backdrop,
-        body.app-gated #mobile-topbar {
-            display: none !important;
-        }
-
-        body.app-gated #main-content {
-            margin-left: auto;
-            margin-right: auto;
-            max-width: 60rem;
-            width: 100%;
-        }
-
-        body.app-gated #dashboard-header,
-        body.app-gated #kpi-stats,
-        body.app-gated #dashboard-panels {
-            display: none !important;
-        }
-
-        body.app-gated #gated-topbar {
-            display: flex !important;
-        }
-
-        body.app-gated #application-review-panel,
-        body.app-gated #application-pending-panel {
-            max-width: 60rem;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* Subtle entrance for the focused action card */
-        body.app-gated #application-review-panel,
-        body.app-gated #application-pending-panel {
-            animation: gatedPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes gatedPop {
-            from {
-                opacity: 0;
-                transform: translateY(10px) scale(0.99);
-            }
-
-            to {
-                opacity: 1;
-                transform: none;
-            }
         }
     </style>
     <link rel="stylesheet" href="/src/util/clinicTour.css" />
 </head>
 
 <body
-    class="bg-slate-50 text-slate-700 font-sans min-h-screen flex antialiased selection:bg-indigo-100 selection:text-indigo-900">
+    class="text-slate-700 font-sans min-h-screen flex antialiased selection:bg-indigo-100 selection:text-indigo-900">
 
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
     <!-- Mobile top bar (the sidebar is an off-canvas drawer on small screens) -->
     <header id="mobile-topbar"
-        class="md:hidden fixed top-0 inset-x-0 z-30 h-14 bg-white border-b border-slate-200 flex items-center gap-3 px-4">
+        class="md:hidden fixed top-0 inset-x-0 z-30 h-14 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center gap-3 px-4">
         <button type="button" id="sidebar-toggle" aria-controls="clinic-sidebar" aria-expanded="false"
             aria-label="Open navigation menu"
             class="w-10 h-10 -ml-2 grid place-items-center rounded-lg text-slate-600 hover:bg-slate-100 cursor-pointer">
@@ -332,8 +527,8 @@
     <div id="sidebar-backdrop" class="hidden md:hidden fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm"></div>
 
     <aside id="clinic-sidebar"
-        class="w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between p-5 shrink-0 shadow-2xs fixed inset-y-0 left-0 z-40 overflow-y-auto -translate-x-full transition-transform duration-200 md:static md:translate-x-0 md:z-auto">
-        <div class="space-y-7">
+        class="w-64 bg-gradient-to-b from-slate-50 to-white border-r border-slate-200/80 flex flex-col justify-between p-5 shrink-0 shadow-2xs fixed inset-y-0 left-0 z-40 overflow-y-auto -translate-x-full transition-transform duration-200 md:static md:translate-x-0 md:z-auto">
+        <div class="space-y-6">
             <div class="flex items-center space-x-3 px-1 py-0.5">
                 <div
                     class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center border border-indigo-100">
@@ -353,13 +548,11 @@
                 </div>
             </div>
 
-            <nav id="sidebar-nav" class="space-y-1">
-                <p class="text-[10px] font-bold text-slate-400 tracking-widest uppercase px-2 mb-2">
-                    Management
-                </p>
+            <nav id="sidebar-nav" class="space-y-1 bg-slate-100/60 rounded-2xl p-2.5">
+                <p class="nav-section-label">Management</p>
 
                 <a href="#" id="nav-appointments" data-target="panel-appointments"
-                    class="nav-item group flex items-center justify-between bg-slate-100 text-slate-900 px-3 py-2 rounded-lg text-xs font-semibold border border-slate-200/50 cursor-pointer transition-all">
+                    class="nav-item group flex items-center justify-between bg-indigo-100 text-indigo-900 px-3 py-2.5 rounded-xl text-[13px] font-semibold border border-indigo-200/80 cursor-pointer transition-all shadow-sm">
                     <div class="flex items-center space-x-2.5">
                         <svg class="w-4 h-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none"
                             viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -377,7 +570,7 @@
                 </a>
 
                 <a href="#" id="nav-staff" data-target="panel-staff" data-roles="SUPER_ADMIN,CLINIC_ADMIN"
-                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
+                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 px-3 py-2.5 rounded-xl text-[13px] font-medium cursor-pointer transition-all">
                     <div class="flex items-center space-x-2.5">
                         <svg class="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors"
                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
@@ -396,7 +589,7 @@
                 </a>
 
                 <a href="#" id="nav-pricing" data-target="panel-pricing" data-roles="SUPER_ADMIN,CLINIC_ADMIN"
-                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
+                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 px-3 py-2.5 rounded-xl text-[13px] font-medium cursor-pointer transition-all">
                     <div class="flex items-center space-x-2.5">
                         <svg class="w-4 h-4 text-slate-400 group-hover:text-emerald-600 transition-colors"
                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
@@ -409,9 +602,9 @@
                     <span class="active-dot w-1.5 h-1.5 rounded-full bg-emerald-500 hidden"></span>
                 </a>
 
-                <!-- 🕒 NEW: Operating Hours Nav Item -->
+                <!-- Operating Hours Nav Item -->
                 <a href="#" id="nav-hours" data-target="panel-hours" data-roles="SUPER_ADMIN,CLINIC_ADMIN"
-                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
+                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 px-3 py-2.5 rounded-xl text-[13px] font-medium cursor-pointer transition-all">
                     <div class="flex items-center space-x-2.5">
                         <svg class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors"
                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
@@ -425,7 +618,7 @@
                 </a>
 
                 <a href="#" id="nav-landing" data-target="panel-landing" data-roles="SUPER_ADMIN,CLINIC_ADMIN"
-                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
+                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 px-3 py-2.5 rounded-xl text-[13px] font-medium cursor-pointer transition-all">
                     <div class="flex items-center space-x-2.5">
                         <svg class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors"
                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
@@ -440,9 +633,9 @@
                     <span class="active-dot w-1.5 h-1.5 rounded-full bg-indigo-600 hidden"></span>
                 </a>
 
-                <!-- ⭐ NEW: Testimonials Moderation Nav Item -->
+                <!-- Testimonials Moderation Nav Item -->
                 <a href="#" id="nav-testimonials" data-target="panel-testimonials" data-roles="SUPER_ADMIN,CLINIC_ADMIN"
-                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
+                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 px-3 py-2.5 rounded-xl text-[13px] font-medium cursor-pointer transition-all">
                     <div class="flex items-center space-x-2.5">
                         <svg class="w-4 h-4 text-slate-400 group-hover:text-amber-500 transition-colors"
                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
@@ -456,7 +649,7 @@
                 </a>
 
                 <a href="#" id="nav-reports" data-target="panel-reports" data-roles="SUPER_ADMIN,CLINIC_ADMIN"
-                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
+                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 px-3 py-2.5 rounded-xl text-[13px] font-medium cursor-pointer transition-all">
                     <div class="flex items-center space-x-2.5">
                         <svg class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors"
                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2"
@@ -469,12 +662,10 @@
                     <span class="active-dot w-1.5 h-1.5 rounded-full bg-indigo-600 hidden"></span>
                 </a>
 
-                <p class="text-[10px] font-bold text-slate-400 tracking-widest uppercase px-2 mb-2 pt-3">
-                    Billing
-                </p>
+                <p class="nav-section-label pt-3 border-t border-slate-100 mt-3">Billing</p>
 
                 <a href="#" id="nav-subscription" data-target="panel-subscription" data-roles="SUPER_ADMIN,CLINIC_ADMIN"
-                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all">
+                    class="nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 px-3 py-2.5 rounded-xl text-[13px] font-medium cursor-pointer transition-all">
                     <div class="flex items-center space-x-2.5">
                         <svg class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors"
                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
@@ -492,12 +683,10 @@
                 </a>
             </nav>
 
-            <nav class="space-y-1 pt-2 border-t border-slate-100">
-                <p class="text-[10px] font-bold text-slate-400 tracking-widest uppercase px-2 mb-2">
-                    Platform Hub
-                </p>
+            <nav class="space-y-1 pt-2 border-t border-slate-200/60 bg-slate-100/60 rounded-2xl p-2.5">
+                <p class="nav-section-label">Platform Hub</p>
                 <a id="viewLiveSiteBtn"
-                    class="group flex items-center space-x-2.5 text-slate-600 hover:text-indigo-600 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all">
+                    class="group flex items-center space-x-2.5 text-slate-600 hover:text-indigo-600 px-3 py-1.5 rounded-xl text-[13px] font-medium cursor-pointer transition-all">
                     <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition-colors"
                         xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
                         stroke="currentColor">
@@ -507,7 +696,7 @@
                     <span>View Live Website</span>
                 </a>
                 <a href="/staffLogin.html" target="_blank" rel="noopener noreferrer" id="nav-staff-login"
-                    class="group flex items-center space-x-2.5 text-slate-600 hover:text-blue-600 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all">
+                    class="group flex items-center space-x-2.5 text-slate-600 hover:text-blue-600 px-3 py-1.5 rounded-xl text-[13px] font-medium cursor-pointer transition-all">
                     <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors"
                         xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
                         stroke="currentColor">
@@ -526,7 +715,7 @@
                     AD
                 </div>
                 <div class="truncate max-w-[150px]">
-                    <p id="display-user-email" class="text-xs font-bold text-slate-800 truncate">
+                    <p id="display-user-email" class="text-[13px] font-bold text-slate-800 truncate">
                         admin@clinic.com
                     </p>
                     <p class="text-[9px] text-slate-400 font-mono tracking-wider font-semibold">
@@ -535,7 +724,7 @@
                 </div>
             </div>
             <button id="logout-btn"
-                class="w-full bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200/80 hover:border-rose-100 rounded-lg py-1.5 text-xs font-semibold transition-all shadow-3xs cursor-pointer">
+                class="w-full bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200/80 hover:border-rose-100 rounded-lg py-1.5 text-[13px] font-semibold transition-all shadow-3xs cursor-pointer">
                 Sign Out
             </button>
         </div>
@@ -558,12 +747,12 @@
                     </svg>
                 </div>
                 <div class="truncate">
-                    <p id="gated-clinic-name" class="text-xs font-black text-slate-900 truncate">Loading workspace…</p>
+                    <p id="gated-clinic-name" class="text-[13px] font-black text-slate-900 truncate">Loading workspace…</p>
                     <p id="gated-user-email" class="text-[10px] text-slate-400 truncate">…</p>
                 </div>
             </div>
             <button id="gated-logout-btn" type="button"
-                class="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-pointer">
+                class="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-[13px] font-bold text-slate-600 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-pointer">
                 Sign Out
             </button>
         </div>
@@ -572,44 +761,48 @@
                 <h1 id="dashboard-title" class="text-xl font-black tracking-tight text-slate-900">
                     Operations Overview
                 </h1>
-                <p id="dashboard-subtitle" class="text-xs text-slate-500 font-medium">
+                <p id="dashboard-subtitle" class="text-[13px] text-slate-500 font-medium">
                     Real-time scheduling and medical provider routing execution paths
                 </p>
             </div>
         </header>
 
-        <section id="kpi-stats" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="bg-white border border-slate-200/80 rounded-xl p-5 space-y-1 shadow-xs">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    Total Scheduled Today
-                </p>
-                <p id="kpi-today-bookings" class="text-2xl font-black text-slate-900">
-                    0
-                </p>
+        <section id="kpi-stats" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="kpi-card kpi-card--indigo">
+                <div class="kpi-icon">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 16 2 2 4-4"/></svg>
+                </div>
+                <div class="kpi-text">
+                    <p class="kpi-label">Scheduled Today</p>
+                    <p id="kpi-today-bookings" class="kpi-value">0</p>
+                </div>
             </div>
-            <div class="bg-white border border-slate-200/80 rounded-xl p-5 space-y-1 shadow-xs">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    This Month's Bookings
-                </p>
-                <p id="kpi-monthly-bookings" class="text-2xl font-black text-indigo-600">
-                    0
-                </p>
+            <div class="kpi-card kpi-card--emerald">
+                <div class="kpi-icon">
+                    <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                </div>
+                <div class="kpi-text">
+                    <p class="kpi-label">This Month</p>
+                    <p id="kpi-monthly-bookings" class="kpi-value">0</p>
+                </div>
             </div>
-            <div class="bg-white border border-slate-200/80 rounded-xl p-5 space-y-1 shadow-xs">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    Active Clinical Staff
-                </p>
-                <p id="kpi-total-staff" class="text-2xl font-black text-indigo-600">
-                    0
-                </p>
+            <div class="kpi-card kpi-card--violet">
+                <div class="kpi-icon">
+                    <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <div class="kpi-text">
+                    <p class="kpi-label">Clinical Staff</p>
+                    <p id="kpi-total-staff" class="kpi-value">0</p>
+                </div>
             </div>
-            <div class="bg-white border border-slate-200/80 rounded-xl p-5 space-y-1 shadow-xs">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    Pending Bookings
-                </p>
-                <p id="kpi-pending-bookings" class="text-2xl font-black text-amber-500">
-                    0
-                </p>
+            <div class="kpi-card kpi-card--amber">
+                <div class="kpi-icon">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div class="kpi-text">
+                    <p class="kpi-label">Pending</p>
+                    <p id="kpi-pending-bookings" class="kpi-value">0</p>
+                </div>
             </div>
         </section>
 
@@ -626,7 +819,7 @@
                             class="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">Rejected</span>
                     </div>
                     <h2 class="text-lg font-black text-slate-900 mt-0.5">Your application needs corrections</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Fix the issues below, re-upload both licenses, and we'll
+                    <p class="text-[13px] text-slate-500 mt-0.5">Fix the issues below, re-upload both licenses, and we'll
                         fast-track your re-review.</p>
                 </div>
             </div>
@@ -641,7 +834,7 @@
                             class="text-sm text-slate-800 mt-1.5 whitespace-pre-line leading-relaxed"></p>
                     </div>
 
-                    <ol class="space-y-2.5 text-xs text-slate-600">
+                    <ol class="space-y-2.5 text-[13px] text-slate-600">
                         <li class="flex gap-2.5">
                             <span
                                 class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white text-[10px] font-black">1</span>
@@ -665,7 +858,7 @@
                     <div>
                         <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Previously
                             submitted</p>
-                        <ul id="application-previous-docs" class="space-y-1.5 text-xs"></ul>
+                        <ul id="application-previous-docs" class="space-y-1.5 text-[13px]"></ul>
                     </div>
                 </div>
 
@@ -685,7 +878,7 @@
                             <span aria-hidden="true"
                                 class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-lg">📄</span>
                             <div class="min-w-0 flex-1">
-                                <p class="text-xs font-black text-slate-900">Business License <span
+                                <p class="text-[13px] font-black text-slate-900">Business License <span
                                         class="text-rose-500">*</span></p>
                                 <p id="business-file-meta" class="text-[11px] text-slate-400 truncate">Mayor's Permit,
                                     DTI/SEC, or equivalent · PDF/JPG/PNG/WEBP · max 5MB</p>
@@ -714,7 +907,7 @@
                             <span aria-hidden="true"
                                 class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-lg">🩺</span>
                             <div class="min-w-0 flex-1">
-                                <p class="text-xs font-black text-slate-900">Medical License <span
+                                <p class="text-[13px] font-black text-slate-900">Medical License <span
                                         class="text-rose-500">*</span></p>
                                 <p id="medical-file-meta" class="text-[11px] text-slate-400 truncate">PRC, professional,
                                     or facility license · PDF/JPG/PNG/WEBP · max 5MB</p>
@@ -740,12 +933,12 @@
                         photos are the #1 reason for a second rejection.</p>
 
                     <button id="application-resubmit-submit" type="submit" disabled
-                        class="w-full rounded-xl bg-slate-900 py-3 text-xs font-black uppercase tracking-wider text-white transition-all hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40">Attach
+                        class="w-full rounded-xl bg-slate-900 py-3 text-[11px] font-black uppercase tracking-wider text-white transition-all hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40">Attach
                         both documents to continue</button>
                     <div id="resubmit-progress" class="hidden h-1.5 overflow-hidden rounded-full bg-slate-200">
                         <div class="h-full w-1/3 animate-pulse rounded-full bg-indigo-500"></div>
                     </div>
-                    <p id="application-resubmit-feedback" class="hidden text-xs font-semibold" role="status"
+                    <p id="application-resubmit-feedback" class="hidden text-[13px] font-semibold" role="status"
                         aria-live="polite"></p>
                 </form>
             </div>
@@ -763,12 +956,12 @@
                             class="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">Pending</span>
                     </div>
                     <h2 class="text-lg font-black text-slate-900 mt-0.5">Your application is being reviewed</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Our team usually reviews within 24 hours. We'll notify you
+                    <p class="text-[13px] text-slate-500 mt-0.5">Our team usually reviews within 24 hours. We'll notify you
                         by email the moment there's an update.</p>
                 </div>
             </div>
             <div class="p-5">
-                <ol class="space-y-2.5 text-xs text-slate-600">
+                <ol class="space-y-2.5 text-[13px] text-slate-600">
                     <li class="flex gap-2.5">
                         <span
                             class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white text-[10px] font-black">✓</span>
@@ -792,36 +985,30 @@
             </div>
         </section>
         <div id="dashboard-panels">
+            <!-- ═══════ APPOINTMENTS ═══════ -->
             <div id="panel-appointments" class="dashboard-panel grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <div
-                    class="xl:col-span-3 bg-white border border-slate-200/80 rounded-xl shadow-xs overflow-hidden flex flex-col justify-between">
+                <div class="xl:col-span-3 card overflow-hidden flex flex-col justify-between">
                     <div>
-                        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">
-                                Live Appointment Queue
-                            </h3>
+                        <div class="panel-header">
+                            <h3>Live Appointment Queue</h3>
                             <button id="refresh-appointments"
-                                class="text-[11px] text-indigo-600 hover:text-indigo-700 font-bold uppercase tracking-wider transition-colors cursor-pointer">
-                                refresh
-                            </button>
+                                class="btn-ghost btn-xs">refresh</button>
                         </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse">
+                            <table class="data-table">
                                 <thead>
-                                    <tr
-                                        class="bg-slate-50 border-b border-slate-200/90 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-                                        <th class="p-3.5 pl-5">Patient Name</th>
-                                        <th class="p-3.5">Date / Time</th>
-                                        <th class="p-3.5">Reason</th>
-                                        <th class="p-3.5">Price (PHP)</th>
-                                        <th class="p-3.5">Status</th>
-                                        <th class="p-3.5 pr-5 text-right">Actions</th>
+                                    <tr>
+                                        <th>Patient Name</th>
+                                        <th>Date / Time</th>
+                                        <th>Reason</th>
+                                        <th>Price (PHP)</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="appointment-table-body"
-                                    class="text-xs text-slate-700 divide-y divide-slate-100">
+                                <tbody id="appointment-table-body">
                                     <tr>
-                                        <td colspan="6" class="p-8 text-center text-slate-400 italic font-medium">
+                                        <td colspan="6" class="empty-state">
                                             No active patients synchronized.
                                         </td>
                                     </tr>
@@ -831,44 +1018,40 @@
                     </div>
                 </div>
             </div>
+
+            <!-- ═══════ STAFF ═══════ -->
             <div id="panel-staff" class="dashboard-panel hidden grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <div
-                    class="xl:col-span-2 bg-white border border-slate-200/80 rounded-xl shadow-xs overflow-hidden flex flex-col justify-between">
+                <div class="xl:col-span-2 card overflow-hidden flex flex-col justify-between">
                     <div>
-                        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">
-                                Active Staff Directory
-                            </h3>
+                        <div class="panel-header">
+                            <h3>Active Staff Directory</h3>
                             <button id="refresh-staff"
-                                class="text-[11px] text-indigo-600 hover:text-indigo-700 font-bold uppercase tracking-wider transition-colors cursor-pointer">
-                                refresh
-                            </button>
+                                class="btn-ghost btn-xs">refresh</button>
                         </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse">
+                            <table class="data-table">
                                 <thead>
-                                    <tr
-                                        class="bg-slate-50 border-b border-slate-200/90 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-                                        <th class="p-3.5 pl-5">Staff Member</th>
-                                        <th class="p-3.5">Role</th>
-                                        <th class="p-3.5">Specialization</th>
-                                        <th class="p-3.5">Contact Details</th>
-                                        <th class="p-3.5 pr-5 text-right">Actions</th>
+                                    <tr>
+                                        <th>Staff Member</th>
+                                        <th>Role</th>
+                                        <th>Specialization</th>
+                                        <th>Contact Details</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="staff-table-body" class="text-xs text-slate-700 divide-y divide-slate-100">
+                                <tbody id="staff-table-body">
                                     <tr aria-hidden="true">
-                                        <td colspan="5" class="p-3">
+                                        <td colspan="5">
                                             <div class="h-4 bg-slate-100 rounded animate-pulse"></div>
                                         </td>
                                     </tr>
                                     <tr aria-hidden="true">
-                                        <td colspan="5" class="p-3">
+                                        <td colspan="5">
                                             <div class="h-4 bg-slate-100 rounded animate-pulse"></div>
                                         </td>
                                     </tr>
                                     <tr aria-hidden="true">
-                                        <td colspan="5" class="p-3">
+                                        <td colspan="5">
                                             <div class="h-4 bg-slate-100 rounded animate-pulse"></div>
                                         </td>
                                     </tr>
@@ -878,7 +1061,7 @@
                     </div>
                 </div>
                 <!-- Onboard Clinical Staff Form -->
-                <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs space-y-4 h-fit">
+                <div class="card p-5 space-y-4 h-fit">
                     <div>
                         <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">
                             Onboard Clinical Staff
@@ -892,7 +1075,7 @@
                         <p class="text-[10px] font-bold text-amber-800 uppercase tracking-wider">
                             ⚠️ Security Credential Generated
                         </p>
-                        <p class="text-xs text-amber-700 font-medium">
+                        <p class="text-[13px] text-amber-700 font-medium">
                             Authentication Access PIN Code:
                         </p>
                         <div class="flex items-center space-x-2 pt-1">
@@ -904,20 +1087,16 @@
                     <form id="add-staff-form" class="space-y-3.5">
                         <!-- Full Name -->
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                                Full Name
-                            </label>
+                            <label class="form-label">Full Name</label>
                             <input type="text" id="staff-name" required placeholder="Dr. Jane Doe"
-                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" />
+                                class="form-input" />
                         </div>
 
                         <!-- Specialization Dropdown -->
                         <div id="specialization-container" class="hidden">
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                                Specialization
-                            </label>
+                            <label class="form-label">Specialization</label>
                             <select id="staff-spec" name="specialization"
-                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all cursor-pointer">
+                                class="form-select cursor-pointer">
                                 <option value="" disabled selected>Select specialization...</option>
 
                                 <!-- Primary Clinical Specialties -->
@@ -967,11 +1146,9 @@
 
                         <!-- Workspace Assignment Role -->
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                                Workspace Assignment Role
-                            </label>
+                            <label class="form-label">Workspace Assignment Role</label>
                             <select id="staff-role" required
-                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all cursor-pointer">
+                                class="form-select cursor-pointer">
                                 <option value="" disabled selected>Select a role...</option>
                                 <option value="Staff">Staff</option>
                                 <option value="Dentist">Dentist</option>
@@ -980,25 +1157,20 @@
 
                         <!-- Workspace Email Address -->
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                                Workspace Email Address
-                            </label>
+                            <label class="form-label">Workspace Email Address</label>
                             <input type="email" id="staff-email" required placeholder="provider@clinic.com"
-                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" />
+                                class="form-input" />
                         </div>
 
                         <!-- Contact Number -->
                         <div>
-                            <label for="staff-phone"
-                                class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                                Contact Number
-                            </label>
+                            <label for="staff-phone" class="form-label">Contact Number</label>
                             <input type="tel" id="staff-phone" required aria-label="Contact Number"
                                 placeholder="+63 912 345 6789"
-                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" />
+                                class="form-input" />
                         </div>
 
-                        <!-- 🎯 THE DENTIST WRAPPER (Hidden by default) -->
+                        <!-- Dentist Wrapper (Hidden by default) -->
                         <div id="dentist-fields-container"
                             class="hidden space-y-3.5 mt-2 p-4 border border-sky-200 bg-sky-50 rounded-xl">
                             <h4 class="text-[10px] font-black text-sky-700 uppercase tracking-wider mb-1">
@@ -1007,80 +1179,65 @@
 
                             <!-- License Number -->
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                                    License Number
-                                </label>
+                                <label class="form-label" style="color: #64748b;">License Number</label>
                                 <input type="text" id="reg-license" name="licenseNumber" placeholder="e.g. PRC-123456"
-                                    class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-sky-500 transition-all">
+                                    class="form-input" style="background: #fff; border-color: #e2e8f0;">
                             </div>
 
                             <!-- Experience -->
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                                    Years of Experience
-                                </label>
+                                <label class="form-label" style="color: #64748b;">Years of Experience</label>
                                 <input type="number" id="reg-experience" name="experienceYears" placeholder="e.g. 5"
                                     min="0"
-                                    class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-sky-500 transition-all">
+                                    class="form-input" style="background: #fff; border-color: #e2e8f0;">
                             </div>
 
                             <!-- Bio -->
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                                    Professional Bio
-                                </label>
+                                <label class="form-label" style="color: #64748b;">Professional Bio</label>
                                 <textarea id="reg-bio" name="bio" rows="3"
                                     placeholder="Brief background about the dentist..."
-                                    class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-sky-500 transition-all"></textarea>
+                                    class="form-input" style="background: #fff; border-color: #e2e8f0;"></textarea>
                             </div>
 
                             <!-- Profile Image Upload -->
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                                    Profile Photo
-                                </label>
+                                <label class="form-label" style="color: #64748b;">Profile Photo</label>
                                 <input type="file" id="reg-image" name="profileImage" accept="image/*"
-                                    class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:uppercase file:tracking-wider file:bg-sky-100 file:text-sky-700 hover:file:bg-sky-200 transition-all cursor-pointer">
+                                    class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px] text-slate-800 file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:uppercase file:tracking-wider file:bg-sky-100 file:text-sky-700 hover:file:bg-sky-200 transition-all cursor-pointer">
                             </div>
                         </div>
 
                         <!-- Submit Button -->
                         <button type="submit"
-                            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold tracking-wide uppercase text-[11px] py-2.5 rounded-lg transition-all shadow-md cursor-pointer mt-4">
-                            Register Staff Member
-                        </button>
+                            class="btn btn-primary w-full mt-4">Register Staff Member</button>
                     </form>
                 </div>
             </div>
 
+            <!-- ═══════ PRICING ═══════ -->
             <div id="panel-pricing" class="dashboard-panel hidden grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <div
-                    class="xl:col-span-2 bg-white border border-slate-200/80 rounded-xl shadow-xs overflow-hidden flex flex-col justify-between">
+                <div class="xl:col-span-2 card overflow-hidden flex flex-col justify-between">
                     <div>
-                        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">
-                                Live Treatment Ledger
-                            </h3>
+                        <div class="panel-header">
+                            <h3>Live Treatment Ledger</h3>
                             <button id="refresh-prices"
-                                class="text-[11px] text-emerald-600 hover:text-emerald-700 font-bold uppercase tracking-wider transition-colors cursor-pointer">
-                                refresh
-                            </button>
+                                class="btn-ghost btn-xs" style="color: #059669;">refresh</button>
                         </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse">
+                            <table class="data-table">
                                 <thead>
-                                    <tr
-                                        class="bg-slate-50 border-b border-slate-200/90 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-                                        <th class="p-3.5 pl-5">Treatment Service Item</th>
-                                        <th class="p-3.5">Reference Code</th>
-                                        <th class="p-3.5">Current Rate</th>
-                                        <th class="p-3.5 text-center">Available</th> <!-- 👈 NEW COLUMN -->
-                                        <th class="p-3.5 pr-5 text-right">Actions</th>
+                                    <tr>
+                                        <th>Treatment Service Item</th>
+                                        <th>Reference Code</th>
+                                        <th>Current Rate</th>
+                                        <th>Available</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="pricing-table-body" class="text-xs text-slate-700 divide-y divide-slate-100">
+                                <tbody id="pricing-table-body">
                                     <tr>
-                                        <td colspan="5" class="p-8 text-center text-slate-400 italic font-medium">
+                                        <td colspan="5" class="empty-state">
                                             Syncing live dynamic treatment database tracks...
                                         </td>
                                     </tr>
@@ -1092,43 +1249,37 @@
 
                 <div class="space-y-6">
                     <!-- MODIFY OPERATIONAL RATES CARD -->
-                    <div id="modify-rates-card" class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+                    <div id="modify-rates-card" class="card p-6">
                         <h3 class="font-bold text-slate-900 uppercase text-xs tracking-wider mb-1">
                             Modify Operational Rates
                         </h3>
-                        <p class="text-xs text-slate-500 mb-4">
+                        <p class="text-[13px] text-slate-500 mb-4">
                             Quickly adjust base patient pricing for a service.
                         </p>
 
                         <form id="modify-fee-form">
                             <!-- REFERENCE CODE -->
                             <div class="mb-4">
-                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                                    Reference Code
-                                </label>
+                                <label class="form-label">Reference Code</label>
                                 <input type="text" id="service-slug" readonly
-                                    class="w-full px-3 py-2 text-sm font-mono text-slate-500 bg-slate-50 border border-slate-200 rounded-lg cursor-not-allowed focus:outline-none"
+                                    class="form-input font-mono text-slate-500 cursor-not-allowed"
                                     placeholder="routine-cleaning" />
                             </div>
 
                             <!-- NEW BASE FEE (PHP) -->
                             <div class="mb-4">
-                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                                    New Base Fee (PHP)
-                                </label>
+                                <label class="form-label">New Base Fee (PHP)</label>
                                 <input type="number" step="0.01" id="service-price"
-                                    class="w-full px-3 py-2 text-sm font-semibold text-slate-800 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                    placeholder="0.00" />
+                                    class="form-input font-semibold"
+                                    placeholder="0.00" style="box-shadow: 0 0 0 3px rgba(16,185,129,.12); border-color: #10b981;" />
                             </div>
 
                             <button type="submit"
-                                class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-colors uppercase tracking-wider cursor-pointer">
-                                Modify Fee
-                            </button>
+                                class="btn btn-success w-full">Modify Fee</button>
                         </form>
                     </div>
 
-                    <div class="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs space-y-4">
+                    <div class="card p-5 space-y-4">
                         <div>
                             <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">
                                 New operational Treatment
@@ -1139,56 +1290,48 @@
                         </div>
                         <form id="add-price-form" class="space-y-3">
                             <div>
-                                <label
-                                    class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Display
-                                    Service Name</label>
+                                <label class="form-label">Display Service Name</label>
                                 <input type="text" id="add-name" required placeholder="Premium Titanium Dental Implant"
-                                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" />
+                                    class="form-input" />
                             </div>
                             <div>
-                                <label
-                                    class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">reference
-                                    code</label>
+                                <label class="form-label">Reference Code</label>
                                 <input type="text" id="add-slug" required placeholder="dental-implants"
-                                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" />
+                                    class="form-input font-mono" />
                             </div>
                             <div>
-                                <label
-                                    class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Treatment
-                                    Description</label>
+                                <label class="form-label">Treatment Description</label>
                                 <textarea id="add-desc" required rows="2"
                                     placeholder="Surgical placement of titanium root fixtures..."
-                                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all resize-none"></textarea>
+                                    class="form-input resize-none"></textarea>
                             </div>
                             <div>
-                                <label
-                                    class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Initial
-                                    Base Cost (PHP)</label>
+                                <label class="form-label">Initial Base Cost (PHP)</label>
                                 <div class="relative">
-                                    <span class="absolute left-3 top-2 text-xs font-bold text-slate-400">₱</span>
+                                    <span class="absolute left-3 top-2 text-[13px] font-bold text-slate-400">₱</span>
                                     <input type="number" step="0.01" id="add-price" required placeholder="75000.00"
-                                        class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-7 pr-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" />
+                                        class="form-input pl-7 font-bold" />
                                 </div>
                             </div>
                             <button type="submit"
-                                class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold tracking-wide uppercase text-[11px] py-2.5 rounded-lg transition-all shadow-md cursor-pointer">
-                                Register new treatment
-                            </button>
+                                class="btn btn-primary w-full">Register new treatment</button>
                         </form>
                     </div>
                 </div>
             </div>
+
+            <!-- ═══════ REPORTS ═══════ -->
             <div id="panel-reports" class="dashboard-panel hidden">
-                <div class="bg-white border border-slate-200/80 rounded-xl shadow-xs p-6 mb-8">
+                <div class="card p-6 mb-8">
                     <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">
                         Download System Report
                     </h3>
-                    <p class="text-xs text-slate-400 mt-2">
+                    <p class="text-[13px] text-slate-400 mt-2">
                         you can export financial and operational report daily
                     </p>
                 </div>
                 <button id="export-report-btn"
-                    class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer">
+                    class="btn btn-success">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M12 16v-8m0 8l-3-3m3 3l3-3m-8 4h10a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -1197,319 +1340,375 @@
                 </button>
             </div>
 
-            <!-- MY SUBSCRIPTION PANEL (clinic self-serve billing) -->
+            <!-- ═══════ SUBSCRIPTION ═══════ -->
             <div id="panel-subscription" class="dashboard-panel hidden space-y-6">
                 <div id="sub-alert-slot"></div>
 
+                <!-- Plan hero + payment side-by-side -->
                 <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                    <!-- Current plan card -->
-                    <div class="xl:col-span-2 bg-white border border-slate-200/80 rounded-xl shadow-xs p-6">
-                        <div class="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current plan
-                                </p>
-                                <div class="flex items-center gap-2.5 mt-1.5">
-                                    <h3 id="my-sub-plan-name" class="text-xl font-black text-slate-900">—</h3>
-                                    <span id="my-sub-status"
-                                        class="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full bg-slate-100 text-slate-500">—</span>
+                    <!-- Plan hero card -->
+                    <div class="xl:col-span-2 relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-500 to-violet-500 text-white p-7 shadow-lg shadow-indigo-200">
+                        <div class="absolute inset-0 opacity-[0.07]" style="background-image:url('data:image/svg+xml,%3Csvg width=&quot;40&quot; height=&quot;40&quot; viewBox=&quot;0 0 40 40&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cpath d=&quot;M0 40L40 0H20L0 20M40 40V20L20 40&quot; fill=&quot;%23fff&quot; fill-opacity=&quot;1&quot;/%3E%3C/svg%3E');"></div>
+                        <div class="relative z-10">
+                            <div class="flex flex-wrap items-start justify-between gap-4">
+                                <div>
+                                    <p class="text-[11px] font-semibold uppercase tracking-widest text-white/60">Current Plan</p>
+                                    <div class="flex items-center gap-3 mt-2">
+                                        <h3 id="my-sub-plan-name" class="text-2xl font-black tracking-tight">—</h3>
+                                        <span id="my-sub-status" class="inline-flex items-center rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide backdrop-blur-sm">—</span>
+                                    </div>
+                                    <p id="my-sub-price" class="text-[14px] text-white/80 mt-1.5 font-medium">—</p>
                                 </div>
-                                <p id="my-sub-price" class="text-xs text-slate-500 mt-1">—</p>
+                                <div class="flex flex-wrap gap-2" id="my-sub-actions"></div>
                             </div>
-                            <div class="flex flex-wrap gap-2" id="my-sub-actions"></div>
+
+                            <!-- Billing stats -->
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-6 pt-5 border-t border-white/15">
+                                <div>
+                                    <p class="text-[10px] font-semibold uppercase tracking-wider text-white/50">Next charge</p>
+                                    <p id="my-sub-next-charge" class="text-[14px] font-bold mt-0.5">—</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-semibold uppercase tracking-wider text-white/50">Renews / ends</p>
+                                    <p id="my-sub-renewal" class="text-[14px] font-bold mt-0.5">—</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-semibold uppercase tracking-wider text-white/50">Payment</p>
+                                    <p id="my-sub-method" class="text-[14px] font-bold mt-0.5">—</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-semibold uppercase tracking-wider text-white/50">Auto-renew</p>
+                                    <label class="mt-1.5 inline-flex items-center gap-2 cursor-pointer group">
+                                        <input id="my-sub-autorenew" type="checkbox"
+                                            class="w-4 h-4 rounded accent-white cursor-pointer" />
+                                        <span id="my-sub-autorenew-label" class="text-[13px] font-bold text-white/90">On</span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-5 text-sm">
-                            <div>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Next charge</p>
-                                <p id="my-sub-next-charge" class="font-bold text-slate-800 mt-0.5">—</p>
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Renews / ends
-                                </p>
-                                <p id="my-sub-renewal" class="font-bold text-slate-800 mt-0.5">—</p>
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Payment method
-                                </p>
-                                <p id="my-sub-method" class="font-bold text-slate-800 mt-0.5">—</p>
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Auto-renew</p>
-                                <label class="mt-1 inline-flex items-center gap-2 cursor-pointer">
-                                    <input id="my-sub-autorenew" type="checkbox"
-                                        class="w-4 h-4 rounded accent-indigo-600 cursor-pointer" />
-                                    <span id="my-sub-autorenew-label" class="text-xs font-bold text-slate-700">On</span>
-                                </label>
-                            </div>
-                        </div>
-                        <p class="text-[10px] text-slate-400 mt-4">🧪 Test mode — no real money moves.</p>
+                        <p class="relative z-10 text-[10px] text-white/40 mt-4 font-medium">Test mode, no real money moves.</p>
                     </div>
 
-                    <!-- Manage card -->
-                    <div class="bg-white border border-slate-200/80 rounded-xl shadow-xs p-6 space-y-4 h-fit">
+                    <!-- Payment method card -->
+                    <div class="card p-6 space-y-5 h-fit">
                         <div>
-                            <h3 class="font-black text-xs uppercase tracking-wider text-slate-800">Payment method</h3>
-                            <p class="text-[11px] text-slate-400 font-medium mt-0.5">Card · GCash · PayMaya · bank (test
-                                mode).</p>
-                        </div>
-                        <div>
-                            <p id="my-sub-current-method" class="text-sm font-bold text-slate-800">—</p>
-                            <p id="my-sub-card-expiry" class="text-xs text-slate-500 mt-1">Expiry —</p>
-                            <div id="my-sub-card-warning" class="hidden mt-2 text-xs font-semibold text-amber-700">
+                            <div class="flex items-center gap-2.5 mb-1">
+                                <div class="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-[13px] font-bold text-slate-800">Payment Method</h3>
+                                    <p class="text-[11px] text-slate-400">Card, GCash, PayMaya, bank</p>
+                                </div>
                             </div>
+                        </div>
+                        <div class="bg-slate-50 rounded-xl p-4 space-y-1">
+                            <p id="my-sub-current-method" class="text-[14px] font-bold text-slate-800">—</p>
+                            <p id="my-sub-card-expiry" class="text-[12px] text-slate-500">Expiry —</p>
+                            <div id="my-sub-card-warning" class="hidden mt-2 text-[12px] font-semibold text-amber-700 bg-amber-50 rounded-lg px-3 py-1.5"></div>
                         </div>
                         <div>
                             <label for="my-sub-card-select" class="sr-only">Test payment method</label>
                             <div class="flex items-center gap-2">
                                 <select id="my-sub-card-select"
-                                    class="flex-1 min-w-0 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"></select>
+                                    class="form-select flex-1 min-w-0"></select>
                                 <button id="my-sub-card-apply" type="button"
-                                    class="shrink-0 bg-slate-900 hover:bg-slate-700 text-white text-xs font-bold px-3 py-2 rounded-lg cursor-pointer">Update</button>
+                                    class="shrink-0 btn btn-primary !px-4 !py-2.5 !text-[12px]">Update</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white border border-slate-200/80 rounded-xl shadow-xs p-6">
-                    <div id="my-sub-features" class="space-y-2 text-xs text-slate-600"></div>
+                <!-- Plan features -->
+                <div class="card overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-100">
+                        <h3 class="text-[13px] font-bold text-slate-800">What's included in your plan</h3>
+                    </div>
+                    <div id="my-sub-features" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0"></div>
                 </div>
 
+                <!-- Invoices + Billing notices -->
                 <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                    <div class="bg-white border border-slate-200/80 rounded-xl shadow-xs p-6">
-                        <h3 class="font-black text-xs uppercase tracking-wider text-slate-800 mb-3">Invoices</h3>
-                        <div id="my-sub-invoices" class="space-y-2">
-                            <div class="h-10 bg-slate-100 rounded-lg animate-pulse"></div>
+                    <div class="card overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h3 class="text-[13px] font-bold text-slate-800">Invoice History</h3>
+                        </div>
+                        <div id="my-sub-invoices" class="divide-y divide-slate-100">
+                            <div class="px-6 py-4"><div class="h-10 bg-slate-100 rounded-lg animate-pulse"></div></div>
                         </div>
                     </div>
-                    <div class="bg-white border border-slate-200/80 rounded-xl shadow-xs p-6">
-                        <h3 class="font-black text-xs uppercase tracking-wider text-slate-800 mb-3">Billing notices</h3>
-                        <div id="my-sub-notifs" class="space-y-2 max-h-96 overflow-y-auto">
-                            <div class="h-10 bg-slate-100 rounded-lg animate-pulse"></div>
+                    <div class="card overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h3 class="text-[13px] font-bold text-slate-800">Billing Notices</h3>
+                        </div>
+                        <div id="my-sub-notifs" class="divide-y divide-slate-100 max-h-96 overflow-y-auto">
+                            <div class="px-6 py-4"><div class="h-10 bg-slate-100 rounded-lg animate-pulse"></div></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- LANDING PAGE BUILDER PANEL -->
+            <!-- ═══════ LANDING PAGE BUILDER ═══════ -->
             <div id="panel-landing" class="dashboard-panel hidden space-y-6">
-                <div
-                    class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm">
-                    <div>
-                        <h2 class="text-lg font-bold text-slate-900">Landing Page Builder</h2>
-                        <p class="text-xs text-slate-500 mt-1">Customize your public clinic page.</p>
-                        <p id="landing-status" class="text-[11px] font-semibold text-slate-400 mt-1" role="status"
-                            aria-live="polite"></p>
+                <!-- Header bar -->
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-white to-slate-50 p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-start gap-4">
+                        <div class="w-11 h-11 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5a17.92 17.92 0 0 1-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-900">Landing Page Builder</h2>
+                            <p class="text-[13px] text-slate-500 mt-0.5">Customize your public clinic page.</p>
+                            <p id="landing-status" class="text-[11px] font-semibold text-slate-400 mt-1" role="status" aria-live="polite"></p>
+                        </div>
                     </div>
-                    <div class="flex flex-wrap items-center gap-2">
-                        <button id="landing-preview-btn" type="button"
-                            class="inline-flex items-center gap-1.5 bg-white border border-slate-200 hover:border-indigo-300 text-slate-700 text-xs font-bold px-3.5 py-2.5 rounded-lg transition-all cursor-pointer">Preview</button>
-                        <button id="landing-publish-btn" type="button"
-                            class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-all cursor-pointer">Publish</button>
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <button id="landing-preview-btn" type="button" class="btn btn-secondary gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
+                            Preview
+                        </button>
+                        <button id="landing-publish-btn" type="button" class="btn btn-primary gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"/></svg>
+                            Publish
+                        </button>
                     </div>
                 </div>
 
                 <!-- Embedded live preview -->
-                <div id="landing-preview-wrap"
-                    class="hidden bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Live preview</h3>
-                        <button id="landing-preview-close" type="button"
-                            class="text-xs font-bold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg cursor-pointer">Close</button>
+                <div id="landing-preview-wrap" class="hidden bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+                            <h3 class="text-[13px] font-bold text-slate-700">Live Preview</h3>
+                        </div>
+                        <button id="landing-preview-close" type="button" class="btn btn-sm !bg-slate-100 !text-slate-500 hover:!bg-slate-200 hover:!text-slate-700 gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                            Close
+                        </button>
                     </div>
-                    <div class="rounded-lg overflow-hidden border border-slate-200">
-                        <iframe id="landing-preview-frame" title="Live preview of your public clinic page"
-                            class="w-full h-[70vh] bg-white" sandbox="allow-scripts allow-same-origin"
-                            loading="lazy"></iframe>
+                    <div class="rounded-xl overflow-hidden border border-slate-200 ring-1 ring-slate-100">
+                        <iframe id="landing-preview-frame" title="Live preview of your public clinic page" class="w-full h-[70vh] bg-white" sandbox="allow-scripts allow-same-origin" loading="lazy"></iframe>
                     </div>
                 </div>
 
-                <!-- Choose a Template (whole-page layout) -->
-                <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm space-y-4">
-                    <div>
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Choose a Template</h3>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Pick the overall layout for your public page. Each
-                            template is a completely different page design. Your colors, text, and content carry over
-                            when you switch.</p>
+                <!-- Choose a Template -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg class="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-[14px] font-bold text-slate-800">Choose a Template</h3>
+                            <p class="text-[12px] text-slate-400 mt-0.5">Pick the overall layout for your public page. Each template is a completely different page design. Your colors, text, and content carry over when you switch.</p>
+                        </div>
                     </div>
                     <div id="landing-template-cards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
                 </div>
 
+                <!-- Presets + Branding side by side -->
                 <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     <!-- Choose a Preset -->
-                    <div class="xl:col-span-2 bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm space-y-4">
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Choose a Preset</h3>
-                        <p class="text-[11px] text-slate-400">Pick a pre-designed theme to quickly set up your landing
-                            page, or choose <strong>Custom</strong> to start from scratch and configure every detail.
-                        </p>
+                    <div class="xl:col-span-2 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-[14px] font-bold text-slate-800">Choose a Preset</h3>
+                                <p class="text-[12px] text-slate-400 mt-0.5">Pick a pre-designed theme to quickly set up your landing page, or choose <strong>Custom</strong> to start from scratch.</p>
+                            </div>
+                        </div>
                         <div id="landing-preset-cards" class="flex flex-wrap gap-3"></div>
                     </div>
+
                     <!-- Branding -->
-                    <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm space-y-5">
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Branding</h3>
-                        <div class="flex items-center gap-4">
-                            <img id="landing-logo-preview" alt="Current clinic logo"
-                                class="hidden w-14 h-14 rounded-xl object-cover border border-slate-200" />
-                            <div class="min-w-0">
-                                <label for="landing-logo-input"
-                                    class="block text-xs font-semibold text-slate-700 mb-1">Clinic logo</label>
-                                <input id="landing-logo-input" type="file" accept="image/png,image/jpeg,image/webp"
-                                    class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" />
-                                <p class="text-[11px] text-slate-400 mt-1">PNG, JPG, or WEBP. Max 5MB.</p>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-5">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-pink-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <svg class="w-4 h-4 text-pink-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-[14px] font-bold text-slate-800">Branding</h3>
+                                <p class="text-[12px] text-slate-400 mt-0.5">Colors, logo, and typography</p>
                             </div>
                         </div>
-                        <div>
-                            <label for="landing-color-hex"
-                                class="block text-xs font-semibold text-slate-700 mb-1">Primary color</label>
-                            <div class="flex items-center gap-3 flex-wrap">
-                                <input id="landing-color-input" type="color" value="#0f766e"
-                                    aria-label="Primary color picker"
-                                    class="h-9 w-12 rounded cursor-pointer border border-slate-200 bg-white" />
-                                <input id="landing-color-hex" type="text" inputmode="text" placeholder="#0f766e"
-                                    maxlength="7"
-                                    class="w-28 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:bg-white focus:outline-none focus:border-indigo-500" />
-                                <div id="landing-color-presets" class="flex items-center gap-1.5"></div>
+
+                        <!-- Logo -->
+                        <div class="flex items-center gap-4 p-3 bg-slate-50 rounded-xl">
+                            <img id="landing-logo-preview" alt="Current clinic logo" class="hidden w-14 h-14 rounded-xl object-cover border border-slate-200 bg-white" />
+                            <div class="min-w-0 flex-1">
+                                <label for="landing-logo-input" class="block text-[12px] font-bold text-slate-600 mb-1">Clinic logo</label>
+                                <input id="landing-logo-input" type="file" accept="image/png,image/jpeg,image/webp" class="block w-full text-[12px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" />
+                                <p class="text-[10px] text-slate-400 mt-1">PNG, JPG, or WEBP. Max 5MB.</p>
                             </div>
                         </div>
-                        <div>
-                            <label for="landing-secondary-hex"
-                                class="block text-xs font-semibold text-slate-700 mb-1">Secondary color</label>
-                            <div class="flex items-center gap-3 flex-wrap">
-                                <input id="landing-secondary-input" type="color" value="#0d9488"
-                                    aria-label="Secondary color picker"
-                                    class="h-9 w-12 rounded cursor-pointer border border-slate-200 bg-white" />
-                                <input id="landing-secondary-hex" type="text" inputmode="text" placeholder="#0d9488"
-                                    maxlength="7"
-                                    class="w-28 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:bg-white focus:outline-none focus:border-indigo-500" />
-                                <div id="landing-secondary-presets" class="flex items-center gap-1.5"></div>
+
+                        <!-- Colors row -->
+                        <div class="space-y-3">
+                            <div>
+                                <label for="landing-color-hex" class="block text-[12px] font-bold text-slate-600 mb-1.5">Primary color</label>
+                                <div class="flex items-center gap-3 flex-wrap">
+                                    <input id="landing-color-input" type="color" value="#0f766e" aria-label="Primary color picker" class="h-9 w-12 rounded-lg cursor-pointer border border-slate-200 bg-white" />
+                                    <input id="landing-color-hex" type="text" inputmode="text" placeholder="#0f766e" maxlength="7" class="w-28 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-[13px] font-mono focus:bg-white focus:outline-none focus:border-indigo-500" />
+                                    <div id="landing-color-presets" class="flex items-center gap-1.5"></div>
+                                </div>
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-1">Tint used for section eyebrows and accents.
-                                Optional.</p>
+                            <div>
+                                <label for="landing-secondary-hex" class="block text-[12px] font-bold text-slate-600 mb-1.5">Secondary color</label>
+                                <div class="flex items-center gap-3 flex-wrap">
+                                    <input id="landing-secondary-input" type="color" value="#0d9488" aria-label="Secondary color picker" class="h-9 w-12 rounded-lg cursor-pointer border border-slate-200 bg-white" />
+                                    <input id="landing-secondary-hex" type="text" inputmode="text" placeholder="#0d9488" maxlength="7" class="w-28 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-[13px] font-mono focus:bg-white focus:outline-none focus:border-indigo-500" />
+                                    <div id="landing-secondary-presets" class="flex items-center gap-1.5"></div>
+                                </div>
+                                <p class="text-[10px] text-slate-400 mt-1">Tint used for section eyebrows and accents. Optional.</p>
+                            </div>
                         </div>
+
+                        <!-- Typography -->
                         <div>
-                            <label for="landing-typography"
-                                class="block text-xs font-semibold text-slate-700 mb-1">Typography</label>
-                            <select id="landing-typography"
-                                class="w-full max-w-xs bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-3 py-2 focus:bg-white focus:outline-none focus:border-indigo-500">
+                            <label for="landing-typography" class="block text-[12px] font-bold text-slate-600 mb-1.5">Typography</label>
+                            <select id="landing-typography" class="form-select w-full max-w-xs">
                                 <option value="default">Default (system)</option>
                                 <option value="clean">Clean (Inter)</option>
                                 <option value="elegant">Elegant (serif)</option>
                                 <option value="rounded">Rounded (friendly)</option>
                             </select>
                         </div>
-                        <div>
-                            <label for="landing-header-hex"
-                                class="block text-xs font-semibold text-slate-700 mb-1">Header background</label>
-                            <div class="flex items-center gap-3 flex-wrap">
-                                <input id="landing-header-input" type="color" value="#ffffff"
-                                    aria-label="Header background picker"
-                                    class="h-9 w-12 rounded cursor-pointer border border-slate-200 bg-white" />
-                                <input id="landing-header-hex" type="text" inputmode="text" placeholder="#ffffff"
-                                    maxlength="7"
-                                    class="w-28 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:bg-white focus:outline-none focus:border-indigo-500" />
+
+                        <!-- Header & Footer colors -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="landing-header-hex" class="block text-[12px] font-bold text-slate-600 mb-1.5">Header bg</label>
+                                <div class="flex items-center gap-2">
+                                    <input id="landing-header-input" type="color" value="#ffffff" aria-label="Header background picker" class="h-8 w-10 rounded cursor-pointer border border-slate-200 bg-white" />
+                                    <input id="landing-header-hex" type="text" inputmode="text" placeholder="#ffffff" maxlength="7" class="flex-1 min-w-0 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-[12px] font-mono focus:bg-white focus:outline-none focus:border-indigo-500" />
+                                </div>
+                                <p class="text-[10px] text-slate-400 mt-1">Blank = default frosted white.</p>
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-1">Leave blank to keep the default frosted white
-                                header.</p>
-                        </div>
-                        <div>
-                            <label for="landing-footer-hex"
-                                class="block text-xs font-semibold text-slate-700 mb-1">Footer background</label>
-                            <div class="flex items-center gap-3 flex-wrap">
-                                <input id="landing-footer-input" type="color" value="#0f172a"
-                                    aria-label="Footer background picker"
-                                    class="h-9 w-12 rounded cursor-pointer border border-slate-200 bg-white" />
-                                <input id="landing-footer-hex" type="text" inputmode="text" placeholder="#0f172a"
-                                    maxlength="7"
-                                    class="w-28 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:bg-white focus:outline-none focus:border-indigo-500" />
+                            <div>
+                                <label for="landing-footer-hex" class="block text-[12px] font-bold text-slate-600 mb-1.5">Footer bg</label>
+                                <div class="flex items-center gap-2">
+                                    <input id="landing-footer-input" type="color" value="#0f172a" aria-label="Footer background picker" class="h-8 w-10 rounded cursor-pointer border border-slate-200 bg-white" />
+                                    <input id="landing-footer-hex" type="text" inputmode="text" placeholder="#0f172a" maxlength="7" class="flex-1 min-w-0 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-[12px] font-mono focus:bg-white focus:outline-none focus:border-indigo-500" />
+                                </div>
+                                <p class="text-[10px] text-slate-400 mt-1">Blank = default dark navy.</p>
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-1">Leave blank to keep the default dark navy footer.
-                            </p>
                         </div>
+
+                        <!-- Tagline -->
                         <div>
-                            <label for="landing-tagline-input"
-                                class="block text-xs font-semibold text-slate-700 mb-1">Tagline</label>
-                            <input id="landing-tagline-input" maxlength="160"
-                                placeholder="Gentle, modern dentistry for the whole family."
-                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:bg-white focus:outline-none focus:border-indigo-500" />
+                            <label for="landing-tagline-input" class="block text-[12px] font-bold text-slate-600 mb-1.5">Tagline</label>
+                            <input id="landing-tagline-input" maxlength="160" placeholder="Gentle, modern dentistry for the whole family." class="form-input w-full" />
                         </div>
                     </div>
+
                     <!-- Section visibility -->
-                    <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm space-y-3">
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Sections</h3>
-                        <p class="text-[11px] text-slate-400">Toggle which sections appear on your public page.</p>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-[14px] font-bold text-slate-800">Sections</h3>
+                                <p class="text-[12px] text-slate-400 mt-0.5">Toggle which sections appear on your public page.</p>
+                            </div>
+                        </div>
                         <div id="landing-sections" class="space-y-2"></div>
                     </div>
                 </div>
 
-                <!-- Profile & page text (merged landing/profile editing) -->
-                <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm space-y-5">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Profile & page text</h3>
-                    <div>
-                        <label for="landing-description" class="block text-xs font-semibold text-slate-700 mb-1">Clinic
-                            description</label>
-                        <textarea id="landing-description" maxlength="600" rows="5"
-                            class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
-                            placeholder="Tell patients what makes your clinic special."></textarea>
-                        <div class="flex justify-between gap-4 mt-1.5">
-                            <p class="text-[11px] text-slate-400">Plain text only. Maximum 600 characters.</p>
-                            <p id="landing-description-count" class="text-[11px] text-slate-400">0 / 600</p>
+                <!-- Profile & page text -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-5">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-[14px] font-bold text-slate-800">Profile & Page Text</h3>
+                            <p class="text-[12px] text-slate-400 mt-0.5">Clinic description and hero text</p>
                         </div>
                     </div>
                     <div>
-                        <label for="landing-hero-eyebrow" class="block text-xs font-semibold text-slate-700 mb-1">Hero
-                            welcome line</label>
-                        <input id="landing-hero-eyebrow" maxlength="120" placeholder="Welcome to"
-                            class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:bg-white focus:outline-none focus:border-indigo-500" />
-                        <p class="text-[11px] text-slate-400 mt-1">Shown above your clinic name on the public page.</p>
+                        <label for="landing-description" class="block text-[12px] font-bold text-slate-600 mb-1.5">Clinic description</label>
+                        <textarea id="landing-description" maxlength="600" rows="4" class="form-input w-full !py-2.5 resize-none" placeholder="Tell patients what makes your clinic special."></textarea>
+                        <div class="flex justify-between gap-4 mt-1.5">
+                            <p class="text-[10px] text-slate-400">Plain text only. Maximum 600 characters.</p>
+                            <p id="landing-description-count" class="text-[10px] font-semibold text-slate-400">0 / 600</p>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="landing-hero-eyebrow" class="block text-[12px] font-bold text-slate-600 mb-1.5">Hero welcome line</label>
+                        <input id="landing-hero-eyebrow" maxlength="120" placeholder="Welcome to" class="form-input w-full" />
+                        <p class="text-[10px] text-slate-400 mt-1">Shown above your clinic name on the public page.</p>
                     </div>
                 </div>
 
-                <!-- Static section texts (headlines + intros) -->
-                <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm space-y-4">
-                    <div>
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Page section text</h3>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Edit the eyebrow, heading, and intro shown above
-                            each
-                            built-in section. Leave a field blank to keep the original text.</p>
+                <!-- Page section text -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg class="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-[14px] font-bold text-slate-800">Page Section Text</h3>
+                            <p class="text-[12px] text-slate-400 mt-0.5">Edit the eyebrow, heading, and intro shown above each built-in section. Leave blank to keep original text.</p>
+                        </div>
                     </div>
                     <div id="landing-section-texts" class="space-y-4"></div>
                 </div>
 
                 <!-- Social links -->
-                <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm space-y-4">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div>
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Social links</h3>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Show your clinic's profiles in the page footer.
-                                Up to 5 links.</p>
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-cyan-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <svg class="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m9.86-2.416a4.5 4.5 0 0 0-6.364-6.364L4.757 8.25a4.5 4.5 0 0 0 6.364 6.364l4.5-4.5Z"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-[14px] font-bold text-slate-800">Social Links</h3>
+                                <p class="text-[12px] text-slate-400 mt-0.5">Show your clinic's profiles in the page footer. Up to 5 links.</p>
+                            </div>
                         </div>
-                        <button id="landing-add-social" type="button"
-                            class="self-start bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-3 py-2 rounded-lg cursor-pointer">+
-                            Add link</button>
+                        <button id="landing-add-social" type="button" class="self-start btn btn-sm !bg-slate-100 !text-slate-700 hover:!bg-slate-200 gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                            Add link
+                        </button>
                     </div>
                     <div id="landing-social-links" class="space-y-2"></div>
                 </div>
 
                 <!-- Content blocks -->
-                <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm space-y-4">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div>
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Content blocks</h3>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Add custom text or image sections. Reorder with
-                                the arrows. Up to 12 blocks.</p>
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 0 1-2.25 2.25M16.5 7.5V18a2.25 2.25 0 0 0 2.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 0 0 2.25 2.25h13.5"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-[14px] font-bold text-slate-800">Content Blocks</h3>
+                                <p class="text-[12px] text-slate-400 mt-0.5">Add custom text or image sections. Reorder with arrows. Up to 12 blocks.</p>
+                            </div>
                         </div>
                         <div class="flex gap-2">
-                            <button id="landing-add-text" type="button"
-                                class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-3 py-2 rounded-lg cursor-pointer">+
-                                Text block</button>
-                            <button id="landing-add-image" type="button"
-                                class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-3 py-2 rounded-lg cursor-pointer">+
-                                Image block</button>
+                            <button id="landing-add-text" type="button" class="btn btn-sm !bg-slate-100 !text-slate-700 hover:!bg-slate-200 gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg>
+                                Text
+                            </button>
+                            <button id="landing-add-image" type="button" class="btn btn-sm !bg-slate-100 !text-slate-700 hover:!bg-slate-200 gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z"/></svg>
+                                Image
+                            </button>
                         </div>
                     </div>
                     <div id="landing-blocks" class="space-y-3"></div>
                 </div>
             </div>
 
-            <!-- OPERATING HOURS PANEL -->
+            <!-- ═══════ OPERATING HOURS ═══════ -->
             <div id="panel-hours" class="dashboard-panel hidden space-y-6">
                 <div
                     class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm">
@@ -1522,13 +1721,13 @@
                             </svg>
                             Operating Hours & Availability
                         </h2>
-                        <p class="text-xs text-slate-500 mt-1">Configure your clinic's weekly working schedule and
+                        <p class="text-[13px] text-slate-500 mt-1">Configure your clinic's weekly working schedule and
                             default
                             appointment slot durations.</p>
                     </div>
 
                     <button id="btn-save-hours" type="button"
-                        class="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-sm transition-all cursor-pointer">
+                        class="btn btn-primary">
                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                             stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
@@ -1544,12 +1743,12 @@
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">General Configuration
                         </h3>
                         <div class="max-w-xs">
-                            <label for="slot-duration" class="block text-xs font-semibold text-slate-700 mb-1.5">
+                            <label for="slot-duration" class="block text-[13px] font-semibold text-slate-700 mb-1.5">
                                 Appointment Slot Interval
                             </label>
                             <div class="relative">
                                 <select id="slot-duration"
-                                    class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all font-medium">
+                                    class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-[13px] rounded-lg px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all font-medium">
                                     <option value="15">15 Minutes</option>
                                     <option value="20">20 Minutes</option>
                                     <option value="30" selected>30 Minutes (Recommended)</option>
@@ -1569,7 +1768,7 @@
                             <div>
                                 <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Weekly Business
                                     Schedule</h3>
-                                <p class="text-xs text-slate-500 mt-0.5">Toggle days off or set start and end times for
+                                <p class="text-[13px] text-slate-500 mt-0.5">Toggle days off or set start and end times for
                                     open days.
                                 </p>
                             </div>
@@ -1585,21 +1784,21 @@
                                     <input type="checkbox" id="closed-Monday"
                                         class="day-closed-checkbox w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
                                     <label for="closed-Monday"
-                                        class="text-xs font-bold text-slate-800 cursor-pointer">Monday</label>
+                                        class="text-[13px] font-bold text-slate-800 cursor-pointer">Monday</label>
                                 </div>
 
                                 <div class="day-time-inputs flex items-center gap-3">
                                     <div class="flex items-center gap-2">
                                         <span class="text-[11px] font-medium text-slate-400">Open:</span>
                                         <input type="time"
-                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-[13px] rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
                                             value="09:00">
                                     </div>
                                     <span class="text-slate-300">—</span>
                                     <div class="flex items-center gap-2">
                                         <span class="text-[11px] font-medium text-slate-400">Close:</span>
                                         <input type="time"
-                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-[13px] rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
                                             value="17:00">
                                     </div>
                                 </div>
@@ -1615,20 +1814,20 @@
                                     <input type="checkbox" id="closed-Tuesday"
                                         class="day-closed-checkbox w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
                                     <label for="closed-Tuesday"
-                                        class="text-xs font-bold text-slate-800 cursor-pointer">Tuesday</label>
+                                        class="text-[13px] font-bold text-slate-800 cursor-pointer">Tuesday</label>
                                 </div>
                                 <div class="day-time-inputs flex items-center gap-3">
                                     <div class="flex items-center gap-2">
                                         <span class="text-[11px] font-medium text-slate-400">Open:</span>
                                         <input type="time"
-                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-[13px] rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
                                             value="09:00">
                                     </div>
                                     <span class="text-slate-300">—</span>
                                     <div class="flex items-center gap-2">
                                         <span class="text-[11px] font-medium text-slate-400">Close:</span>
                                         <input type="time"
-                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-[13px] rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
                                             value="17:00">
                                     </div>
                                 </div>
@@ -1643,20 +1842,20 @@
                                     <input type="checkbox" id="closed-Wednesday"
                                         class="day-closed-checkbox w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
                                     <label for="closed-Wednesday"
-                                        class="text-xs font-bold text-slate-800 cursor-pointer">Wednesday</label>
+                                        class="text-[13px] font-bold text-slate-800 cursor-pointer">Wednesday</label>
                                 </div>
                                 <div class="day-time-inputs flex items-center gap-3">
                                     <div class="flex items-center gap-2">
                                         <span class="text-[11px] font-medium text-slate-400">Open:</span>
                                         <input type="time"
-                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-[13px] rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
                                             value="09:00">
                                     </div>
                                     <span class="text-slate-300">—</span>
                                     <div class="flex items-center gap-2">
                                         <span class="text-[11px] font-medium text-slate-400">Close:</span>
                                         <input type="time"
-                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-[13px] rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
                                             value="17:00">
                                     </div>
                                 </div>
@@ -1671,20 +1870,20 @@
                                     <input type="checkbox" id="closed-Thursday"
                                         class="day-closed-checkbox w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
                                     <label for="closed-Thursday"
-                                        class="text-xs font-bold text-slate-800 cursor-pointer">Thursday</label>
+                                        class="text-[13px] font-bold text-slate-800 cursor-pointer">Thursday</label>
                                 </div>
                                 <div class="day-time-inputs flex items-center gap-3">
                                     <div class="flex items-center gap-2">
                                         <span class="text-[11px] font-medium text-slate-400">Open:</span>
                                         <input type="time"
-                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-[13px] rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
                                             value="09:00">
                                     </div>
                                     <span class="text-slate-300">—</span>
                                     <div class="flex items-center gap-2">
                                         <span class="text-[11px] font-medium text-slate-400">Close:</span>
                                         <input type="time"
-                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-[13px] rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
                                             value="17:00">
                                     </div>
                                 </div>
@@ -1699,20 +1898,20 @@
                                     <input type="checkbox" id="closed-Friday"
                                         class="day-closed-checkbox w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
                                     <label for="closed-Friday"
-                                        class="text-xs font-bold text-slate-800 cursor-pointer">Friday</label>
+                                        class="text-[13px] font-bold text-slate-800 cursor-pointer">Friday</label>
                                 </div>
                                 <div class="day-time-inputs flex items-center gap-3">
                                     <div class="flex items-center gap-2">
                                         <span class="text-[11px] font-medium text-slate-400">Open:</span>
                                         <input type="time"
-                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-[13px] rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
                                             value="09:00">
                                     </div>
                                     <span class="text-slate-300">—</span>
                                     <div class="flex items-center gap-2">
                                         <span class="text-[11px] font-medium text-slate-400">Close:</span>
                                         <input type="time"
-                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-[13px] rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
                                             value="17:00">
                                     </div>
                                 </div>
@@ -1727,20 +1926,20 @@
                                     <input type="checkbox" id="closed-Saturday"
                                         class="day-closed-checkbox w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
                                     <label for="closed-Saturday"
-                                        class="text-xs font-bold text-slate-800 cursor-pointer">Saturday</label>
+                                        class="text-[13px] font-bold text-slate-800 cursor-pointer">Saturday</label>
                                 </div>
                                 <div class="day-time-inputs flex items-center gap-3">
                                     <div class="flex items-center gap-2">
                                         <span class="text-[11px] font-medium text-slate-400">Open:</span>
                                         <input type="time"
-                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-[13px] rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
                                             value="09:00">
                                     </div>
                                     <span class="text-slate-300">—</span>
                                     <div class="flex items-center gap-2">
                                         <span class="text-[11px] font-medium text-slate-400">Close:</span>
                                         <input type="time"
-                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-[13px] rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
                                             value="14:00">
                                     </div>
                                 </div>
@@ -1754,21 +1953,21 @@
                                     <input type="checkbox" id="closed-Sunday"
                                         class="day-closed-checkbox w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
                                     <label for="closed-Sunday"
-                                        class="text-xs font-bold text-slate-800 cursor-pointer select-none">Sunday</label>
+                                        class="text-[13px] font-bold text-slate-800 cursor-pointer select-none">Sunday</label>
                                 </div>
 
                                 <div class="day-time-inputs flex items-center gap-3 transition-opacity duration-200">
                                     <div class="flex items-center gap-2">
                                         <span class="text-[11px] font-medium text-slate-400">Open:</span>
                                         <input type="time"
-                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            class="time-open bg-slate-50 border border-slate-200 text-slate-800 text-[13px] rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
                                             value="09:00">
                                     </div>
                                     <span class="text-slate-300">—</span>
                                     <div class="flex items-center gap-2">
                                         <span class="text-[11px] font-medium text-slate-400">Close:</span>
                                         <input type="time"
-                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
+                                            class="time-close bg-slate-50 border border-slate-200 text-slate-800 text-[13px] rounded-lg px-2.5 py-1.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono"
                                             value="17:00">
                                     </div>
                                 </div>
@@ -1782,7 +1981,7 @@
                 </form>
             </div>
 
-            <!-- ⭐ TESTIMONIALS MODERATION PANEL -->
+            <!-- ═══════ TESTIMONIALS MODERATION ═══════ -->
             <div id="panel-testimonials" class="dashboard-panel hidden space-y-6">
                 <div
                     class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm">
@@ -1795,13 +1994,13 @@
                             </svg>
                             Testimonials
                         </h2>
-                        <p class="text-xs text-slate-500 mt-1">Patient feedback publishes automatically the moment it
+                        <p class="text-[13px] text-slate-500 mt-1">Patient feedback publishes automatically the moment it
                             is submitted.</p>
                     </div>
 
                     <div class="flex items-center gap-3">
                         <button id="refresh-testimonials" type="button"
-                            class="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-sm transition-all cursor-pointer">
+                            class="btn btn-primary">
                             <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                 stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -1813,11 +2012,11 @@
                 </div>
 
                 <div id="testimonials-moderation-list" class="space-y-4" aria-busy="true">
-                    <div class="bg-white border border-slate-200/80 rounded-xl p-5 space-y-3" aria-hidden="true">
+                    <div class="card p-5 space-y-3" aria-hidden="true">
                         <div class="h-4 w-1/3 bg-slate-100 rounded animate-pulse"></div>
                         <div class="h-16 bg-slate-100 rounded animate-pulse"></div>
                     </div>
-                    <div class="bg-white border border-slate-200/80 rounded-xl p-5 space-y-3" aria-hidden="true">
+                    <div class="card p-5 space-y-3" aria-hidden="true">
                         <div class="h-4 w-1/3 bg-slate-100 rounded animate-pulse"></div>
                         <div class="h-16 bg-slate-100 rounded animate-pulse"></div>
                     </div>
@@ -1826,9 +2025,10 @@
             </div>
         </div>
     </main>
-    <!-- 🔑 STAFF PIN RESET SUCCESS MODAL -->
+
+    <!-- STAFF PIN RESET SUCCESS MODAL -->
     <div id="reset-pin-modal"
-        class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        class="modal-backdrop hidden">
         <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4">
 
             <!-- Icon Header -->
@@ -1839,7 +2039,7 @@
 
             <div>
                 <h3 class="text-base font-black text-slate-900">New PIN Generated</h3>
-                <p class="text-xs text-slate-500 mt-1">
+                <p class="text-[13px] text-slate-500 mt-1">
                     Share this code with <span id="reset-modal-staff-name" class="font-bold text-slate-800">the staff
                         member</span>.
                 </p>
@@ -1850,7 +2050,7 @@
                 <span id="reset-modal-pin-display"
                     class="font-mono text-2xl font-black text-slate-900 tracking-widest pl-2">000000</span>
                 <button id="copy-pin-btn" onclick="copyResetPinToClipboard()"
-                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5">
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-[13px] font-bold px-3 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -1861,7 +2061,7 @@
 
             <!-- Close Button -->
             <button onclick="closeResetPinModal()"
-                class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2.5 rounded-lg transition-colors cursor-pointer">
+                class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-bold py-2.5 rounded-lg transition-colors cursor-pointer">
                 Done
             </button>
         </div>
@@ -1873,27 +2073,27 @@
             <div class="flex items-start justify-between gap-3">
                 <div>
                     <h2 id="change-plan-title" class="text-base font-black text-slate-900">Change billing cycle</h2>
-                    <p class="text-xs text-slate-500 mt-1">One fixed plan — switch between monthly and yearly.
+                    <p class="text-[13px] text-slate-500 mt-1">One fixed plan — switch between monthly and yearly.
                         Switching restarts your billing period today and charges the new amount immediately.</p>
                 </div>
                 <button id="change-plan-close" type="button" aria-label="Close change plan dialog"
                     class="text-slate-400 hover:text-slate-700 p-2 rounded-lg hover:bg-slate-100 cursor-pointer">✕</button>
             </div>
             <div>
-                <label for="change-plan-select" class="block text-xs font-bold text-slate-700 mb-1.5">Billing
+                <label for="change-plan-select" class="block text-[13px] font-bold text-slate-700 mb-1.5">Billing
                     cycle</label>
                 <select id="change-plan-select"
-                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500">
+                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-[13px] text-slate-800 focus:outline-none focus:border-indigo-500">
                 </select>
-                <p id="change-plan-empty" class="hidden mt-2 text-xs text-slate-500">Pricing is unavailable right now.
+                <p id="change-plan-empty" class="hidden mt-2 text-[13px] text-slate-500">Pricing is unavailable right now.
                 </p>
             </div>
-            <p id="change-plan-error" class="hidden text-xs font-semibold text-rose-700" role="alert"></p>
+            <p id="change-plan-error" class="hidden text-[13px] font-semibold text-rose-700" role="alert"></p>
             <div class="flex justify-end gap-2">
                 <button id="change-plan-cancel" type="button"
-                    class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-lg cursor-pointer">Cancel</button>
+                    class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-bold px-4 py-2.5 rounded-lg cursor-pointer">Cancel</button>
                 <button id="change-plan-confirm" type="button"
-                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg cursor-pointer">Switch
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-[13px] font-bold px-4 py-2.5 rounded-lg cursor-pointer">Switch
                     cycle</button>
             </div>
         </div>
@@ -1968,9 +2168,9 @@
                 area.</p>
             <div class="flex items-center justify-end gap-2">
                 <button id="landing-crop-cancel-btn" type="button"
-                    class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-lg cursor-pointer">Cancel</button>
+                    class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-bold px-4 py-2.5 rounded-lg cursor-pointer">Cancel</button>
                 <button id="landing-crop-apply" type="button"
-                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg cursor-pointer">Apply
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-[13px] font-bold px-4 py-2.5 rounded-lg cursor-pointer">Apply
                     & upload</button>
             </div>
         </div>

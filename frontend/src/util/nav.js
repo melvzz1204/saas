@@ -90,9 +90,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const ACTIVE_CLASS =
-    "nav-item group flex items-center justify-between bg-slate-100 text-slate-900 px-3 py-2 rounded-lg text-xs font-semibold border border-slate-200/50 cursor-pointer transition-all";
+    "nav-item group flex items-center justify-between bg-indigo-100 text-indigo-900 px-3 py-2.5 rounded-xl text-[13px] font-semibold border border-indigo-200/80 cursor-pointer transition-all shadow-sm";
   const IDLE_CLASS =
-    "nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all";
+    "nav-item group flex items-center justify-between text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 px-3 py-2.5 rounded-xl text-[13px] font-medium cursor-pointer transition-all";
 
   // -----------------------------------------------------------------------
   // ARIA wiring (tablist / tab / tabpanel + roving tabindex)

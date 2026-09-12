@@ -175,49 +175,34 @@
     const plan = currentFeaturePlan();
     if (!plan) {
       const empty = document.createElement("p");
-      empty.className = "text-xs text-slate-500";
+      empty.className = "px-6 py-4 text-xs text-slate-500";
       empty.textContent = meta ? "No active plans are available." : "Plan details unavailable. Check back later.";
       box.appendChild(empty);
       return;
     }
 
-    const heading = document.createElement("h4");
-    heading.className = "text-xs font-black uppercase tracking-wider text-slate-800";
-    heading.textContent = "What's included";
-    box.appendChild(heading);
-
     const prices = plan.prices || {};
     const cycle = current?.subscription?.billingCycle === "yearly" ? "yearly" : "monthly";
-    const price = current?.subscription
-      ? `${peso(current.subscription.amount, current.subscription.currency)} per ${current.subscription.billingCycle === "yearly" ? "year" : "month"}`
-      : `${peso(prices[cycle], plan.currency)} per ${cycle === "yearly" ? "year" : "month"}`;
-    const summary = document.createElement("p");
-    summary.className = "text-xs text-slate-600 mt-1";
-    summary.textContent = `${plan.name} · ${price}`;
-    box.appendChild(summary);
-
-    const list = document.createElement("ul");
-    list.className = "mt-3 space-y-2 text-xs text-slate-600";
     const features = Array.isArray(plan.features) ? plan.features.filter(Boolean) : [];
     if (!features.length) {
-      const empty = document.createElement("li");
-      empty.className = "text-slate-400";
+      const empty = document.createElement("p");
+      empty.className = "px-6 py-4 text-xs text-slate-400";
       empty.textContent = "No features listed for this plan.";
-      list.appendChild(empty);
+      box.appendChild(empty);
     } else {
       features.forEach((feature) => {
-        const item = document.createElement("li");
-        item.className = "flex gap-2";
-        const check = document.createElement("span");
-        check.className = "mt-0.5 text-emerald-500";
-        check.textContent = "✓";
+        const item = document.createElement("div");
+        item.className = "flex items-start gap-3 px-6 py-3.5 hover:bg-slate-50/60 transition-colors";
+        const icon = document.createElement("div");
+        icon.className = "mt-0.5 w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0";
+        icon.innerHTML = '<svg class="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>';
         const text = document.createElement("span");
+        text.className = "text-[13px] text-slate-600 font-medium";
         text.textContent = feature;
-        item.append(check, text);
-        list.appendChild(item);
+        item.append(icon, text);
+        box.appendChild(item);
       });
     }
-    box.appendChild(list);
   }
 
   function cardExpiry(pm) {
