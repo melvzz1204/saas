@@ -67,6 +67,9 @@ document.addEventListener("DOMContentLoaded", () => {
     "reveal",
   ) === "all";
 
+  const reveal = (el) => el.classList.add("visible");
+  const revealAll = () => revealEls.forEach(reveal);
+
   if (
     revealEls.length &&
     "IntersectionObserver" in window &&
@@ -77,7 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
+            reveal(entry.target);
             observer.unobserve(entry.target);
           }
         });
@@ -85,9 +88,44 @@ document.addEventListener("DOMContentLoaded", () => {
       { threshold: 0.12, rootMargin: "0px 0px -40px 0px" },
     );
     revealEls.forEach((el) => observer.observe(el));
+
+    // -------------------------------------------------------------------
+    // Reliability guards for reveal-gated CTAs (e.g. "Register your clinic")
+    //
+    // publicClinics.js injects a tall, variable-height clinic grid ABOVE
+    // several reveal wrappers *after* this observer takes its first
+    // measurements. That late layout shift — together with the browser's
+    // scroll restoration on reload — can otherwise leave a CTA stranded at
+    // opacity:0 until the next reload. These guards guarantee visibility
+    // regardless of async timing.
+    // -------------------------------------------------------------------
+
+    // Reveal anything already within the viewport right now. Uses a plain
+    // rect check so it is immune to the observer's intersection-ratio
+    // threshold (which a very tall element can never reach on small screens).
+    const revealInView = () => {
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      revealEls.forEach((el) => {
+        if (el.classList.contains("visible")) return;
+        const rect = el.getBoundingClientRect();
+        if (rect.top < vh && rect.bottom > 0) {
+          reveal(el);
+          observer.unobserve(el);
+        }
+      });
+    };
+
+    // Re-check once the clinic directory has injected its grid (layout is
+    // now settled) and again after the window fully loads.
+    document.addEventListener("clinics:loaded", revealInView);
+    window.addEventListener("load", revealInView);
+
+    // Absolute safety net: never leave content hidden. If the observer's
+    // timing was thrown off, force everything visible after a short delay.
+    window.setTimeout(revealAll, 4000);
   } else {
-    // Reduced motion or no observer support: show everything immediately.
-    revealEls.forEach((el) => el.classList.add("visible"));
+    // Reduced motion, no observer support, or ?reveal=all: show everything.
+    revealAll();
   }
 
   // ---------------------------------------------------------------------

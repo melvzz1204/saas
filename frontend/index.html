@@ -14,6 +14,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
 
+    <!-- Progressive-enhancement flag: reveal animations only hide content when
+         JS is available to reveal it, so CTAs are never stranded at opacity:0. -->
+    <script>document.documentElement.classList.add("js");</script>
     <link rel="stylesheet" href="./src/style/landing.css">
 </head>
 
@@ -108,7 +111,7 @@
                     <dl class="hero-stats">
                         <div class="stat">
                             <dt class="sr-only">Clinics onboarded</dt>
-                            <dd class="stat-value accent" id="hero-clinic-count" </dd>
+                            <dd class="stat-value accent" id="hero-clinic-count">—</dd>
                             <dd class="stat-label">live clinics onboarded</dd>
                         </div>
                         <div class="stat">

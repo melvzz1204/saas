@@ -81,6 +81,11 @@ document.addEventListener("DOMContentLoaded", () => {
         ),
         "error",
       );
+    } finally {
+      // Signal that the directory grid has been injected and layout has
+      // settled, so landing.js can re-check any reveal-gated CTAs (e.g. the
+      // "Register your clinic" button) that this async layout shift affects.
+      document.dispatchEvent(new CustomEvent("clinics:loaded"));
     }
   };
 

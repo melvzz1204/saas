@@ -1130,13 +1130,16 @@ h4 {
   }
 }
 
-.reveal {
+/* Scroll-reveal is only hidden when JS is present to reveal it (html.js is
+   set inline in <head>). Without JS, reveal content stays fully visible so
+   critical CTAs are never stranded at opacity:0. */
+html.js .reveal {
   opacity: 0;
   transform: translateY(20px);
   transition: opacity 0.6s ease, transform 0.6s ease;
 }
 
-.reveal.visible {
+html.js .reveal.visible {
   opacity: 1;
   transform: none;
 }
@@ -1161,6 +1164,7 @@ h4 {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  html.js .reveal,
   .reveal {
     opacity: 1;
     transform: none;
