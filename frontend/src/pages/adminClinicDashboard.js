@@ -1116,6 +1116,27 @@ function renderAppointmentsTable(appointments) {
   if (todayBookingsEl) todayBookingsEl.textContent = todayCount;
   if (monthlyBookingsEl) monthlyBookingsEl.textContent = monthlyCount;
 
+  // Accommodated patients: unique patients with at least one completed
+  // treatment. Keyed by patient/user id when present, otherwise by
+  // name + phone so repeat walk-ins count once.
+  const accommodatedKeys = new Set();
+  appointments.forEach((appt) => {
+    if (String(appt.status || "").toLowerCase() !== "completed") return;
+    const pid = appt.patientId;
+    const uid = appt.userId;
+    if (pid && typeof pid === "object" && pid._id) accommodatedKeys.add(`id:${pid._id}`);
+    else if (typeof pid === "string" && pid) accommodatedKeys.add(`id:${pid}`);
+    else if (uid && typeof uid === "object" && uid._id) accommodatedKeys.add(`u:${uid._id}`);
+    else if (typeof uid === "string" && uid) accommodatedKeys.add(`u:${uid}`);
+    else {
+      accommodatedKeys.add(
+        `walk:${String(appt.patientName || "walk-in").trim().toLowerCase()}|${String(appt.phone || "").trim()}`,
+      );
+    }
+  });
+  const accommodatedEl = document.getElementById("kpi-accommodated-patients");
+  if (accommodatedEl) accommodatedEl.textContent = accommodatedKeys.size;
+
   if (appointments.length === 0) {
     tableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 italic">No appointments allocated for this specific clinic location.</td></tr>`;
     return;
