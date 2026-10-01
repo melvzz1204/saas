@@ -330,7 +330,7 @@
       if (ar) { ar.checked = false; ar.disabled = true; }
       const arLabel = $("my-sub-autorenew-label");
       if (arLabel) arLabel.textContent = "—";
-      alertCard("info", "No active subscription", "Choose a test payment method and subscribe to get started.", null, null);
+      alertCard("info", "No active subscription", "No payment is due until your application is approved. Once approved, choose a test payment method and subscribe here to activate your workspace.", null, null);
       setBadge("", null, current?.unread);
       renderFeatures();
       renderPaymentMethod(null);
@@ -418,7 +418,7 @@
     wrap.appendChild(sub);
     const hint = document.createElement("p");
     hint.className = "text-[10px] text-slate-400 w-full";
-    hint.textContent = "Uses the test payment method selected in the Payment method card.";
+    hint.textContent = "No payment is due until your application is approved. Uses the test payment method selected in the Payment method card.";
     box.append(wrap, hint);
   }
 

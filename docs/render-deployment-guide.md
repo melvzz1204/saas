@@ -1,4 +1,4 @@
-# Render.com Deployment Guide — Dental SaaS (NovaClinic)
+# Render.com Deployment Guide — Dental SaaS (DentaCloud)
 
 This guide deploys the project to Render as **two services**:
 
@@ -63,7 +63,7 @@ Add these under **Environment** (do **not** commit the real `.env`):
 | `SAAS_ADMIN_SECRET` | The shared secret used by `saasAdminLogin` to mint admin tokens                                                                                                                                         |
 | `EMAIL_USER`        | Gmail address used by nodemailer (e.g. `bahalakahh@gmail.com`)                                                                                                                                          |
 | `EMAIL_PASS`        | Gmail **App Password** (not the account password)                                                                                                                                                       |
-| `MAIL_FROM_NAME`    | `NovaClinic`                                                                                                                                                                                            |
+| `MAIL_FROM_NAME`    | `DentaCloud`                                                                                                                                                                                            |
 | `FRONTEND_URL`      | **The deployed frontend origin**, e.g. `https://frontend.onrender.com` — used to build login/public links in emails AND added to the Socket.IO CORS allow-list ([`server.js`](../backend/server.js:13)) |
 | `PAYMONGO_MOCK`     | Leave unset (defaults to `true` → PayMongo-shaped simulated gateway)                                                                                                                                    |
 
@@ -241,7 +241,7 @@ JWT_SECRET=<random-64-hex>
 SAAS_ADMIN_SECRET=<shared-capstone-secret>
 EMAIL_USER=<gmail>
 EMAIL_PASS=<gmail-app-password>
-MAIL_FROM_NAME=NovaClinic
+MAIL_FROM_NAME=DentaCloud
 FRONTEND_URL=https://<frontend>.onrender.com
 # PAYMONGO_MOCK=true   (optional; simulated gateway is the default)
 

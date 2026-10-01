@@ -40,9 +40,11 @@ const pendingRegistrationSchema = new mongoose.Schema(
     codeHash: { type: String, required: true },
     codeExpiresAt: { type: Date, required: true },
 
-    // Subscription selected and PAID up-front at initiate time (before the
-    // Clinic/Subscription records exist). The real subscription is created on
-    // verify using this pre-charged payment. No real card data is stored.
+    // Billing preference chosen at submit time. Payment is collected ONLY after
+    // super-admin approval (from the clinic dashboard), so `payment` stays
+    // empty for new registrations. Legacy records created before
+    // pay-after-approval may still carry a prepaid `payment` used at verify
+    // time to activate the subscription. No real card data is ever stored.
     subscriptionPlanKey: { type: String, default: "" },
     planName: { type: String, default: "" },
     billingCycle: { type: String, enum: ["monthly", "yearly"], default: "monthly" },

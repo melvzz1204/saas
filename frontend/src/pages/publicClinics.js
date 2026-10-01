@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <span class="badge badge-emerald"><span aria-hidden="true">✓</span> Verified clinic</span>
       </div>
       <h3>${name}</h3>
-      <p class="clinic-slug">novaclinic/${slug}</p>
+      <p class="clinic-slug">dentacloud/${slug}</p>
       <div class="clinic-card-foot">
         <span>Approved practice</span>
         <a href="/clinicHomePage.html?clinic=${slug}">Visit clinic →</a>

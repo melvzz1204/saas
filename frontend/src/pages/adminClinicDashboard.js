@@ -168,7 +168,12 @@ async function fetchApplicationStatus() {
     if (status === "Rejected") setGatedMode("rejected", clinic);
     else if (status === "Pending") setGatedMode("pending", clinic);
     else setGatedMode(null, clinic);
-    if (status === "Approved") fetchDashboardData();
+    if (status === "Approved") {
+      // Paywall: an approved clinic must hold an active subscription before
+      // the dashboard unlocks. The gate shows its own modal + lock.
+      const gated = await checkSubscriptionGate();
+      if (!gated) fetchDashboardData();
+    }
     if (form && !form.dataset.bound) {
       form.dataset.bound = "true";
       initResubmitSlots();
@@ -568,7 +573,7 @@ document.addEventListener(
     if (!document.body.classList.contains("application-locked")) return;
     if (
       event.target.closest(
-        "#application-review-panel, #application-pending-panel, #logout-btn, #gated-topbar",
+        "#application-review-panel, #application-pending-panel, #subscription-gate-modal, #logout-btn, #gated-topbar",
       )
     )
       return;
@@ -577,6 +582,374 @@ document.addEventListener(
   },
   true,
 );
+
+// =========================================================================
+// 💳 SUBSCRIPTION GATE — paywall after approval, before dashboard access
+// An Approved clinic must hold an active/trialing subscription. CLINIC_ADMIN
+// gets a blocking modal (subscribe, or settle the open invoice) until the
+// workspace is paid for. No dismiss control — pay or sign out.
+// =========================================================================
+let subGateCycle = "monthly";
+let subGatePlans = [];
+let subGateInvoiceId = null;
+let subGateSig = "";
+
+const SUB_GATE_OK_STATUSES = ["active", "trialing"];
+
+function subGateToast(message, type) {
+  if (window.DashboardUI && typeof window.DashboardUI.toast === "function") {
+    window.DashboardUI.toast(message, type);
+  } else {
+    window.alert(message);
+  }
+}
+
+async function subGateApi(path, options = {}) {
+  const res = await fetch(window.apiUrl(`/api/v1/billing${path}`), {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...(options.headers || {}),
+    },
+  });
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok || out.success === false) {
+    const err = new Error(out.message || `Request failed (${res.status})`);
+    err.status = res.status;
+    throw err;
+  }
+  return out;
+}
+
+function subGatePeso(n, currency = "PHP") {
+  if (n == null) return "—";
+  const symbol = currency === "PHP" ? "₱" : "$";
+  return (
+    symbol +
+    Number(n).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  );
+}
+
+function subGateShowError(message) {
+  const el = document.getElementById("sub-gate-error");
+  if (!el) return;
+  if (!message) {
+    el.classList.add("hidden");
+    el.textContent = "";
+    return;
+  }
+  el.textContent = message;
+  el.classList.remove("hidden");
+}
+
+function subGateSetBusy(busy) {
+  ["sub-gate-pay-btn", "sub-gate-pay-invoice-btn", "sub-gate-recheck-btn"].forEach(
+    (id) => {
+      const btn = document.getElementById(id);
+      if (btn) btn.disabled = !!busy;
+    },
+  );
+}
+
+function subGatePaintCycle() {
+  const monthly = subGateCycle === "monthly";
+  const mBtn = document.getElementById("sub-gate-monthly");
+  const yBtn = document.getElementById("sub-gate-yearly");
+  const pro =
+    (subGatePlans || []).find((p) => p.key === "pro") || subGatePlans[0];
+  const currency = pro?.currency || "PHP";
+  const amount = pro
+    ? monthly
+      ? pro.prices.monthly
+      : pro.prices.yearly
+    : monthly
+      ? 3000
+      : 25000;
+  if (mBtn) {
+    mBtn.textContent = `Monthly · ${subGatePeso(pro ? pro.prices.monthly : 3000, currency).replace(/\.00$/, "")}`;
+    mBtn.className = `rounded-xl border-2 px-3 py-2.5 text-[13px] font-bold cursor-pointer ${monthly ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"}`;
+  }
+  if (yBtn) {
+    yBtn.textContent = `Yearly · ${subGatePeso(pro ? pro.prices.yearly : 25000, currency).replace(/\.00$/, "")}`;
+    yBtn.className = `rounded-xl border-2 px-3 py-2.5 text-[13px] font-bold cursor-pointer ${!monthly ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"}`;
+  }
+  const total = document.getElementById("sub-gate-total");
+  if (total) total.textContent = subGatePeso(amount, currency);
+}
+
+async function subGateLoadMeta() {
+  try {
+    const out = await subGateApi("/meta");
+    // /meta is public; subGateApi still attaches (optional) auth — harmless.
+    return out.data || {};
+  } catch {
+    try {
+      const res = await fetch(window.apiUrl("/api/v1/billing/meta"));
+      const out = await res.json().catch(() => ({}));
+      return out.data || {};
+    } catch {
+      return {};
+    }
+  }
+}
+
+function subGateFillMethods(methods) {
+  const select = document.getElementById("sub-gate-method");
+  if (!select) return;
+  const previous = select.value;
+  select.innerHTML = "";
+  if (!methods.length) {
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "No test methods available";
+    select.appendChild(opt);
+    return;
+  }
+  // Group by type: Card | GCash | PayMaya | GrabPay | Bank.
+  const groups = [
+    ["card", "Cards"],
+    ["gcash", "GCash"],
+    ["paymaya", "PayMaya"],
+    ["grab_pay", "GrabPay"],
+    ["bank", "Online banking"],
+  ];
+  groups.forEach(([type, label]) => {
+    const items = methods.filter((m) => (m.type || "card") === type);
+    if (!items.length) return;
+    const og = document.createElement("optgroup");
+    og.label = label;
+    items.forEach((m) => {
+      const o = document.createElement("option");
+      o.value = m.token;
+      const name = m.type === "card" ? `${m.brand} •••• ${m.last4}` : `${m.provider || m.brand} •••• ${m.last4}`;
+      o.textContent = `${name} — ${m.label}`;
+      og.appendChild(o);
+    });
+    select.appendChild(og);
+  });
+  // Prefer a succeeding method; keep the user's pick across re-renders.
+  if (previous && [...select.options].some((o) => o.value === previous)) {
+    select.value = previous;
+  } else {
+    const firstOk = methods.find((m) => /succeed/i.test(m.label || "")) || methods[0];
+    if (firstOk) select.value = firstOk.token;
+  }
+}
+
+function subGateShowMode(mode, details) {
+  initSubscriptionGate(); // safety net: never show the modal with dead buttons
+  document.getElementById("subscription-gate-modal")?.classList.remove("hidden");
+  document.getElementById("sub-gate-subscribe")?.classList.toggle("hidden", mode !== "subscribe");
+  document.getElementById("sub-gate-method-wrap")?.classList.toggle("hidden", mode === "processing");
+  document.getElementById("sub-gate-pay")?.classList.toggle("hidden", mode !== "pay");
+  document.getElementById("sub-gate-processing")?.classList.toggle("hidden", mode !== "processing");
+  if (mode === "pay" && details) {
+    const due = document.getElementById("sub-gate-due");
+    if (due) {
+      due.textContent = `${subGatePeso(details.amountDue, details.currency)} · ${details.number || "open invoice"}`;
+    }
+  }
+  const desc = document.getElementById("sub-gate-desc");
+  if (desc) {
+    desc.textContent =
+      mode === "pay"
+        ? "Your last payment didn't go through. Settle it now to unlock your dashboard."
+        : mode === "processing"
+          ? "Your payment is being processed. This usually takes a moment."
+          : "One last step — subscribe to the Professional plan to unlock your dashboard. No payment was collected during your application.";
+  }
+  setApplicationLock(true);
+  setTimeout(() => {
+    const focusTarget =
+      mode === "pay"
+        ? document.getElementById("sub-gate-pay-invoice-btn")
+        : mode === "processing"
+          ? document.getElementById("sub-gate-recheck-btn")
+          : document.getElementById("sub-gate-pay-btn");
+    try {
+      focusTarget?.focus({ preventScroll: true });
+    } catch {
+      /* noop */
+    }
+  }, 80);
+}
+
+function clearSubscriptionGate() {
+  subGateSig = "";
+  subGateInvoiceId = null;
+  document.getElementById("subscription-gate-modal")?.classList.add("hidden");
+  subGateShowError("");
+}
+
+// Returns true when the paywall is up (dashboard must stay locked).
+async function checkSubscriptionGate(force = false) {
+  // Only the payer role is gated; staff/dentists use the clinic's subscription.
+  if (!clinicId || userData?.role !== "CLINIC_ADMIN") return false;
+  let data = null;
+  try {
+    data = (await subGateApi("/me/subscription")).data || {};
+  } catch (err) {
+    console.error("Subscription gate check failed:", err);
+    // Fail open on errors so a billing blip never bricks the dashboard; the
+    // My Subscription panel still shows the true state.
+    clearSubscriptionGate();
+    return false;
+  }
+  const sub = data.subscription || null;
+  if (sub && SUB_GATE_OK_STATUSES.includes(sub.status)) {
+    if (subGateSig !== "") subGateToast("Subscription active — workspace unlocked.", "success");
+    clearSubscriptionGate();
+    setApplicationLock(false);
+    return false;
+  }
+
+  const openInv = (data.invoices || []).find((i) => i.status === "open");
+  let mode = "subscribe";
+  let sig = "subscribe:none";
+  if (!sub || ["canceled", "expired"].includes(sub.status)) {
+    mode = "subscribe";
+    sig = `subscribe:${sub ? sub.status : "none"}`;
+  } else if (sub.status === "pending") {
+    mode = "processing";
+    sig = `processing:${sub._id}`;
+  } else if (["past_due", "payment_failed", "unpaid"].includes(sub.status) && openInv) {
+    mode = "pay";
+    sig = `pay:${openInv._id}:${openInv.amountDue}`;
+    subGateInvoiceId = openInv._id;
+  } else if (["past_due", "payment_failed", "unpaid"].includes(sub.status)) {
+    // Failed state but no open invoice to settle — don't trap the user.
+    clearSubscriptionGate();
+    setApplicationLock(false);
+    return false;
+  } else {
+    // paused and any other non-billable state: leave the dashboard usable;
+    // billing actions stay available in My Subscription.
+    clearSubscriptionGate();
+    setApplicationLock(false);
+    return false;
+  }
+
+  // Don't wipe the form mid-interaction on background re-checks.
+  const modalOpen = !document.getElementById("subscription-gate-modal")?.classList.contains("hidden");
+  if (!force && modalOpen && sig === subGateSig) {
+    setApplicationLock(true);
+    return true;
+  }
+  subGateSig = sig;
+
+  const meta = await subGateLoadMeta();
+  subGatePlans = meta.plans || [];
+  subGateFillMethods(meta.testPaymentMethods || []);
+  subGatePaintCycle();
+  subGateShowError("");
+  subGateShowMode(mode, openInv);
+  return true;
+}
+
+async function subGateSubscribe() {
+  const methodToken = document.getElementById("sub-gate-method")?.value || "";
+  if (!methodToken) {
+    subGateShowError("Choose a test payment method first.");
+    return;
+  }
+  subGateShowError("");
+  subGateSetBusy(true);
+  try {
+    const out = await subGateApi("/me/subscribe", {
+      method: "POST",
+      body: JSON.stringify({
+        planKey: "pro",
+        billingCycle: subGateCycle,
+        testToken: methodToken,
+        autoRenew: true,
+      }),
+    });
+    const outcome = out.data?.outcome;
+    if (outcome === "payment_failed") {
+      throw new Error(out.message || "Payment failed. Try another test card.");
+    }
+    subGateToast(out.message || "Subscribed.", "success");
+    const stillGated = await checkSubscriptionGate(true);
+    if (!stillGated) {
+      fetchDashboardData();
+      if (typeof window.refreshMySubscription === "function") window.refreshMySubscription();
+    }
+  } catch (err) {
+    subGateShowError(err.message || "Subscription failed. Please try again.");
+  } finally {
+    subGateSetBusy(false);
+  }
+}
+
+async function subGatePayInvoice() {
+  if (!subGateInvoiceId) {
+    subGateShowError("No open invoice found. Please refresh and try again.");
+    return;
+  }
+  subGateShowError("");
+  subGateSetBusy(true);
+  try {
+    // Use the selected test card for this payment attempt.
+    const methodToken = document.getElementById("sub-gate-method")?.value || "";
+    if (methodToken) {
+      try {
+        await subGateApi("/me/payment-method", {
+          method: "POST",
+          body: JSON.stringify({ testToken: methodToken }),
+        });
+      } catch (methodErr) {
+        console.warn("Gate payment-method update failed:", methodErr.message);
+      }
+    }
+    const out = await subGateApi(`/me/pay-invoice/${subGateInvoiceId}`, {
+      method: "POST",
+      body: "{}",
+    });
+    if (out.data?.outcome === "failed") {
+      throw new Error(out.message || "Payment failed. Try another test card.");
+    }
+    subGateToast(out.message || "Payment processed.", "success");
+    const stillGated = await checkSubscriptionGate(true);
+    if (!stillGated) {
+      fetchDashboardData();
+      if (typeof window.refreshMySubscription === "function") window.refreshMySubscription();
+    }
+  } catch (err) {
+    subGateShowError(err.message || "Payment failed. Please try again.");
+  } finally {
+    subGateSetBusy(false);
+  }
+}
+
+let subGateBound = false;
+function initSubscriptionGate() {
+  // The gate modal markup sits after the script tags in the document, so this
+  // must run after parsing completes — otherwise querySelectorAll finds
+  // nothing and the pills/buttons silently stay dead. Guarded + re-callable.
+  if (subGateBound) return;
+  const pills = document.querySelectorAll("[data-sub-cycle]");
+  if (!pills.length && document.readyState === "loading") return;
+  pills.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      subGateCycle = btn.dataset.subCycle === "yearly" ? "yearly" : "monthly";
+      subGatePaintCycle();
+    });
+  });
+  document.getElementById("sub-gate-pay-btn")?.addEventListener("click", subGateSubscribe);
+  document.getElementById("sub-gate-pay-invoice-btn")?.addEventListener("click", subGatePayInvoice);
+  document.getElementById("sub-gate-recheck-btn")?.addEventListener("click", () => checkSubscriptionGate(true));
+  document.getElementById("sub-gate-logout-btn")?.addEventListener("click", handleLogout);
+  subGateBound = pills.length > 0;
+}
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initSubscriptionGate);
+} else {
+  initSubscriptionGate();
+}
 
 async function fetchDashboardData() {
   if (!clinicId) return;
@@ -1182,17 +1555,86 @@ async function copyResetPinToClipboard() {
   }
 }
 // =========================================================================
-// 📊 FINANCIAL & OPERATIONAL REPORT GENERATOR (CSV EXPORT)
+// 📊 FINANCIAL & OPERATIONAL REPORT GENERATOR (FORMATTED EXCEL EXPORT)
+// Builds a single-worksheet .xls workbook (HTML-table format Excel opens
+// natively — no library needed) with four clearly separated sections:
+//   1. Financial summary (Realized / Scheduled / Pending / Lost + total)
+//   2. Operations by status (every status counted — reconciles to the total)
+//   3. Revenue by service
+//   4. Detailed appointment log with a totals footer
+// Amounts are written as real numbers (not "PHP ..." text) so Excel can
+// SUM/average them. Every appointment lands in exactly one bucket, so all
+// section totals reconcile with each other.
+// Bucket rules:
+//   Realized   = completed treatments (service rendered)
+//   Scheduled  = approved / checked-in / waiting / in-treatment (booked, not done)
+//   Pending    = waiting for approval
+//   Lost       = cancelled / declined / missed
+//   Other      = any unrecognized status (still counted, never dropped)
 // =========================================================================
 
 document.addEventListener("DOMContentLoaded", () => {
   const exportBtn = document.getElementById("export-report-btn");
   if (exportBtn) {
-    exportBtn.addEventListener("click", generateClinicReportCSV);
+    exportBtn.addEventListener("click", generateClinicReportExcel);
   }
 });
 
-function generateClinicReportCSV() {
+function reportEscHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+// Canonical bucket + display label for any appointment status string.
+function reportClassifyStatus(rawStatus) {
+  const s = String(rawStatus || "Pending").toLowerCase();
+  if (["completed", "confirmed"].includes(s)) return { bucket: "realized", label: "Completed" };
+  if (["approved", "checked-in", "waiting", "in-treatment", "treatment"].includes(s)) {
+    const labels = {
+      approved: "Approved",
+      "checked-in": "Checked-in",
+      waiting: "Waiting",
+      "in-treatment": "In treatment",
+      treatment: "In treatment",
+    };
+    return { bucket: "scheduled", label: labels[s] || "Approved" };
+  }
+  if (s === "pending") return { bucket: "pending", label: "Pending" };
+  if (["cancelled", "declined", "rejected"].includes(s)) {
+    const labels = { cancelled: "Cancelled", declined: "Declined", rejected: "Declined" };
+    return { bucket: "lost", label: labels[s] };
+  }
+  if (["missed", "no-show", "noshow"].includes(s)) return { bucket: "lost", label: "Missed" };
+  return { bucket: "other", label: rawStatus || "Other" };
+}
+
+function reportPatientName(appt) {
+  if (appt.patientName) return appt.patientName;
+  const ref = appt.patientId && typeof appt.patientId === "object" ? appt.patientId : null;
+  const user = appt.userId && typeof appt.userId === "object" ? appt.userId : null;
+  const person = ref || user;
+  if (person) {
+    const full = `${person.firstName || ""} ${person.lastName || ""}`.trim();
+    if (full) return full;
+  }
+  return appt.isWalkIn ? "Walk-In Patient" : "Walk-In Patient";
+}
+
+function reportFeeFor(serviceName) {
+  const matchedTreatment = globalTreatmentsData.find((t) => {
+    if (!t.name) return false;
+    const dbName = t.name.toLowerCase().trim();
+    return dbName.includes(String(serviceName).toLowerCase().trim());
+  });
+  return matchedTreatment && matchedTreatment.basePricePhp
+    ? Number(matchedTreatment.basePricePhp) || 0
+    : 0;
+}
+
+function generateClinicReportExcel() {
   if (!globalAppointmentsData || globalAppointmentsData.length === 0) {
     window.DashboardUI.toast(
       "No appointment data available to generate a report.",
@@ -1201,102 +1643,152 @@ function generateClinicReportCSV() {
     return;
   }
 
-  let totalRealizedRevenue = 0;
-  let totalLostRevenue = 0;
-  let totalPendingRevenue = 0;
-
-  let confirmedCount = 0;
-  let missedCount = 0;
-  let pendingCount = 0;
-
-  // 1. Calculate Metrics & Prepare Flat Data
-  const rowData = globalAppointmentsData.map((appt) => {
-    const currentStatus = appt.status ? appt.status.toLowerCase() : "pending";
-
-    // Calculate Patient Name
-    let patientName = "Walk-In Patient";
-    if (appt.patientName) patientName = appt.patientName;
-    else if (appt.patientId && typeof appt.patientId === "object") {
-      patientName =
-        `${appt.patientId.firstName || ""} ${appt.patientId.lastName || ""}`.trim();
-    } else if (appt.userId && typeof appt.userId === "object") {
-      patientName =
-        `${appt.userId.firstName || ""} ${appt.userId.lastName || ""}`.trim();
-    }
-
+  // 1. Normalize every appointment into one row object (exactly one bucket).
+  const rows = globalAppointmentsData.map((appt) => {
     const serviceName = appt.service || appt.reason || "General Consultation";
-
-    // Calculate Fee based on globalTreatmentsData
-    const matchedTreatment = globalTreatmentsData.find((t) => {
-      if (!t.name) return false;
-      const dbName = t.name.toLowerCase().trim();
-      return dbName.includes(serviceName.toLowerCase().trim());
-    });
-
-    const rawFee =
-      matchedTreatment && matchedTreatment.basePricePhp
-        ? Number(matchedTreatment.basePricePhp)
-        : 0;
-
-    // Accumulate Financial & Ops Totals
-    if (["confirmed", "approved"].includes(currentStatus)) {
-      totalRealizedRevenue += rawFee;
-      confirmedCount++;
-    } else if (
-      ["cancelled", "rejected", "declined", "missed", "no-show"].includes(
-        currentStatus,
-      )
-    ) {
-      totalLostRevenue += rawFee;
-      if (["missed", "no-show"].includes(currentStatus)) missedCount++;
-    } else if (currentStatus === "pending") {
-      totalPendingRevenue += rawFee;
-      pendingCount++;
-    }
-
-    return [
-      `"${patientName}"`,
-      `"${appt.date || "N/A"}"`,
-      `"${appt.time || "N/A"}"`,
-      `"${serviceName}"`,
-      `"PHP ${rawFee.toFixed(2)}"`,
-      `"${appt.status || "Pending"}"`,
-    ].join(",");
+    const fee = reportFeeFor(serviceName);
+    const { bucket, label } = reportClassifyStatus(appt.status);
+    return {
+      date: appt.date || "N/A",
+      time: appt.time || "N/A",
+      patient: reportPatientName(appt),
+      service: serviceName,
+      fee,
+      status: label,
+      bucket,
+    };
   });
+  rows.sort((a, b) =>
+    `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`),
+  );
 
-  // 2. Format the CSV Document
+  const buckets = {
+    realized: { label: "Realized (completed treatments)", count: 0, amount: 0 },
+    scheduled: { label: "Scheduled pipeline (booked, not done)", count: 0, amount: 0 },
+    pending: { label: "Pending approval", count: 0, amount: 0 },
+    lost: { label: "Lost (cancelled / declined / missed)", count: 0, amount: 0 },
+    other: { label: "Other statuses", count: 0, amount: 0 },
+  };
+  const byStatus = new Map();
+  const byService = new Map();
+  rows.forEach((r) => {
+    buckets[r.bucket].count += 1;
+    buckets[r.bucket].amount += r.fee;
+    const s = byStatus.get(r.status) || { count: 0, amount: 0 };
+    s.count += 1;
+    s.amount += r.fee;
+    byStatus.set(r.status, s);
+    const g = byService.get(r.service) || {
+      count: 0, realized: 0, scheduled: 0, pending: 0, lost: 0, other: 0, total: 0,
+    };
+    g.count += 1;
+    g[r.bucket] += r.fee;
+    g.total += r.fee;
+    byService.set(r.service, g);
+  });
+  const grandCount = rows.length;
+  const grandAmount = rows.reduce((sum, r) => sum + r.fee, 0);
+
+  const clinicName =
+    document.getElementById("display-clinic-name")?.textContent?.trim() ||
+    localStorage.getItem("activeClinicSlug") ||
+    "Clinic";
   const dateStr = new Date().toISOString().split("T")[0];
-  let csvContent = "data:text/csv;charset=utf-8,";
+  const datedRows = rows.filter((r) => r.date && r.date !== "N/A").map((r) => r.date).sort();
+  const period = datedRows.length
+    ? `${datedRows[0]} to ${datedRows[datedRows.length - 1]}`
+    : "All records";
 
-  // --- SECTION: Financial & Operations Summary ---
-  csvContent += "CLINIC FINANCIAL & OPERATIONS SUMMARY\n";
-  csvContent += `Report Generated On:,${dateStr}\n\n`;
+  // 2. Build the workbook (inline styles + number formats Excel honors).
+  const TITLE_BG = "background:#1e293b;color:#ffffff;font-weight:bold;";
+  const SEC_BG = "background:#4f46e5;color:#ffffff;font-weight:bold;font-size:12pt;";
+  const HEAD_BG = "background:#e2e8f0;font-weight:bold;";
+  const TOTAL_BG = "background:#f1f5f9;font-weight:bold;";
+  const NUM_FMT = "mso-number-format:'#,##0.00';";
+  const money = (n, extra = "") => `<td style="${extra}${NUM_FMT}">${Number(n).toFixed(2)}</td>`;
+  const labelCell = (t, style = "") =>
+    `<td${style ? ` style="${style}"` : ""}>${reportEscHtml(t)}</td>`;
 
-  csvContent += "FINANCIAL DASHBOARD\n";
-  csvContent += `Realized Revenue (Approved/Confirmed):,PHP ${totalRealizedRevenue.toFixed(2)}\n`;
-  csvContent += `Pending Pipeline (Waiting Approval):,PHP ${totalPendingRevenue.toFixed(2)}\n`;
-  csvContent += `Lost Revenue (Missed/Cancelled):,PHP ${totalLostRevenue.toFixed(2)}\n\n`;
+  let table = `<table border="1" cellspacing="0" cellpadding="5">`;
+  table += `<col width="42"/><col width="28"/><col width="22"/><col width="34"/><col width="24"/><col width="18"/><col width="18"/><col width="18"/>`;
+  table += `<tr><td colspan="8" style="${TITLE_BG}font-size:14pt;">DentaCloud — Clinic Financial &amp; Operations Report</td></tr>`;
+  table += `<tr>${labelCell("Clinic:", HEAD_BG)}${labelCell(clinicName)}${labelCell("Report period:", HEAD_BG)}<td colspan="5">${reportEscHtml(period)}</td></tr>`;
+  table += `<tr>${labelCell("Generated on:", HEAD_BG)}${labelCell(dateStr)}${labelCell("Appointments covered:", HEAD_BG)}<td colspan="5">${grandCount}</td></tr>`;
+  table += `<tr><td colspan="8"></td></tr>`;
 
-  csvContent += "OPERATIONS & ATTENDANCE\n";
-  csvContent += `Total Processed Appointments:,${globalAppointmentsData.length}\n`;
-  csvContent += `Completed / Approved:,${confirmedCount}\n`;
-  csvContent += `No-Shows / Missed:,${missedCount}\n`;
-  csvContent += `Pending Actions Needed:,${pendingCount}\n\n`;
+  // --- Section 1: Financial summary ---
+  table += `<tr><td colspan="8" style="${SEC_BG}">1 · FINANCIAL SUMMARY (amounts in PHP)</td></tr>`;
+  table += `<tr>${labelCell("Category", HEAD_BG)}${labelCell("Appointments", HEAD_BG)}${labelCell("Amount (PHP)", HEAD_BG)}<td colspan="5" style="${HEAD_BG}">Notes</td></tr>`;
+  const finNotes = {
+    realized: "Service rendered — money earned",
+    scheduled: "Booked / in chair — expected, not yet earned",
+    pending: "Awaiting approval — expected, not yet earned",
+    lost: "Cancelled / declined / missed",
+    other: "Unrecognized statuses (review these rows below)",
+  };
+  ["realized", "scheduled", "pending", "lost", "other"].forEach((key) => {
+    const b = buckets[key];
+    if (key === "other" && b.count === 0) return; // hide empty Other row
+    table += `<tr>${labelCell(b.label)}<td>${b.count}</td>${money(b.amount)}<td colspan="5">${finNotes[key]}</td></tr>`;
+  });
+  table += `<tr>${labelCell("GRAND TOTAL", TOTAL_BG)}<td style="${TOTAL_BG}">${grandCount}</td><td style="${TOTAL_BG}${NUM_FMT}">${grandAmount.toFixed(2)}</td><td colspan="5" style="${TOTAL_BG}">Must match the totals in sections 2–4</td></tr>`;
+  table += `<tr><td colspan="8"></td></tr>`;
 
-  // --- SECTION: Raw Operations Data (The Itinerary) ---
-  csvContent += "RAW APPOINTMENT LOG\n";
-  csvContent +=
-    "Patient Name,Date,Time,Service Requested,Expected Fee,Status\n";
-  csvContent += rowData.join("\n");
+  // --- Section 2: Operations by status ---
+  table += `<tr><td colspan="8" style="${SEC_BG}">2 · OPERATIONS BY STATUS</td></tr>`;
+  table += `<tr>${labelCell("Status", HEAD_BG)}${labelCell("Appointments", HEAD_BG)}${labelCell("Expected revenue (PHP)", HEAD_BG)}<td colspan="5"></td></tr>`;
+  [...byStatus.entries()]
+    .sort((a, b) => b[1].count - a[1].count)
+    .forEach(([status, s]) => {
+      table += `<tr>${labelCell(status)}<td>${s.count}</td>${money(s.amount)}<td colspan="5"></td></tr>`;
+    });
+  table += `<tr>${labelCell("TOTAL", TOTAL_BG)}<td style="${TOTAL_BG}">${grandCount}</td><td style="${TOTAL_BG}${NUM_FMT}">${grandAmount.toFixed(2)}</td><td colspan="5"></td></tr>`;
+  table += `<tr><td colspan="8"></td></tr>`;
 
-  // 3. Trigger the Browser Download
-  const encodedUri = encodeURI(csvContent);
+  // --- Section 3: Revenue by service ---
+  table += `<tr><td colspan="8" style="${SEC_BG}">3 · REVENUE BY SERVICE (amounts in PHP)</td></tr>`;
+  table += `<tr>${labelCell("Service", HEAD_BG)}${labelCell("Appointments", HEAD_BG)}${labelCell("Realized", HEAD_BG)}${labelCell("Scheduled", HEAD_BG)}${labelCell("Pending", HEAD_BG)}${labelCell("Lost", HEAD_BG)}${labelCell("Other", HEAD_BG)}${labelCell("Total", HEAD_BG)}</tr>`;
+  [...byService.entries()]
+    .sort((a, b) => b[1].total - a[1].total)
+    .forEach(([service, g]) => {
+      table += `<tr>${labelCell(service)}<td>${g.count}</td>${money(g.realized)}${money(g.scheduled)}${money(g.pending)}${money(g.lost)}${money(g.other)}${money(g.total)}</tr>`;
+    });
+  const svcTotal = (key) => [...byService.values()].reduce((sum, g) => sum + g[key], 0);
+  table += `<tr>${labelCell("TOTAL", TOTAL_BG)}<td style="${TOTAL_BG}">${grandCount}</td>${money(svcTotal("realized"), TOTAL_BG)}${money(svcTotal("scheduled"), TOTAL_BG)}${money(svcTotal("pending"), TOTAL_BG)}${money(svcTotal("lost"), TOTAL_BG)}${money(svcTotal("other"), TOTAL_BG)}<td style="${TOTAL_BG}${NUM_FMT}">${grandAmount.toFixed(2)}</td></tr>`;
+  table += `<tr><td colspan="8"></td></tr>`;
+
+  // --- Section 4: Appointment details ---
+  table += `<tr><td colspan="8" style="${SEC_BG}">4 · APPOINTMENT DETAILS</td></tr>`;
+  table += `<tr>${labelCell("#", HEAD_BG)}${labelCell("Date", HEAD_BG)}${labelCell("Time", HEAD_BG)}${labelCell("Patient", HEAD_BG)}${labelCell("Service", HEAD_BG)}${labelCell("Fee (PHP)", HEAD_BG)}${labelCell("Status", HEAD_BG)}${labelCell("Bucket", HEAD_BG)}</tr>`;
+  const bucketLabel = { realized: "Realized", scheduled: "Scheduled", pending: "Pending", lost: "Lost", other: "Other" };
+  rows.forEach((r, i) => {
+    const zebra = i % 2 ? "background:#f8fafc;" : "";
+    table += `<tr>`
+      + `<td style="${zebra}">${i + 1}</td>`
+      + `${labelCell(r.date, zebra)}${labelCell(r.time, zebra)}${labelCell(r.patient, zebra)}${labelCell(r.service, zebra)}`
+      + `<td style="${zebra}${NUM_FMT}">${r.fee.toFixed(2)}</td>`
+      + `${labelCell(r.status, zebra)}${labelCell(bucketLabel[r.bucket], zebra)}`
+      + `</tr>`;
+  });
+  table += `<tr>${labelCell("TOTAL", TOTAL_BG)}<td colspan="4" style="${TOTAL_BG}"></td><td style="${TOTAL_BG}${NUM_FMT}">${grandAmount.toFixed(2)}</td><td colspan="2" style="${TOTAL_BG}"></td></tr>`;
+  table += `</table>`;
+
+  const workbook =
+    `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">` +
+    `<head><meta charset="UTF-8"/></head><body>${table}</body></html>`;
+
+  // 3. Trigger the browser download (.xls opens directly in Excel).
+  const blob = new Blob(["\ufeff" + workbook], { type: "application/vnd.ms-excel;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const safeSlug = String(localStorage.getItem("activeClinicSlug") || "clinic").replace(/[^a-z0-9-_]+/gi, "-");
   const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", `Clinic_Report_${dateStr}.csv`);
+  link.href = url;
+  link.download = `DentaCloud_${safeSlug}_Financial_Operations_Report_${dateStr}.xls`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  window.DashboardUI.toast(`Report exported: ${grandCount} appointment(s), 4 sections.`, "success");
 }
 
 // Attach helpers to global window object

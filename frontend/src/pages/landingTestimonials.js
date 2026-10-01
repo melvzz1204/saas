@@ -62,7 +62,7 @@
 
     const clinicLink = (testimonial) => {
       const name = escapeHtml(
-        testimonial.clinicName || "Clinic on Novaclinic",
+        testimonial.clinicName || "Clinic on DentaCloud",
       );
       const slug = escapeHtml(testimonial.clinicSlug || "");
       if (!slug) return `<span>${name}</span>`;

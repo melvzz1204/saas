@@ -26,12 +26,10 @@ import {
   RESEND_COOLDOWN_SECONDS,
   MAX_RESENDS,
 } from "../utils/verificationCode.js";
-import { sendVerificationEmail, sendSubscriptionActiveEmail } from "../services/emailService.js";
+import { sendVerificationEmail } from "../services/emailService.js";
 import { rateLimit } from "../middlewares/rateLimit.js";
 import { SubscriptionPlan } from "../models/billingModels.js";
-import { getGateway, TEST_TOKENS, testMethodFromToken } from "../services/billing/gateway.js";
 import { activatePaidSubscriptionForRegistration } from "../services/billing/billingService.js";
-import { money, addCycle } from "../services/billing/helpers.js";
 
 const router = express.Router();
 
@@ -43,10 +41,14 @@ const LANDING_UPLOAD_DIR = path.resolve(__dirname, "../../uploads/documents");
 // ==========================================
 // 🏥 SECURE, EMAIL-VERIFIED CLINIC REGISTRATION
 // The Clinic + CLINIC_ADMIN are created ONLY after the emailed code is verified.
+// Payment happens LATER — only after a super-admin approves the application —
+// so a rejected clinic is never charged.
 //   POST /register            -> initiate (legacy alias, kept for compatibility)
 //   POST /register/initiate   -> validate + email a code + store a pending record
-//   POST /register/verify     -> confirm the code + create the clinic & admin
+//   POST /register/verify     -> confirm the code + create the clinic (Pending)
 //   POST /register/resend     -> resend a fresh code (rate limited)
+// After approval the clinic subscribes/pays from its own dashboard
+// (POST /api/v1/billing/me/subscribe).
 // ==========================================
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -105,8 +107,8 @@ async function createClinicWithAdmin(data) {
     Clinic.findOne({ slug }).select("_id").lean(),
     User.findOne({ email: admin.email }).select("_id").lean(),
   ]);
-  if (clinicExists) return { error: "This clinic URL is already taken.", status: 409 };
-  if (userExists) return { error: "An account with this email already exists.", status: 409 };
+  if (clinicExists) return { error: "This clinic URL is already taken.", status: 409, code: "SLUG_TAKEN" };
+  if (userExists) return { error: "This email already exists.", status: 409, code: "EMAIL_EXISTS" };
 
   let newClinic;
   try {
@@ -116,7 +118,10 @@ async function createClinicWithAdmin(data) {
       address,
       description,
       contactNumber,
-      isActive: true,
+      // Locked until a super-admin approves the application (review flips this
+      // to true). Subscription/payment happens after approval, never before.
+      isActive: false,
+      applicationStatus: "Pending",
       landing: {
         draft: defaultLandingConfig({ description }, DEFAULT_PRESET),
         published: defaultLandingConfig({ description }, DEFAULT_PRESET),
@@ -125,7 +130,7 @@ async function createClinicWithAdmin(data) {
   } catch (err) {
     // Initiate->verify race: another request claimed the slug after our check.
     if (err && err.code === 11000)
-      return { error: "This clinic URL is already taken.", status: 409 };
+      return { error: "This clinic URL is already taken.", status: 409, code: "SLUG_TAKEN" };
     throw err;
   }
 
@@ -144,7 +149,7 @@ async function createClinicWithAdmin(data) {
   } catch (err) {
     await Clinic.findByIdAndDelete(newClinic._id).catch(() => {});
     if (err && err.code === 11000)
-      return { error: "An account with this email already exists.", status: 409 };
+      return { error: "This email already exists.", status: 409, code: "EMAIL_EXISTS" };
     throw err;
   }
 }
@@ -181,6 +186,11 @@ const resendLimiter = rateLimit({
   max: 10,
   message: "Too many code requests. Please wait a few minutes and try again.",
 });
+const checkEmailLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: "Too many email checks. Please wait a few minutes and try again.",
+});
 
 async function initiateHandler(req, res) {
   try {
@@ -195,11 +205,13 @@ async function initiateHandler(req, res) {
     if (userExists)
       return res.status(409).json({
         success: false,
-        message: "An account with this email already exists. Please sign in instead.",
+        code: "EMAIL_EXISTS",
+        message: "This email already exists. Please sign in instead.",
       });
     if (clinicExists)
       return res.status(409).json({
         success: false,
+        code: "SLUG_TAKEN",
         message: "This clinic URL is already taken. Please choose another.",
       });
 
@@ -214,34 +226,33 @@ async function initiateHandler(req, res) {
           message: `Please wait ${Math.ceil(waitMs / 1000)}s before requesting another code.`,
           retryAfterSeconds: Math.ceil(waitMs / 1000),
         });
-      // A paid pending is still alive: do NOT silently charge again. Point the
-      // client at verify/resend so a retry never double-charges for the same
-      // email+slug. Pass allowRecharge:true to intentionally start over.
+      // A live pending is still alive: do NOT start over silently. Point the
+      // client at verify/resend so a retry never creates a duplicate record
+      // for the same email+slug. Pass allowRecharge:true to intentionally
+      // start over (legacy name kept for backward compatibility).
       const stillAlive =
-        existing.payment?.providerRef &&
         existing.purgeAt &&
         new Date(existing.purgeAt).getTime() > Date.now();
       if (stillAlive && existing.slug === value.slug && !req.body?.allowRecharge) {
         return res.status(409).json({
           success: false,
           message:
-            "You already have a pending registration with a completed payment. Enter the code we emailed, or resend a new code instead of paying again.",
+            "You already have a pending registration. Enter the code we emailed, or resend a new code.",
           data: {
             pendingId: existing._id,
             email: existing.email,
-            paymentRef: existing.payment?.providerRef,
           },
         });
       }
     }
 
-    // ---- Subscription plan + up-front payment (SIMULATED gateway) ----
-    // Payment happens BEFORE the account is created. Only on a successful charge
-    // do we store the pending registration and send the verification code.
+    // ---- Subscription preference (NO payment here — SIMULATED or otherwise) ----
+    // Payment happens only AFTER a super-admin approves the application, so a
+    // rejected clinic (e.g. lacking requirements) is never charged. The clinic
+    // subscribes/pays from its own dashboard once approved.
     // Single fixed product: Professional ₱3,000/mo or ₱25,000/yr.
     // planKey from the client is ignored (kept for backward compat).
     const billingCycle = ["monthly", "yearly"].includes(req.body.billingCycle) ? req.body.billingCycle : "monthly";
-    const testToken = String(req.body.testToken || "");
     let plan = await SubscriptionPlan.findOne({ key: "pro", isActive: true });
     if (!plan) {
       // Self-heal: boot seeding may have been skipped or failed (e.g. the
@@ -257,23 +268,6 @@ async function initiateHandler(req, res) {
     }
     if (!plan)
       return res.status(400).json({ success: false, message: "The Professional plan is currently unavailable. Please try again." });
-    if (!(testToken in TEST_TOKENS))
-      return res.status(400).json({ success: false, message: "Please choose a (test) payment method." });
-
-    const chargeAmount = money(billingCycle === "yearly" ? plan.prices.yearly : plan.prices.monthly);
-    const method = testMethodFromToken(testToken);
-    const charge = await getGateway().charge({ amount: chargeAmount, currency: plan.currency, method, forcedOutcome: "" });
-    if (charge.status !== "succeeded") {
-      const reason =
-        charge.outcome === "delayed"
-          ? "the payment is still processing — please use a method that settles immediately"
-          : charge.failureMessage || "the payment was declined";
-      return res.status(402).json({
-        success: false,
-        message: `Payment could not be completed: ${reason}. Your account was not created.`,
-        data: { paymentOutcome: charge.outcome },
-      });
-    }
 
     const code = generateCode();
     const [passwordHash, codeHash] = await Promise.all([
@@ -302,21 +296,14 @@ async function initiateHandler(req, res) {
       resendCount: 0,
       lastSentAt: now,
       purgeAt: pendingPurgeDate(now),
-      // Paid subscription captured for activation at verify time.
+      // Billing preference only — NO payment is collected here. The clinic
+      // subscribes and pays from its own dashboard after super-admin approval.
+      // (`payment` stays empty for new registrations; legacy records created
+      // before pay-after-approval may still carry a prepaid payment.)
       subscriptionPlanKey: plan.key,
       planName: plan.name,
       billingCycle,
-      payment: {
-        providerRef: charge.providerRef,
-        amount: chargeAmount,
-        currency: plan.currency,
-        testToken,
-        type: method.type || "card",
-        provider: method.provider || method.brand,
-        brand: method.brand,
-        last4: method.last4,
-        paidAt: now,
-      },
+      payment: {},
     };
 
     // A fresh initiate replaces any prior pending record for this email
@@ -336,45 +323,27 @@ async function initiateHandler(req, res) {
       });
     } catch (mailErr) {
       console.error("Verification email failed:", mailErr.message);
-      // Payment already succeeded and the pending (with code hash) is stored.
-      // Return the pendingId so the client can RESEND a code instead of
-      // re-initiating (which would charge a second time).
+      // The pending record (with code hash) is stored even though the email
+      // failed. Return the pendingId so the client can RESEND a code instead
+      // of re-initiating.
       return res.status(502).json({
         success: false,
         message:
-          "Payment was received but we couldn't send the verification email. Use Resend code instead of paying again.",
+          "We couldn't send the verification email. Use Resend code to try again.",
         data: {
           pendingId: pending._id,
           email: pending.email,
-          paymentRef: pending.payment?.providerRef,
           ...pendingPublic(pending),
         },
       });
     }
 
-    // Separate confirmation that the subscription has been paid & is active (best-effort).
-    try {
-      await sendSubscriptionActiveEmail({
-        to: value.admin.email,
-        clinicName: value.clinicName,
-        planName: plan.name,
-        amount: chargeAmount,
-        currency: plan.currency,
-        billingCycle,
-        nextRenewalDate: addCycle(now, billingCycle),
-        reference: charge.providerRef,
-      });
-    } catch (mailErr) {
-      console.error("Subscription confirmation email failed:", mailErr.message);
-    }
-
     return res.status(200).json({
       success: true,
-      message: `Payment received for the ${plan.name} plan. We sent a ${CODE_LENGTH}-digit verification code to ${value.admin.email}. It expires in ${CODE_TTL_MINUTES} minutes.`,
+      message: `We sent a ${CODE_LENGTH}-digit verification code to ${value.admin.email}. It expires in ${CODE_TTL_MINUTES} minutes. No payment is due yet — you subscribe after your application is approved.`,
       data: {
         ...pendingPublic(pending),
-        plan: { key: plan.key, name: plan.name, billingCycle, amount: chargeAmount, currency: plan.currency },
-        paymentRef: charge.providerRef,
+        plan: { key: plan.key, name: plan.name, billingCycle, currency: plan.currency },
       },
     });
   } catch (err) {
@@ -457,27 +426,30 @@ router.post("/register/verify", verifyLimiter, async (req, res) => {
 
     if (result.error) {
       // Slug/email was taken between initiate and verify — discard the pending.
-      // Surface the pre-paid paymentRef so support can reconcile/refund.
-      const paymentRef = pending.payment?.providerRef || "";
       await PendingRegistration.deleteOne({ _id: pending._id }).catch(() => {});
       return res.status(result.status || 409).json({
         success: false,
-        message: `${result.error} Your payment (${paymentRef}) is recorded — contact support for a refund or retry with a different URL.`,
-        data: { paymentRef },
+        code: result.code,
+        message: result.error,
       });
     }
 
     // Single-use: deleting the pending permanently invalidates the code.
     await PendingRegistration.deleteOne({ _id: pending._id }).catch(() => {});
 
-    // Bring the pre-paid subscription up as active (payment already happened
-    // at initiate). Never let this fail the account creation — but never fail
+    // LEGACY compat: registrations created before pay-after-approval carry a
+    // prepaid charge (pending.payment.providerRef). Activate that subscription
+    // now so those clinics are not left without service. New registrations
+    // have no payment — subscription happens after super-admin approval.
+    // Never let activation fail the account creation — but never fail
     // silently either: any partial state is reported with the paymentRef so
     // support can reconcile without a second charge.
     let subscription = null;
     let activationWarning = "";
+    let paymentRef = "";
     const prepaidRef = pending.payment?.providerRef || "";
     if (pending.subscriptionPlanKey && prepaidRef) {
+      paymentRef = prepaidRef;
       try {
         const act = await activatePaidSubscriptionForRegistration({
           clinic: result.clinic,
@@ -506,15 +478,13 @@ router.post("/register/verify", verifyLimiter, async (req, res) => {
         console.error("Subscription activation after verify failed:", subErr.message);
         activationWarning = `Subscription activation was interrupted (${subErr.message || "unknown error"}). Your payment ${prepaidRef} is recorded.`;
       }
-    } else {
-      activationWarning = "No prepaid payment was recorded for this registration.";
     }
 
     return res.status(201).json({
       success: true,
       message: subscription && subscription.status === "active"
         ? "Email verified. Your clinic workspace has been created and your subscription is active."
-        : "Email verified. Your clinic workspace has been created. We received your payment but subscription activation needs attention — contact support with your payment reference. Do NOT pay again.",
+        : "Email verified. Your application is now pending review — no payment is due yet. You'll subscribe after your application is approved.",
       data: {
         _id: result.clinic._id,
         clinic: {
@@ -528,7 +498,7 @@ router.post("/register/verify", verifyLimiter, async (req, res) => {
           role: result.admin.role,
         },
         subscription,
-        paymentRef: prepaidRef,
+        paymentRef,
         activationWarning,
       },
     });
@@ -607,6 +577,54 @@ router.post("/register/resend", resendLimiter, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Could not resend the code. Please try again.",
+    });
+  }
+});
+
+// Pre-submit availability check so the wizard can warn about a taken email on
+// the Account step instead of at the end. Always answers 200 for well-formed
+// emails (availability in `data`); the submit-time 409 remains authoritative.
+// Note: existence is already revealed by registration itself, so this exposes
+// nothing new — it is rate limited like the other register endpoints.
+router.post("/register/check-email", checkEmailLimiter, async (req, res) => {
+  try {
+    const email = String(req.body?.email || "").trim().toLowerCase();
+    if (!EMAIL_RE.test(email) || email.length > 160)
+      return res.status(400).json({
+        success: false,
+        message: "Enter a valid email address.",
+      });
+
+    const [userExists, pending] = await Promise.all([
+      User.findOne({ email }).select("_id").lean(),
+      PendingRegistration.findOne({ email }).select("_id purgeAt").lean(),
+    ]);
+    if (userExists)
+      return res.status(200).json({
+        success: true,
+        data: {
+          available: false,
+          code: "EMAIL_EXISTS",
+          message: "This email already exists.",
+        },
+      });
+    const pendingAlive =
+      pending?.purgeAt && new Date(pending.purgeAt).getTime() > Date.now();
+    if (pendingAlive)
+      return res.status(200).json({
+        success: true,
+        data: {
+          available: false,
+          code: "PENDING_EXISTS",
+          message: "This email already has a pending registration.",
+        },
+      });
+    return res.status(200).json({ success: true, data: { available: true } });
+  } catch (err) {
+    console.error("Email check error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Could not check the email. Please try again.",
     });
   }
 });

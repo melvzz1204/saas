@@ -1327,7 +1327,8 @@
                         Download System Report
                     </h3>
                     <p class="text-[13px] text-slate-400 mt-2">
-                        you can export financial and operational report daily
+                        Download a daily financial and operational report — organized into summary, status, service,
+                        and appointment sections that open directly in Excel.
                     </p>
                 </div>
                 <button id="export-report-btn"
@@ -2145,6 +2146,86 @@
             user-select: none;
         }
     </style>
+
+    <!-- Subscription gate: blocking paywall for Approved clinics without an active
+         subscription. No dismiss control on purpose — subscribe/pay or sign out. -->
+    <div id="subscription-gate-modal" role="dialog" aria-modal="true" aria-labelledby="sub-gate-title"
+        class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
+        <div
+            class="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="text-center space-y-1">
+                <div aria-hidden="true"
+                    class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-2xl">🎉
+                </div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-emerald-600">Application approved</p>
+                <h2 id="sub-gate-title" class="text-lg font-black text-slate-900">Activate your workspace</h2>
+                <p id="sub-gate-desc" class="text-[13px] text-slate-500">One last step — subscribe to the Professional
+                    plan to unlock your dashboard. No payment was collected during your application.</p>
+            </div>
+
+            <!-- Shared test payment-method picker (used by both actions) -->
+            <div id="sub-gate-method-wrap">
+                <label for="sub-gate-method"
+                    class="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-1">Payment
+                    method (test)</label>
+                <select id="sub-gate-method"
+                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[13px] text-slate-800 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                    <option value="">Loading payment methods…</option>
+                </select>
+            </div>
+
+            <!-- Mode: subscribe (no subscription yet, or previous one closed) -->
+            <div id="sub-gate-subscribe" class="space-y-3">
+                <div class="grid grid-cols-2 gap-2" role="group" aria-label="Billing cycle">
+                    <button type="button" data-sub-cycle="monthly" id="sub-gate-monthly"
+                        class="rounded-xl border-2 border-slate-900 bg-slate-900 px-3 py-2.5 text-[13px] font-bold text-white cursor-pointer">
+                        Monthly · ₱3,000
+                    </button>
+                    <button type="button" data-sub-cycle="yearly" id="sub-gate-yearly"
+                        class="rounded-xl border-2 border-slate-200 bg-white px-3 py-2.5 text-[13px] font-bold text-slate-600 hover:border-slate-400 cursor-pointer">
+                        Yearly · ₱25,000
+                    </button>
+                </div>
+                <div class="flex items-center justify-between rounded-xl bg-slate-50 border border-slate-200 px-4 py-3">
+                    <span class="text-[13px] font-semibold text-slate-500">Total due today</span>
+                    <span id="sub-gate-total" class="text-lg font-black text-slate-900">₱3,000.00</span>
+                </div>
+                <button id="sub-gate-pay-btn" type="button"
+                    class="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-3 text-[13px] font-black uppercase tracking-wider transition-all cursor-pointer">Pay
+                    &amp; activate workspace</button>
+            </div>
+
+            <!-- Mode: pay open invoice (past due / failed / unpaid) -->
+            <div id="sub-gate-pay" class="hidden space-y-3">
+                <div class="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-center">
+                    <p class="text-[11px] font-black uppercase tracking-wider text-amber-700">Payment attention</p>
+                    <p id="sub-gate-due" class="text-lg font-black text-slate-900 mt-0.5">—</p>
+                </div>
+                <button id="sub-gate-pay-invoice-btn" type="button"
+                    class="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-3 text-[13px] font-black uppercase tracking-wider transition-all cursor-pointer">Pay
+                    now</button>
+                <p class="text-[11px] text-slate-400 text-center">Or update your card from My Subscription after a
+                    partial unlock. Wrong card? Use “Sign out” and contact support.</p>
+            </div>
+
+            <!-- Mode: processing (delayed payment settling) -->
+            <div id="sub-gate-processing" class="hidden space-y-3 text-center">
+                <div class="rounded-xl bg-sky-50 border border-sky-200 px-4 py-4">
+                    <p class="text-[13px] font-bold text-sky-800">Payment is processing…</p>
+                    <p class="text-[12px] text-sky-600 mt-1">Your plan activates automatically once it settles.</p>
+                </div>
+                <button id="sub-gate-recheck-btn" type="button"
+                    class="w-full rounded-xl bg-slate-900 hover:bg-slate-700 text-white py-2.5 text-[13px] font-bold transition-all cursor-pointer">Check
+                    again</button>
+            </div>
+
+            <p id="sub-gate-error" class="hidden text-[12px] font-bold text-rose-600 text-center" role="alert"></p>
+            <p class="text-[10px] text-slate-400 text-center">🧪 Test mode — no real money moves.</p>
+            <button id="sub-gate-logout-btn" type="button"
+                class="w-full text-[12px] font-bold text-slate-400 hover:text-rose-600 py-1 cursor-pointer">Sign
+                out</button>
+        </div>
+    </div>
 
     <!-- First-login floating setup prompts (Dental Pricing + Operating Hours) -->
     <div id="setup-guide-slot" aria-live="polite"

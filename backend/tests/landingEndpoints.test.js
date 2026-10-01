@@ -2,7 +2,7 @@
 // Integration tests for the REST landing/profile endpoints.
 //
 // Requires a real MongoDB for the test database. Point the suite at it with:
-//   TEST_MONGO_URI=mongodb://localhost:27017/novaclinic-test npm test
+//   TEST_MONGO_URI=mongodb://localhost:27017/dentacloud-test npm test
 // When TEST_MONGO_URI is unset the suite is skipped so the unit tests still run.
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";

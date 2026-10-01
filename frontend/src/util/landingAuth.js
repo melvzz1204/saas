@@ -43,7 +43,7 @@
   // Reassigned by setupVerify(); called by the register submit handler.
   let showVerifyView = () => {};
 
-  const REMEMBER_KEY = "novaclinic_remember_email";
+  const REMEMBER_KEY = "dentacloud_remember_email";
 
   let modal = null;
   let panel = null;
@@ -415,149 +415,28 @@
         const dot = d.querySelector(".step-dot");
         if (dot) dot.textContent = n < authStep ? "✓" : String(n);
       });
-      if (authProgress) authProgress.style.width = `${(authStep / 4) * 100}%`;
+      if (authProgress) authProgress.style.width = `${(authStep / 3) * 100}%`;
       if (authBack) authBack.style.visibility = authStep === 1 ? "hidden" : "visible";
-      const last = authStep === 4;
+      const last = authStep === 3;
       if (authNext) authNext.hidden = last;
       if (authPay) authPay.hidden = !last;
     };
     const gotoAuthStep = (n) => {
       if (n < authStep || validateAuthStep(authStep)) {
-        authStep = Math.min(Math.max(n, 1), 4);
+        authStep = Math.min(Math.max(n, 1), 3);
         if (summary) summary.className = "banner hidden";
         paintAuthStep();
       }
     };
-    authDots.forEach((d) => d.addEventListener("click", () => gotoAuthStep(Number(d.dataset.goto))));
+    // Stepper dots + Next are bound below (email-guarded): leaving step 2
+    // forward first checks the address server-side.
     authBack?.addEventListener("click", () => gotoAuthStep(authStep - 1));
-    authNext?.addEventListener("click", () => gotoAuthStep(authStep + 1));
     paintAuthStep();
     window.__authResetStep = () => { authStep = 1; paintAuthStep(); };
 
-    // Subscription plan + simulated payment (cards, not dropdowns).
-    const planSelect = document.getElementById("auth-plan");
-    const cycleSelect = document.getElementById("auth-cycle");
-    const cardSelect = document.getElementById("auth-testcard");
-    const planCards = document.getElementById("auth-plan-cards");
-    const cardList = document.getElementById("auth-card-list");
-    const orderSummary = document.getElementById("auth-order-summary");
-    const cyclePills = Array.from(document.querySelectorAll(".auth-cycle"));
-    let billingMeta = null;
-    let authMethodType = "card";
-    const AUTH_TABS = (window.PaymongoCheckout
-      ? window.PaymongoCheckout.METHOD_TABS
-      : [
-        { type: "card", label: "Card" },
-        { type: "gcash", label: "GCash" },
-        { type: "paymaya", label: "PayMaya" },
-        { type: "grab_pay", label: "GrabPay" },
-        { type: "bank", label: "Bank" },
-      ]);
-    const pesoFmt = (n, c = "PHP") => (c === "PHP" ? "₱" : "$") + Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const currentPlan = () => {
-      const plans = billingMeta?.plans || [];
-      return plans.find((p) => p.key === "pro") || plans.find((p) => p.key === planSelect.value) || plans[0];
-    };
-    const currentAmount = () => { const p = currentPlan(); return p ? (cycleSelect.value === "yearly" ? p.prices.yearly : p.prices.monthly) : 0; };
-    const yearlySave = () => { const p = currentPlan(); return p ? Math.max((p.prices.monthly * 12) - p.prices.yearly, 0) : 0; };
-    const methodTitle = (m) => {
-      if (window.PaymongoCheckout) return window.PaymongoCheckout.methodTitle(m);
-      if (m.type === "gcash") return `GCash •••• ${m.last4}`;
-      if (m.type === "paymaya") return `PayMaya •••• ${m.last4}`;
-      if (m.type === "grab_pay") return `GrabPay •••• ${m.last4}`;
-      if (m.type === "bank") return `${m.brand} •••• ${m.last4}`;
-      return `${m.brand} •••• ${m.last4}`;
-    };
-    const paintPlanCards = () => {
-      // Single fixed product.
-      if (!billingMeta || !planCards) return;
-      const p = currentPlan(); if (!p) return;
-      planSelect.value = p.key;
-      const amt = cycleSelect.value === "yearly" ? p.prices.yearly : p.prices.monthly;
-      planCards.innerHTML = "";
-      const b = document.createElement("div");
-      b.className = "plan-card active";
-      const save = cycleSelect.value === "yearly" && yearlySave() > 0 ? ` · save ${pesoFmt(yearlySave(), p.currency)}` : "";
-      b.innerHTML = `<div class="plan-name"></div><div class="plan-price">${pesoFmt(amt, p.currency)}</div><div class="plan-meta">Professional · per ${cycleSelect.value === "yearly" ? "year" : "month"}${save}${p.trialDays ? ` · ${p.trialDays}-day trial` : ""}</div>`;
-      b.querySelector(".plan-name").textContent = `${p.name} — fixed plan`;
-      planCards.appendChild(b);
-    };
-    const paintCardList = () => {
-      if (!billingMeta || !cardList) return;
-      const methods = billingMeta.testPaymentMethods;
-      const visible = methods.filter((m) => (m.type || "card") === authMethodType);
-      if (!visible.some((m) => m.token === cardSelect.value) && visible.length) cardSelect.value = visible[0].token;
-      if (window.PaymongoCheckout) {
-        window.PaymongoCheckout.renderShell(cardList, {
-          methods,
-          activeType: authMethodType,
-          activeToken: cardSelect.value,
-          plan: null,
-          cycle: cycleSelect.value,
-          onType: (t) => { authMethodType = t; paintCardList(); },
-          onToken: (tok) => { cardSelect.value = tok; paintCardList(); },
-        });
-        return;
-      }
-      cardList.innerHTML = "";
-      const tabs = document.createElement("div");
-      tabs.style.cssText = "display:flex;gap:.4rem;margin-bottom:.6rem;flex-wrap:wrap";
-      AUTH_TABS.forEach((t) => {
-        const has = methods.some((m) => (m.type || "card") === t.type);
-        if (!has) return;
-        const tb = document.createElement("button");
-        tb.type = "button";
-        tb.className = `btn btn-secondary${authMethodType === t.type ? " active" : ""}`;
-        tb.style.cssText = authMethodType === t.type ? "border-color:var(--accent)" : "";
-        tb.textContent = t.label;
-        tb.addEventListener("click", () => { authMethodType = t.type; paintCardList(); });
-        tabs.appendChild(tb);
-      });
-      cardList.appendChild(tabs);
-      visible.forEach((m) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = `card-option${cardSelect.value === m.token ? " active" : ""}`;
-        b.innerHTML = `<span class="card-chip"></span><span class="card-main"><span class="card-num"></span><br><span class="card-sub"></span></span>`;
-        b.querySelector(".card-chip").textContent = (m.provider || m.brand).slice(0, 4).toUpperCase();
-        b.querySelector(".card-num").textContent = methodTitle(m);
-        const sub = b.querySelector(".card-sub"); sub.textContent = m.label;
-        sub.style.color = /decline|insufficient|expired|error/i.test(m.label) ? "var(--amber)" : "var(--accent-2)";
-        b.addEventListener("click", () => { cardSelect.value = m.token; paintCardList(); });
-        cardList.appendChild(b);
-      });
-    };
-    const paintOrder = () => {
-      if (!orderSummary || !currentPlan()) return;
-      const p = currentPlan();
-      const save = cycleSelect.value === "yearly" && yearlySave() > 0 ? ` (save ${pesoFmt(yearlySave(), p.currency)})` : "";
-      orderSummary.innerHTML = `<div style="display:flex;justify-content:space-between"><span></span><strong></strong></div><div style="display:flex;justify-content:space-between;color:var(--text-3)"><span>Total due today</span><strong class="total"></strong></div>`;
-      orderSummary.querySelector("span").textContent = `${p.name} (${cycleSelect.value}${save})`;
-      orderSummary.querySelector("strong").textContent = pesoFmt(currentAmount(), p.currency);
-      orderSummary.querySelector(".total").textContent = pesoFmt(currentAmount(), p.currency);
-    };
-    const refreshPrice = () => { paintPlanCards(); paintOrder(); };
-    (async () => {
-      try {
-        const out = await (await fetch(window.apiUrl("/api/v1/billing/meta"))).json();
-        billingMeta = out.data;
-        const pro = billingMeta.plans.find((p) => p.key === "pro") || billingMeta.plans[0];
-        if (planSelect) { planSelect.innerHTML = `<option value="${pro.key}">${pro.name}</option>`; planSelect.value = pro.key; }
-        if (cardSelect) cardSelect.innerHTML = billingMeta.testPaymentMethods.map((m) => `<option value="${m.token}">${m.brand} •••• ${m.last4}</option>`).join("");
-        const firstOk = billingMeta.testPaymentMethods.find((m) => /succeed/i.test(m.label)) || billingMeta.testPaymentMethods[0];
-        if (firstOk) { cardSelect.value = firstOk.token; authMethodType = firstOk.type || "card"; }
-        paintPlanCards(); paintCardList(); paintOrder();
-      } catch {
-        // Loud failure: an empty Plan & Pay step looks "unselectable". Show why.
-        if (planCards) planCards.innerHTML = `<div class="banner banner-error block">Couldn't load plans. Is the backend running at ${window.ApiBase}? <button type="button" id="auth-retry-meta" class="switch-link">Retry</button></div>`;
-        document.getElementById("auth-retry-meta")?.addEventListener("click", () => window.location.reload());
-      }
-    })();
-    cyclePills.forEach((b) => b.addEventListener("click", () => {
-      cycleSelect.value = b.dataset.cycle;
-      cyclePills.forEach((x) => x.classList.toggle("active", x === b));
-      paintPlanCards(); paintOrder();
-    }));
+    // Pay-after-approval: no payment is collected during registration. The
+    // clinic subscribes from its own dashboard after super-admin approval,
+    // so the Plan & Pay step was removed from this wizard.
 
     // Slug preview + password strength + file names
     const slugPreview = document.getElementById("auth-slug-preview");
@@ -645,7 +524,6 @@
         1: ["auth-clinic-name", "auth-clinic-address"],
         2: ["auth-admin-firstname", "auth-admin-lastname", "auth-admin-email", "auth-admin-phone", "auth-admin-password", "auth-admin-confirm-password"],
         3: ["auth-business-license", "auth-medical-license"],
-        4: [],
       };
       let ok = true;
       for (const id of stepIds[n] || []) {
@@ -662,6 +540,87 @@
       }
       return ok;
     }
+
+    // Duplicate-email warning pinned to the Account-step email field.
+    function showDuplicateEmailWarning(focusIt, pending) {
+      gotoAuthStep(2);
+      const message = pending
+        ? "This email already has a pending registration. Check your inbox for the verification code."
+        : "This email already exists. Please sign in instead.";
+      const emailField = document.getElementById("auth-admin-email");
+      if (emailField) {
+        setError(emailField, message);
+        if (focusIt) setTimeout(() => emailField.focus({ preventScroll: true }), 60);
+      }
+      showBanner(message, "error");
+    }
+
+    // Server-side email availability check. Returns true when the address is
+    // free OR the check itself fails (fail open — the submit-time 409 stays
+    // authoritative, so a network blip never blocks a legit user).
+    async function checkEmailAvailable(focusIt) {
+      const emailField = document.getElementById("auth-admin-email");
+      const email = (emailField?.value || "").trim();
+      if (!emailField || !email || !emailField.checkValidity()) return false;
+      try {
+        const res = await fetch(window.apiUrl("/api/v1/tenants/register/check-email"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const out = await res.json().catch(() => ({}));
+        if (!res.ok || !out.success) return true; // fail open (e.g. rate limited)
+        if (out.data?.available === false) {
+          showDuplicateEmailWarning(focusIt, out.data?.code === "PENDING_EXISTS");
+          return false;
+        }
+        return true;
+      } catch (err) {
+        console.warn("Email availability check failed:", err?.message || err);
+        return true;
+      }
+    }
+
+    // Early duplicate detection on the Account step itself: leaving step 2
+    // forward (Next or stepper dots) first asks the server about the email,
+    // so a taken address is flagged before the Docs step.
+    authNext?.addEventListener("click", async () => {
+      if (authStep === 2) {
+        if (!validateAuthStep(2)) return;
+        if (!(await checkEmailAvailable(true))) return;
+        gotoAuthStep(3);
+        return;
+      }
+      gotoAuthStep(authStep + 1);
+    });
+    authDots.forEach((d) =>
+      d.addEventListener("click", async () => {
+        const target = Number(d.dataset.goto);
+        if (authStep === 2 && target > 2) {
+          if (!validateAuthStep(2)) return;
+          if (!(await checkEmailAvailable(true))) return;
+        }
+        gotoAuthStep(target);
+      }),
+    );
+
+    // Warn as soon as the email field loses focus with a valid address —
+    // no need to reach Docs + Submit to learn it's taken.
+    document.getElementById("auth-admin-email")?.addEventListener("blur", (e) => {
+      const email = (e.target.value || "").trim();
+      if (!email || !e.target.checkValidity()) return;
+      // Don't flag while a server-side duplicate error is already showing for
+      // this exact value (avoids a redundant request per blur).
+      if (
+        e.target.getAttribute("aria-invalid") === "true" &&
+        /already (exists|has a pending)/i.test(
+          document.getElementById("auth-admin-email-error")?.textContent || "",
+        )
+      ) {
+        return;
+      }
+      checkEmailAvailable(false);
+    });
 
     form.addEventListener("input", (e) => {
       if (e.target.matches("input")) {
@@ -703,7 +662,7 @@
 
       submitBtn.disabled = true;
       submitBtn.setAttribute("aria-busy", "true");
-      if (submitLabel) submitLabel.textContent = "Processing payment…";
+      if (submitLabel) submitLabel.textContent = "Creating account…";
       if (spinner) spinner.hidden = false;
 
       const payload = {
@@ -712,10 +671,8 @@
       slug: slugInput.value.trim() || formatSlug(nameInput.value),
       address: document.getElementById("auth-clinic-address").value.trim(),
       description: descriptionInput?.value.trim() || "",
-      // Subscription + simulated payment (charged before the account is created).
-      planKey: planSelect?.value || "",
-      billingCycle: cycleSelect?.value || "monthly",
-      testToken: cardSelect?.value || "",
+      // Pay-after-approval: no payment fields are sent. The clinic subscribes
+      // from its own dashboard after super-admin approval.
           adminData: {
           firstName: document.getElementById("auth-admin-firstname").value.trim(),
           lastName: document.getElementById("auth-admin-lastname").value.trim(),
@@ -745,8 +702,8 @@
         const initiateResult = await initiateResponse.json().catch(() => ({}));
 
         if (!initiateResponse.ok || !initiateResult.success) {
-          // 409 (paid pending exists) / 502 (paid but email failed): recover by
-          // jumping to the verify step instead of charging again.
+          // 409 (pending exists) / 502 (email failed): recover by jumping to
+          // the verify step instead of starting over.
           const existingId = initiateResult?.data?.pendingId;
           if (existingId && (initiateResponse.status === 409 || initiateResponse.status === 502)) {
             pendingId = existingId;
@@ -756,6 +713,16 @@
               medical: medicalLicenseInput.files[0],
             };
             showVerifyView(initiateResult.data, initiateResult.message);
+            return;
+          }
+          // Duplicate email: send the user back to the Account step and pin
+          // the warning directly on the email field.
+          const serverMsg = initiateResult.message || "";
+          if (
+            initiateResponse.status === 409 &&
+            (initiateResult.code === "EMAIL_EXISTS" || /email[^.]*already exists/i.test(serverMsg))
+          ) {
+            showDuplicateEmailWarning(true, false);
             return;
           }
           throw new Error(
@@ -870,9 +837,16 @@
       if (emailEl) emailEl.textContent = pendingEmail;
       hideVerifyBanner();
       if (message) setVerifyBanner(message, "success");
-      if (paidBadge && data?.plan) {
-        paidBadge.hidden = false;
-        paidBadge.textContent = `✅ Paid for ${data.plan.name} (${data.plan.billingCycle}) · Ref ${data.paymentRef || ""}`;
+      if (paidBadge) {
+        // Legacy compat only: registrations started before pay-after-approval
+        // may still carry a prepaid paymentRef. New registrations are free
+        // until approval, so the badge stays hidden for them.
+        if (data?.paymentRef) {
+          paidBadge.hidden = false;
+          paidBadge.textContent = `✅ Paid for ${data.plan?.name || "Professional"} (${data.plan?.billingCycle || ""}) · Ref ${data.paymentRef}`;
+        } else {
+          paidBadge.hidden = true;
+        }
       }
       setMeta(data);
       otpBoxes.forEach((b) => (b.value = ""));
@@ -936,9 +910,10 @@
         clearInterval(resendTimer);
         const successEmail = document.getElementById("auth-register-success-email");
         if (successEmail) {
-          const subActive = result.data?.subscription?.status === "active";
-          const warn = result.data?.activationWarning || (!subActive ? "Subscription activation needs attention — contact support with your payment reference. Do NOT pay again." : "");
-          successEmail.textContent = `We'll send updates to ${pendingEmail}.${warn ? ` ${warn}` : ""}`;
+          // Legacy compat: very old prepaid registrations may still report an
+          // activation warning. New applications simply await review.
+          const warn = result.data?.activationWarning || "";
+          successEmail.textContent = `We'll send updates to ${pendingEmail}. Our team usually reviews within 24 hours — no payment is due until you're approved, then you subscribe from your dashboard.${warn ? ` ${warn}` : ""}`;
         }
         const registerForm = document.getElementById("auth-register-form");
         registerForm?.reset();

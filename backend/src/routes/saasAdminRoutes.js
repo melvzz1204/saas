@@ -4,6 +4,7 @@ import {
   loginSaasAdmin,
   getPlatformOverview,
   getPlatformTenants,
+  getTenantDetails,
   toggleTenantStatus,
   getPendingApplications,
   reviewApplication,
@@ -24,6 +25,7 @@ router.get("/dashboard-stats", getPlatformOverview);
 
 // 🏥 Tenant Management
 router.get("/tenants", getPlatformTenants);
+router.get("/tenants/:clinicId/details", getTenantDetails);
 router.patch("/tenants/:clinicId/status", toggleTenantStatus);
 
 // 📋 Application Vetting

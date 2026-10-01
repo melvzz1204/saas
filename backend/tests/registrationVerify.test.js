@@ -2,7 +2,7 @@
 // Integration tests for the email-verified clinic registration flow.
 //
 // Requires a REAL but DISPOSABLE MongoDB (its database is dropped in afterAll):
-//   TEST_MONGO_URI=mongodb://localhost:27017/novaclinic-test npm test
+//   TEST_MONGO_URI=mongodb://localhost:27017/dentacloud-test npm test
 // When TEST_MONGO_URI is unset the suite is skipped so unit tests still run.
 //
 // The email service is mocked so no real mail is sent; the mock captures the
@@ -30,6 +30,7 @@ import User from "../src/models/userModel.js";
 import PendingRegistration from "../src/models/pendingRegistrationModel.js";
 import { Subscription } from "../src/models/billingModels.js";
 import { seedPlans } from "../src/scripts/seedBilling.js";
+import { createSubscription } from "../src/services/billing/billingService.js";
 import { __resetRateLimit } from "../src/middlewares/rateLimit.js";
 
 const TEST_MONGO_URI = process.env.TEST_MONGO_URI;
@@ -43,10 +44,8 @@ function validPayload(over = {}) {
     slug: `bright-smile-${counter}`,
     address: "1 Main Street",
     description: "Gentle care",
-    // Payment is required up-front (simulated gateway).
-    planKey: "pro",
+    // No payment at registration (pay-after-approval). Billing preference only.
     billingCycle: "monthly",
-    testToken: "tok_test_visa",
     adminData: {
       firstName: "Jo",
       lastName: "Doe",
@@ -87,27 +86,29 @@ describe.skipIf(!TEST_MONGO_URI)("Email-verified clinic registration", () => {
     ]);
   });
 
-  it("requires a successful payment before creating anything", async () => {
-    const declined = await request(app)
+  it("starts registration with NO payment — code emailed, nothing created yet", async () => {
+    const res = await request(app)
       .post(`${BASE}/register/initiate`)
-      .send(validPayload({ testToken: "tok_test_decline" }));
-    expect(declined.status).toBe(402);
-    expect(sentCodes).toHaveLength(0); // no code emailed on failed payment
-    expect(await PendingRegistration.countDocuments()).toBe(0);
+      .send(validPayload({ testToken: "tok_test_decline" })); // payment fields are ignored now
+    expect(res.status).toBe(200);
+    expect(sentCodes).toHaveLength(1); // code emailed without any charge
+    expect(await PendingRegistration.countDocuments()).toBe(1);
     expect(await Clinic.countDocuments()).toBe(0);
   });
 
-  it("initiate charges, stores a pending record, emails a code, and creates nothing yet", async () => {
+  it("initiate stores a pending record, emails a code, creates nothing, and collects no payment", async () => {
     const res = await request(app).post(`${BASE}/register/initiate`).send(validPayload());
     expect(res.status).toBe(200);
     expect(res.body.data.pendingId).toBeDefined();
     expect(res.body.data.plan.name).toBeDefined();
-    expect(res.body.data.paymentRef).toMatch(/^ch_test_/);
+    expect(res.body.data).not.toHaveProperty("paymentRef"); // no charge at registration
     expect(res.body.data).not.toHaveProperty("code"); // never returned
     expect(sentCodes).toHaveLength(1);
     expect(await Clinic.countDocuments()).toBe(0);
     expect(await User.countDocuments()).toBe(0);
     expect(await PendingRegistration.countDocuments()).toBe(1);
+    const pending = await PendingRegistration.findOne({}).lean();
+    expect(pending.payment?.providerRef || "").toBe("");
   });
 
   it("rejects malformed payloads (short password, bad slug, bad email)", async () => {
@@ -116,7 +117,7 @@ describe.skipIf(!TEST_MONGO_URI)("Email-verified clinic registration", () => {
     expect((await request(app).post(`${BASE}/register/initiate`).send(validPayload({ adminData: { ...validPayload().adminData, email: "nope" } }))).status).toBe(400);
   });
 
-  it("verifies the correct code, creates clinic + admin, and is single-use", async () => {
+  it("verifies the correct code, creates a Pending clinic + admin, and is single-use", async () => {
     const payload = validPayload();
     const init = await request(app).post(`${BASE}/register/initiate`).send(payload);
     const { pendingId } = init.body.data;
@@ -129,15 +130,53 @@ describe.skipIf(!TEST_MONGO_URI)("Email-verified clinic registration", () => {
     expect(await User.countDocuments()).toBe(1);
     expect(await PendingRegistration.countDocuments()).toBe(0);
 
-    // The prepaid subscription is activated on verify.
-    expect(verify.body.data.subscription?.status).toBe("active");
-    const sub = await Subscription.findOne({ clinicId: verify.body.data.clinic._id }).lean();
-    expect(sub).toBeTruthy();
-    expect(sub.status).toBe("active");
+    // Pay-after-approval: NO subscription is created at verify time, and the
+    // clinic is Pending + inactive until a super-admin approves it.
+    expect(verify.body.data.subscription).toBeNull();
+    const clinic = await Clinic.findOne({ slug: payload.slug }).lean();
+    expect(clinic.applicationStatus).toBe("Pending");
+    expect(clinic.isActive).toBe(false);
+    expect(await Subscription.countDocuments()).toBe(0);
 
     // Reusing the same code now fails (pending was deleted on success).
     const reuse = await request(app).post(`${BASE}/register/verify`).send({ pendingId, code });
     expect(reuse.status).toBe(404);
+  });
+
+  it("blocks subscribing while Pending; allows it after approval (pay-after-approval)", async () => {
+    const payload = validPayload();
+    const init = await request(app).post(`${BASE}/register/initiate`).send(payload);
+    const verify = await request(app)
+      .post(`${BASE}/register/verify`)
+      .send({ pendingId: init.body.data.pendingId, code: sentCodes[0].code });
+    const clinicId = verify.body.data.clinic._id;
+
+    // Pending clinic tries to subscribe -> blocked, nothing charged/created.
+    const blocked = await createSubscription({
+      clinicId,
+      planKey: "pro",
+      billingCycle: "monthly",
+      testToken: "tok_test_visa",
+      actor: { type: "clinic" },
+    });
+    expect(blocked.status).toBe(403);
+    expect(blocked.error).toMatch(/approv/i);
+    expect(await Subscription.countDocuments()).toBe(0);
+
+    // Super-admin approves -> subscribing works (pro plan starts with a trial).
+    await Clinic.updateOne(
+      { _id: clinicId },
+      { $set: { applicationStatus: "Approved", isActive: true } },
+    );
+    const ok = await createSubscription({
+      clinicId,
+      planKey: "pro",
+      billingCycle: "monthly",
+      testToken: "tok_test_visa",
+      actor: { type: "clinic" },
+    });
+    expect(ok.error).toBeUndefined();
+    expect(ok.subscription.status).toBe("trialing");
   });
 
   it("stores the admin password as a bcrypt hash (not plaintext)", async () => {
@@ -178,6 +217,34 @@ describe.skipIf(!TEST_MONGO_URI)("Email-verified clinic registration", () => {
     expect(res.status).toBe(410);
   });
 
+  it("check-email flags free, pending, and taken addresses without creating anything", async () => {
+    const free = await request(app)
+      .post(`${BASE}/register/check-email`)
+      .send({ email: "fresh-address@example.com" });
+    expect(free.status).toBe(200);
+    expect(free.body.data).toMatchObject({ available: true });
+
+    expect(
+      (await request(app).post(`${BASE}/register/check-email`).send({ email: "not-an-email" })).status,
+    ).toBe(400);
+
+    const payload = validPayload();
+    const init = await request(app).post(`${BASE}/register/initiate`).send(payload);
+    const pending = await request(app)
+      .post(`${BASE}/register/check-email`)
+      .send({ email: payload.adminData.email });
+    expect(pending.body.data).toMatchObject({ available: false, code: "PENDING_EXISTS" });
+
+    await request(app)
+      .post(`${BASE}/register/verify`)
+      .send({ pendingId: init.body.data.pendingId, code: sentCodes[0].code });
+    const taken = await request(app)
+      .post(`${BASE}/register/check-email`)
+      .send({ email: payload.adminData.email });
+    expect(taken.body.data).toMatchObject({ available: false, code: "EMAIL_EXISTS" });
+    expect(await Clinic.countDocuments()).toBe(1);
+  });
+
   it("blocks a duplicate email that already has an account", async () => {
     const payload = validPayload();
     const init = await request(app).post(`${BASE}/register/initiate`).send(payload);
@@ -188,6 +255,8 @@ describe.skipIf(!TEST_MONGO_URI)("Email-verified clinic registration", () => {
       .post(`${BASE}/register/initiate`)
       .send(validPayload({ slug: "different-slug", adminData: { ...payload.adminData } }));
     expect(dup.status).toBe(409);
+    expect(dup.body.code).toBe("EMAIL_EXISTS");
+    expect(dup.body.message).toMatch(/already exists/i);
   });
 
   it("enforces the resend cooldown", async () => {

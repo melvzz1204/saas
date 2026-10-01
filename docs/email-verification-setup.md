@@ -50,7 +50,7 @@ All secrets live in `backend/.env` (never hard‑coded). Required:
 ```dotenv
 EMAIL_USER=your-gmail-address@gmail.com
 EMAIL_PASS=your-16-char-app-password      # Gmail App Password, NOT your login password
-MAIL_FROM_NAME=NovaClinic                 # optional display name
+MAIL_FROM_NAME=DentaCloud                 # optional display name
 FRONTEND_URL=http://localhost:5173        # used to build login/public links in emails (set to your HTTPS origin in prod)
 ```
 
@@ -125,7 +125,7 @@ cd backend
 npm test                                   # unit tests (code gen/hash/format) always run
 
 # Full endpoint flow (needs a DISPOSABLE Mongo — its DB is dropped afterwards):
-TEST_MONGO_URI=mongodb://localhost:27017/novaclinic-test npm test
+TEST_MONGO_URI=mongodb://localhost:27017/dentacloud-test npm test
 ```
 
 `tests/registrationVerify.test.js` mocks the email service and captures the code,

@@ -290,6 +290,20 @@ export async function createSubscription({ clinicId, planKey = SINGLE_PLAN_KEY, 
   const clinic = await Clinic.findById(clinicId).lean();
   if (!clinic) return { error: "Clinic not found.", status: 404 };
 
+  // Pay-after-approval: a clinic may only subscribe once its application is
+  // approved, so a rejected clinic (e.g. lacking requirements) is never
+  // charged. System actors (seeds, legacy registration activation) bypass
+  // this gate.
+  if (clinic.applicationStatus !== "Approved" && actor?.type !== "system") {
+    return {
+      error:
+        clinic.applicationStatus === "Rejected"
+          ? "Your application needs corrections before you can subscribe. Resubmit your documents first."
+          : "Subscription is available after your application is approved. No payment is due yet.",
+      status: 403,
+    };
+  }
+
   // Single fixed product: anything missing falls back to "pro"; anything else
   // is rejected so legacy plan keys can't create new subscriptions.
   const effectiveKey = String(planKey || SINGLE_PLAN_KEY).toLowerCase();

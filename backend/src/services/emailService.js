@@ -4,7 +4,7 @@
 //     (must be a sender/domain verified in your Resend dashboard).
 //   FALLBACK:   Gmail SMTP — set EMAIL_USER (Gmail address) and EMAIL_PASS
 //     (Gmail *App Password*, 16 chars, not your login password).
-//   MAIL_FROM_NAME    Optional display name (default "NovaClinic").
+//   MAIL_FROM_NAME    Optional display name (default "DentaCloud").
 //
 // Configuration comes ONLY from environment variables (never hard-coded).
 //
@@ -95,7 +95,7 @@ async function sendViaResend({ fromEmail, fromName, to, subject, text, html }) {
 // Gmail SMTP otherwise. Callers pass content only — sender identity is
 // resolved here from the environment.
 async function dispatchMail({ to, subject, text, html }) {
-  const fromName = process.env.MAIL_FROM_NAME || "NovaClinic";
+  const fromName = process.env.MAIL_FROM_NAME || "DentaCloud";
   if (resendConfigured()) {
     const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.EMAIL_USER;
     if (!fromEmail) {
@@ -133,10 +133,10 @@ function escapeHtml(str) {
 
 function buildEmail({ code, clinicName, ttlMinutes }) {
   const safeClinic = escapeHtml(clinicName || "your clinic");
-  const subject = "Your NovaClinic verification code";
+  const subject = "Your DentaCloud verification code";
 
   const text =
-    `Verify your NovaClinic registration\n\n` +
+    `Verify your DentaCloud registration\n\n` +
     `Use this code to finish registering ${clinicName || "your clinic"}:\n\n` +
     `    ${code}\n\n` +
     `This code expires in ${ttlMinutes} minutes. If you didn't request this, you can ignore this email.`;
@@ -144,7 +144,7 @@ function buildEmail({ code, clinicName, ttlMinutes }) {
   const html = `
   <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#0f172a">
     <div style="text-align:center;margin-bottom:20px">
-      <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:14px;background:#0f766e;color:#fff;font-size:22px;font-weight:800">N</div>
+      <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:14px;background:#0f766e;color:#fff;font-size:22px;font-weight:800">D</div>
       <h1 style="font-size:18px;margin:12px 0 0">Verify your registration</h1>
     </div>
     <p style="font-size:14px;line-height:1.6;color:#334155">
@@ -160,7 +160,7 @@ function buildEmail({ code, clinicName, ttlMinutes }) {
       If you didn't request this, you can safely ignore this email.
     </p>
     <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0" />
-    <p style="font-size:11px;color:#94a3b8;text-align:center">NovaClinic · Automated message, please do not reply.</p>
+    <p style="font-size:11px;color:#94a3b8;text-align:center">DentaCloud · Automated message, please do not reply.</p>
   </div>`;
 
   return { subject, text, html };
@@ -192,12 +192,12 @@ function brandShell(title, innerHtml) {
   return `
   <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a">
     <div style="text-align:center;margin-bottom:20px">
-      <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:14px;background:#0f766e;color:#fff;font-size:22px;font-weight:800">N</div>
+      <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:14px;background:#0f766e;color:#fff;font-size:22px;font-weight:800">D</div>
       <h1 style="font-size:19px;margin:12px 0 0">${escapeHtml(title)}</h1>
     </div>
     ${innerHtml}
     <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0" />
-    <p style="font-size:11px;color:#94a3b8;text-align:center">NovaClinic · Automated message, please do not reply.</p>
+    <p style="font-size:11px;color:#94a3b8;text-align:center">DentaCloud · Automated message, please do not reply.</p>
   </div>`;
 }
 
@@ -214,11 +214,11 @@ export async function sendApplicationApprovedEmail({ to, clinicName, slug }) {
   const loginUrl = appUrl("/index.html?auth=login");
   const publicUrl = slug ? appUrl(`/clinicHomePage.html?clinic=${encodeURIComponent(slug)}`) : "";
 
-  const subject = `🎉 ${name} is approved on NovaClinic`;
+  const subject = `🎉 ${name} is approved on DentaCloud`;
 
   const text =
     `Great news — ${name} has been approved!\n\n` +
-    `Your clinic workspace is now active. Sign in with your administrator email and password to start managing appointments, staff, and your public page.\n\n` +
+    `No payment was collected during your application. Now that you're approved, sign in with your administrator email and password, open My Subscription, and subscribe to the Professional plan to activate your workspace.\n\n` +
     (loginUrl ? `Sign in: ${loginUrl}\n` : "") +
     (publicUrl ? `Your public page: ${publicUrl}\n` : "");
 
@@ -227,8 +227,10 @@ export async function sendApplicationApprovedEmail({ to, clinicName, slug }) {
       Great news — <strong>${escapeHtml(name)}</strong> has been <strong style="color:#0f766e">approved</strong>!
     </p>
     <p style="font-size:14px;line-height:1.6;color:#334155">
-      Your clinic workspace is now active. Sign in with your administrator email and password to
-      start managing appointments, staff, pricing, and your public clinic page.
+      Your clinic workspace is now active. <strong>No payment was collected during your application</strong> —
+      now that you're approved, sign in with your administrator email and password, open
+      <strong>My Subscription</strong>, and subscribe to the Professional plan to get started
+      with appointments, staff, pricing, and your public clinic page.
     </p>
     ${ctaButton(loginUrl, "Sign in to your dashboard")}
     ${publicUrl ? `<p style="font-size:13px;line-height:1.6;color:#64748b;text-align:center">Your public page: <a href="${escapeHtml(publicUrl)}" style="color:#0f766e">${escapeHtml(publicUrl)}</a></p>` : ""}
@@ -285,7 +287,9 @@ export async function sendApplicationRejectedEmail({ to, clinicName, reason }) {
   return true;
 }
 
-// Sent right after a successful up-front subscription payment at registration.
+// Legacy: sent after an up-front subscription payment at registration.
+// Kept for compatibility — new registrations pay only after approval, so this
+// is no longer called from the registration flow.
 export async function sendSubscriptionActiveEmail({ to, clinicName, planName, amount, currency = "PHP", billingCycle, nextRenewalDate, reference }) {
   const name = clinicName || "your clinic";
   const symbol = currency === "PHP" ? "₱" : currency === "USD" ? "$" : "";

@@ -656,7 +656,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     tr.appendChild(el("td", "p-3 text-slate-400 tabular-nums", formatDate(clinic.createdAt)));
 
-    const actionTd = el("td", "p-3 text-right");
+    const actionTd = el("td", "p-3 text-right whitespace-nowrap");
+    const viewBtn = el(
+      "button",
+      "text-[11px] font-bold text-indigo-300 hover:underline cursor-pointer mr-3",
+      "View",
+    );
+    viewBtn.addEventListener("click", () => openTenantDetailsModal(clinic._id));
+    actionTd.appendChild(viewBtn);
     const btn = el(
       "button",
       `text-[11px] font-bold ${clinic.isActive ? "text-rose-400 hover:underline" : "text-emerald-400 hover:underline"} cursor-pointer`,
@@ -667,6 +674,212 @@ document.addEventListener("DOMContentLoaded", () => {
     tr.appendChild(actionTd);
 
     return tr;
+  }
+
+  // =======================================================================
+  // 🏢 Tenant details modal (View action)
+  // =======================================================================
+  const tenantModal = document.getElementById("tenant-modal");
+  const tenantModalBody = document.getElementById("tenant-modal-body");
+
+  function closeTenantModal() {
+    tenantModal?.classList.add("hidden");
+    if (tenantModalBody) {
+      clear(tenantModalBody);
+      tenantModalBody.appendChild(
+        el("p", "text-xs text-slate-500", "Loading…"),
+      );
+    }
+  }
+
+  document
+    .getElementById("tenant-modal-close")
+    ?.addEventListener("click", closeTenantModal);
+  tenantModal?.addEventListener("click", (e) => {
+    if (e.target === tenantModal) closeTenantModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !tenantModal?.classList.contains("hidden")) {
+      closeTenantModal();
+    }
+  });
+
+  function infoCell(label, value) {
+    const cell = el("div", "bg-slate-950/60 border border-slate-800 rounded-xl p-3 min-w-0");
+    cell.appendChild(
+      el(
+        "p",
+        "text-[10px] font-bold text-slate-500 uppercase tracking-wider",
+        label,
+      ),
+    );
+    cell.appendChild(
+      el("p", "text-xs text-slate-200 font-semibold mt-0.5 break-words", value || "—"),
+    );
+    return cell;
+  }
+
+  function countCard(label, value, accent) {
+    const card = el(
+      "div",
+      "bg-slate-950/60 border border-slate-800 rounded-xl p-3.5 text-center",
+    );
+    card.appendChild(el("p", `text-2xl font-black tabular-nums ${accent}`, String(value ?? 0)));
+    card.appendChild(
+      el("p", "text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1", label),
+    );
+    return card;
+  }
+
+  function rosterList(title, people, emptyHint) {
+    const wrap = el("div", "bg-slate-950/60 border border-slate-800 rounded-xl p-4");
+    wrap.appendChild(
+      el("h4", "text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-2", title),
+    );
+    if (!people.length) {
+      wrap.appendChild(el("p", "text-xs text-slate-500 italic", emptyHint));
+      return wrap;
+    }
+    const list = el("div", "space-y-1.5 max-h-40 overflow-y-auto pr-1");
+    people.forEach((p) => {
+      const row = el("div", "flex items-center justify-between gap-2 text-xs border-b border-slate-800/60 pb-1.5");
+      row.appendChild(el("span", "text-slate-200 font-semibold truncate", p.name || "Unnamed"));
+      const meta = [p.specialization, p.email].filter(Boolean).join(" · ") || p.status || "";
+      row.appendChild(el("span", "text-[11px] text-slate-500 truncate text-right", meta));
+      list.appendChild(row);
+    });
+    wrap.appendChild(list);
+    return wrap;
+  }
+
+  async function openTenantDetailsModal(clinicId) {
+    if (!clinicId) return;
+    setText("tenant-modal-title", "Tenant details");
+    setText("tenant-modal-sub", "Loading…");
+    if (tenantModalBody) {
+      clear(tenantModalBody);
+      tenantModalBody.appendChild(el("p", "text-xs text-slate-500", "Loading tenant information…"));
+    }
+    tenantModal?.classList.remove("hidden");
+
+    try {
+      const res = await apiFetch(`/tenants/${clinicId}/details`);
+      const d = res.data || {};
+      const clinic = d.clinic || {};
+      const admin = d.admin || null;
+      const counts = d.counts || {};
+      const rosters = d.rosters || { dentists: [], staff: [] };
+      const sub = d.subscription || null;
+
+      setText("tenant-modal-title", clinic.name || "Tenant details");
+      setText(
+        "tenant-modal-sub",
+        `${clinic.slug ? `Code: ${clinic.slug} · ` : ""}Created: ${formatDate(clinic.createdAt)}`,
+      );
+
+      clear(tenantModalBody);
+
+      // Status badges row
+      const badges = el("div", "flex flex-wrap gap-2");
+      badges.appendChild(statusBadge(clinic.applicationStatus));
+      badges.appendChild(
+        el(
+          "span",
+          `px-2 py-0.5 rounded-full text-[10px] font-bold ${clinic.isActive ? "bg-emerald-900/30 text-emerald-400" : "bg-slate-800 text-slate-400"}`,
+          clinic.isActive ? "Active workspace" : "Suspended workspace",
+        ),
+      );
+      if (sub?.status) badges.appendChild(subStatusBadge(sub.status));
+      tenantModalBody.appendChild(badges);
+
+      // Contact / profile grid
+      const grid = el("div", "grid grid-cols-1 sm:grid-cols-2 gap-2");
+      grid.appendChild(infoCell("Clinic address", clinic.address || "Not provided"));
+      grid.appendChild(infoCell("Contact number", clinic.contactNumber || "Not provided"));
+      grid.appendChild(infoCell("Gmail (clinic admin)", admin?.email || "Not provided"));
+      grid.appendChild(infoCell("Admin name", admin?.name || "Not provided"));
+      grid.appendChild(infoCell("Admin phone", admin?.phone || "Not provided"));
+      grid.appendChild(infoCell("Clinic code", clinic.slug || "—"));
+      tenantModalBody.appendChild(grid);
+
+      if (clinic.description) {
+        tenantModalBody.appendChild(infoCell("About / description", clinic.description));
+      }
+      if (clinic.rejectionReason) {
+        const warn = infoCell("Rejection reason", clinic.rejectionReason);
+        warn.className = "bg-rose-950/30 border border-rose-900/60 rounded-xl p-3 min-w-0";
+        tenantModalBody.appendChild(warn);
+      }
+
+      // Headline counts
+      const countsGrid = el("div", "grid grid-cols-2 sm:grid-cols-4 gap-2");
+      countsGrid.appendChild(countCard("Dentists", counts.dentists, "text-sky-300"));
+      countsGrid.appendChild(countCard("Staff", counts.staff, "text-purple-300"));
+      countsGrid.appendChild(countCard("Patients", counts.patients, "text-emerald-300"));
+      countsGrid.appendChild(countCard("Appointments", counts.appointments, "text-amber-300"));
+      tenantModalBody.appendChild(countsGrid);
+
+      // Rosters
+      const rosterGrid = el("div", "grid grid-cols-1 sm:grid-cols-2 gap-2");
+      rosterGrid.appendChild(rosterList(`Dentists (${counts.dentists ?? 0})`, rosters.dentists || [], "No dentist profiles registered."));
+      rosterGrid.appendChild(rosterList(`Staff (${counts.staff ?? 0})`, rosters.staff || [], "No staff profiles registered."));
+      tenantModalBody.appendChild(rosterGrid);
+
+      // Subscription snapshot (same source as Subscriptions tab)
+      const subBox = el("div", "bg-slate-950/60 border border-slate-800 rounded-xl p-4");
+      subBox.appendChild(el("h4", "text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-2", "Subscription"));
+      if (!sub) {
+        subBox.appendChild(el("p", "text-xs text-slate-500", "No subscription yet — clinic subscribes from its own dashboard."));
+      } else {
+        const facts = el("div", "grid grid-cols-2 gap-2 text-xs");
+        [
+          ["Plan", `${sub.planName || sub.planKey || "—"} · ${sub.billingCycle || ""}`],
+          ["Amount", sub.amount != null ? `₱${Number(sub.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "—"],
+          ["Renews", formatDate(sub.nextRenewalDate)],
+          ["Trial ends", formatDate(sub.trialEndsAt)],
+        ].forEach(([k, v]) => {
+          const cell = el("div", "bg-slate-900/60 border border-slate-800 rounded-lg p-2.5");
+          cell.appendChild(el("p", "text-[10px] font-bold text-slate-500 uppercase tracking-wider", k));
+          cell.appendChild(el("p", "text-slate-200 font-bold mt-0.5 break-words", v));
+          facts.appendChild(cell);
+        });
+        subBox.appendChild(facts);
+      }
+      tenantModalBody.appendChild(subBox);
+
+      // Verification documents
+      const docs = clinic.submittedDocuments || [];
+      const docsBox = el("div", "bg-slate-950/60 border border-slate-800 rounded-xl p-4");
+      docsBox.appendChild(el("h4", "text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-2", `Verification documents (${docs.length})`));
+      if (!docs.length) {
+        docsBox.appendChild(el("p", "text-xs text-slate-500 italic", "No verification documents attached."));
+      } else {
+        const wrap = el("div", "flex flex-wrap gap-2");
+        docs.forEach((doc) => {
+          const href = safeHttpUrl(doc.fileUrl);
+          const label = `${doc.documentType || "Document"}: ${doc.documentName || "View"}`;
+          if (href) {
+            const link = el("a", "inline-flex items-center gap-1.5 text-xs text-indigo-300 hover:text-indigo-200 bg-indigo-950/50 border border-indigo-800/40 px-3 py-1.5 rounded-lg transition-all");
+            link.href = href;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.appendChild(el("span", null, `📄 ${label}`));
+            wrap.appendChild(link);
+          } else {
+            wrap.appendChild(el("span", "text-xs text-slate-500 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg", `📄 ${label} (unavailable)`));
+          }
+        });
+        docsBox.appendChild(wrap);
+      }
+      tenantModalBody.appendChild(docsBox);
+    } catch (err) {
+      console.error("Failed to load tenant details:", err);
+      setText("tenant-modal-sub", "Couldn't load details.");
+      if (tenantModalBody) {
+        clear(tenantModalBody);
+        tenantModalBody.appendChild(errorState(err.message || "Failed to load tenant details.", () => openTenantDetailsModal(clinicId)));
+      }
+    }
   }
 
   function updateSortIndicators() {

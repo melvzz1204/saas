@@ -1,6 +1,8 @@
 import Clinic from "../models/clinicModel.js";
 import User from "../models/userModel.js";
 import Appointment from "../models/appointmentModel.js";
+import Staff from "../models/staffModel.js";
+import { Subscription } from "../models/billingModels.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import {
@@ -192,6 +194,122 @@ export const getPlatformTenants = async (req, res) => {
   }
 };
 
+// 2b. Get single tenant full details (clinic profile + roster counts)
+// Used by the super-admin "View" action to show address, contact, gmail
+// (clinic-admin email), dentists, staff and registered patient totals.
+export const getTenantDetails = async (req, res) => {
+  try {
+    const { clinicId } = req.params;
+    const clinic = await Clinic.findById(clinicId).lean();
+    if (!clinic) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Tenant workspace not found." });
+    }
+
+    const [
+      adminUser,
+      dentistStaffDocs,
+      dentistUsers,
+      staffUsers,
+      clinicAdminCount,
+      patientCount,
+      appointmentCount,
+      subscription,
+    ] = await Promise.all([
+      User.findOne({ clinicId: clinic._id, role: "CLINIC_ADMIN" })
+        .select("firstName lastName email phone isActive createdAt")
+        .lean(),
+      Staff.find({ clinicId: clinic._id }).select("fullName role email phone status specialization").lean(),
+      User.countDocuments({ clinicId: clinic._id, role: "DENTIST" }),
+      User.countDocuments({
+        clinicId: clinic._id,
+        role: { $in: ["STAFF", "CLINIC_STAFF"] },
+      }),
+      User.countDocuments({ clinicId: clinic._id, role: "CLINIC_ADMIN" }),
+      User.countDocuments({ clinicId: clinic._id, role: "PATIENT" }),
+      Appointment.countDocuments({ clinicId: clinic._id }),
+      Subscription.findOne({ clinicId: clinic._id })
+        .select("planName planKey billingCycle status amount currency nextRenewalDate trialEndsAt")
+        .lean(),
+    ]);
+
+    const dentistStaffCount = dentistStaffDocs.filter(
+      (s) => s.role === "Dentist",
+    ).length;
+    const staffProfileCount = dentistStaffDocs.filter(
+      (s) => s.role === "Staff",
+    ).length;
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        clinic: {
+          _id: clinic._id,
+          name: clinic.name,
+          slug: clinic.slug,
+          address: clinic.address || "",
+          contactNumber: clinic.contactNumber || "",
+          description: clinic.description || "",
+          applicationStatus: clinic.applicationStatus,
+          isActive: clinic.isActive,
+          rejectionReason: clinic.rejectionReason || "",
+          createdAt: clinic.createdAt,
+          updatedAt: clinic.updatedAt,
+          submittedDocuments: clinic.submittedDocuments || [],
+          operatingHours: clinic.operatingHours || [],
+          slotDurationMinutes: clinic.slotDurationMinutes,
+        },
+        admin: adminUser
+          ? {
+              name: `${adminUser.firstName || ""} ${adminUser.lastName || ""}`.trim(),
+              email: adminUser.email || "",
+              phone: adminUser.phone || "",
+              isActive: adminUser.isActive,
+              createdAt: adminUser.createdAt,
+            }
+          : null,
+        counts: {
+          dentists: dentistStaffCount + dentistUsers,
+          staff: staffProfileCount + staffUsers,
+          clinicAdmins: clinicAdminCount,
+          patients: patientCount,
+          appointments: appointmentCount,
+          documents: (clinic.submittedDocuments || []).length,
+        },
+        rosters: {
+          dentists: dentistStaffDocs
+            .filter((s) => s.role === "Dentist")
+            .slice(0, 50)
+            .map((s) => ({
+              name: s.fullName,
+              email: s.email,
+              phone: s.phone,
+              specialization: s.specialization,
+              status: s.status,
+            })),
+          staff: dentistStaffDocs
+            .filter((s) => s.role === "Staff")
+            .slice(0, 50)
+            .map((s) => ({
+              name: s.fullName,
+              email: s.email,
+              phone: s.phone,
+              status: s.status,
+            })),
+        },
+        subscription: subscription || null,
+      },
+    });
+  } catch (error) {
+    console.error("🔥 SaaS Tenant Details Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to retrieve tenant details.",
+    });
+  }
+};
+
 // 3. Toggle Tenant Active Status (Suspend/Activate Clinics)
 export const toggleTenantStatus = async (req, res) => {
   try {
@@ -284,7 +402,7 @@ export const reviewApplication = async (req, res) => {
         notifications: {
           type: "ApplicationApproved",
           message:
-            "Your clinic application has been approved. You can now use your clinic workspace.",
+            "Your clinic application has been approved. Sign in and subscribe to the Professional plan from My Subscription to activate your workspace — payment is only due now that you're approved.",
         },
       };
     }
