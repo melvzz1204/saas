@@ -1645,17 +1645,52 @@ function reportPatientName(appt) {
 }
 
 function reportFeeFor(serviceName) {
-  const matchedTreatment = globalTreatmentsData.find((t) => {
+  const needle = String(serviceName || "").toLowerCase().trim();
+  if (!needle || !Array.isArray(globalTreatmentsData)) return 0;
+  // 1) Exact match first, then 2) either side contains the other.
+  const exact = globalTreatmentsData.find((t) => String(t.name || "").toLowerCase().trim() === needle);
+  const matchedTreatment = exact || globalTreatmentsData.find((t) => {
     if (!t.name) return false;
-    const dbName = t.name.toLowerCase().trim();
-    return dbName.includes(String(serviceName).toLowerCase().trim());
+    const dbName = String(t.name).toLowerCase().trim();
+    return dbName.includes(needle) || needle.includes(dbName);
   });
   return matchedTreatment && matchedTreatment.basePricePhp
     ? Number(matchedTreatment.basePricePhp) || 0
     : 0;
 }
 
-function generateClinicReportExcel() {
+function ensureReportExcelJS() {
+  if (window.ExcelJS) return Promise.resolve(window.ExcelJS);
+  if (ensureReportExcelJS._promise) return ensureReportExcelJS._promise;
+  ensureReportExcelJS._promise = new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[data-report-exceljs]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve(window.ExcelJS));
+      existing.addEventListener("error", () => reject(new Error("ExcelJS failed to load")));
+      return;
+    }
+    const script = document.createElement("script");
+    script.dataset.reportExceljs = "true";
+    script.src = "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
+    script.async = true;
+    script.onload = () => {
+      if (window.ExcelJS) resolve(window.ExcelJS);
+      else reject(new Error("ExcelJS failed to load"));
+    };
+    script.onerror = () => reject(new Error("ExcelJS failed to load"));
+    document.head.appendChild(script);
+    setTimeout(() => {
+      if (!window.ExcelJS) reject(new Error("ExcelJS load timed out — check internet connection"));
+    }, 20000);
+  });
+  // Allow retry on next click after a failure.
+  ensureReportExcelJS._promise.catch(() => {
+    ensureReportExcelJS._promise = null;
+  });
+  return ensureReportExcelJS._promise;
+}
+
+async function generateClinicReportExcel() {
   if (!globalAppointmentsData || globalAppointmentsData.length === 0) {
     window.DashboardUI.toast(
       "No appointment data available to generate a report.",
@@ -1664,152 +1699,521 @@ function generateClinicReportExcel() {
     return;
   }
 
-  // 1. Normalize every appointment into one row object (exactly one bucket).
-  const rows = globalAppointmentsData.map((appt) => {
-    const serviceName = appt.service || appt.reason || "General Consultation";
-    const fee = reportFeeFor(serviceName);
-    const { bucket, label } = reportClassifyStatus(appt.status);
-    return {
-      date: appt.date || "N/A",
-      time: appt.time || "N/A",
-      patient: reportPatientName(appt),
-      service: serviceName,
-      fee,
-      status: label,
-      bucket,
-    };
-  });
-  rows.sort((a, b) =>
-    `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`),
-  );
+  const exportBtn = document.getElementById("export-report-btn");
+  const originalBtnHtml = exportBtn ? exportBtn.innerHTML : "";
+  if (exportBtn) {
+    exportBtn.disabled = true;
+    exportBtn.innerHTML = "Preparing Excel file…";
+  }
 
-  const buckets = {
-    realized: { label: "Realized (completed treatments)", count: 0, amount: 0 },
-    scheduled: { label: "Scheduled pipeline (booked, not done)", count: 0, amount: 0 },
-    pending: { label: "Pending approval", count: 0, amount: 0 },
-    lost: { label: "Lost (cancelled / declined / missed)", count: 0, amount: 0 },
-    other: { label: "Other statuses", count: 0, amount: 0 },
-  };
-  const byStatus = new Map();
-  const byService = new Map();
-  rows.forEach((r) => {
-    buckets[r.bucket].count += 1;
-    buckets[r.bucket].amount += r.fee;
-    const s = byStatus.get(r.status) || { count: 0, amount: 0 };
-    s.count += 1;
-    s.amount += r.fee;
-    byStatus.set(r.status, s);
-    const g = byService.get(r.service) || {
-      count: 0, realized: 0, scheduled: 0, pending: 0, lost: 0, other: 0, total: 0,
-    };
-    g.count += 1;
-    g[r.bucket] += r.fee;
-    g.total += r.fee;
-    byService.set(r.service, g);
-  });
-  const grandCount = rows.length;
-  const grandAmount = rows.reduce((sum, r) => sum + r.fee, 0);
+  let ExcelJS;
+  try {
+    ExcelJS = await ensureReportExcelJS();
+  } catch (err) {
+    console.error("Excel export failed to load ExcelJS:", err);
+    window.DashboardUI.toast(
+      "Could not load the Excel generator (internet needed once for the library). Please check your connection and try again.",
+      "error",
+    );
+    if (exportBtn) {
+      exportBtn.disabled = false;
+      exportBtn.innerHTML = originalBtnHtml;
+    }
+    return;
+  }
 
-  const clinicName =
-    document.getElementById("display-clinic-name")?.textContent?.trim() ||
-    localStorage.getItem("activeClinicSlug") ||
-    "Clinic";
-  const dateStr = new Date().toISOString().split("T")[0];
-  const datedRows = rows.filter((r) => r.date && r.date !== "N/A").map((r) => r.date).sort();
-  const period = datedRows.length
-    ? `${datedRows[0]} to ${datedRows[datedRows.length - 1]}`
-    : "All records";
-
-  // 2. Build the workbook (inline styles + number formats Excel honors).
-  const TITLE_BG = "background:#1e293b;color:#ffffff;font-weight:bold;";
-  const SEC_BG = "background:#4f46e5;color:#ffffff;font-weight:bold;font-size:12pt;";
-  const HEAD_BG = "background:#e2e8f0;font-weight:bold;";
-  const TOTAL_BG = "background:#f1f5f9;font-weight:bold;";
-  const NUM_FMT = "mso-number-format:'#,##0.00';";
-  const money = (n, extra = "") => `<td style="${extra}${NUM_FMT}">${Number(n).toFixed(2)}</td>`;
-  const labelCell = (t, style = "") =>
-    `<td${style ? ` style="${style}"` : ""}>${reportEscHtml(t)}</td>`;
-
-  let table = `<table border="1" cellspacing="0" cellpadding="5">`;
-  table += `<col width="42"/><col width="28"/><col width="22"/><col width="34"/><col width="24"/><col width="18"/><col width="18"/><col width="18"/>`;
-  table += `<tr><td colspan="8" style="${TITLE_BG}font-size:14pt;">DentaCloud — Clinic Financial &amp; Operations Report</td></tr>`;
-  table += `<tr>${labelCell("Clinic:", HEAD_BG)}${labelCell(clinicName)}${labelCell("Report period:", HEAD_BG)}<td colspan="5">${reportEscHtml(period)}</td></tr>`;
-  table += `<tr>${labelCell("Generated on:", HEAD_BG)}${labelCell(dateStr)}${labelCell("Appointments covered:", HEAD_BG)}<td colspan="5">${grandCount}</td></tr>`;
-  table += `<tr><td colspan="8"></td></tr>`;
-
-  // --- Section 1: Financial summary ---
-  table += `<tr><td colspan="8" style="${SEC_BG}">1 · FINANCIAL SUMMARY (amounts in PHP)</td></tr>`;
-  table += `<tr>${labelCell("Category", HEAD_BG)}${labelCell("Appointments", HEAD_BG)}${labelCell("Amount (PHP)", HEAD_BG)}<td colspan="5" style="${HEAD_BG}">Notes</td></tr>`;
-  const finNotes = {
-    realized: "Service rendered — money earned",
-    scheduled: "Booked / in chair — expected, not yet earned",
-    pending: "Awaiting approval — expected, not yet earned",
-    lost: "Cancelled / declined / missed",
-    other: "Unrecognized statuses (review these rows below)",
-  };
-  ["realized", "scheduled", "pending", "lost", "other"].forEach((key) => {
-    const b = buckets[key];
-    if (key === "other" && b.count === 0) return; // hide empty Other row
-    table += `<tr>${labelCell(b.label)}<td>${b.count}</td>${money(b.amount)}<td colspan="5">${finNotes[key]}</td></tr>`;
-  });
-  table += `<tr>${labelCell("GRAND TOTAL", TOTAL_BG)}<td style="${TOTAL_BG}">${grandCount}</td><td style="${TOTAL_BG}${NUM_FMT}">${grandAmount.toFixed(2)}</td><td colspan="5" style="${TOTAL_BG}">Must match the totals in sections 2–4</td></tr>`;
-  table += `<tr><td colspan="8"></td></tr>`;
-
-  // --- Section 2: Operations by status ---
-  table += `<tr><td colspan="8" style="${SEC_BG}">2 · OPERATIONS BY STATUS</td></tr>`;
-  table += `<tr>${labelCell("Status", HEAD_BG)}${labelCell("Appointments", HEAD_BG)}${labelCell("Expected revenue (PHP)", HEAD_BG)}<td colspan="5"></td></tr>`;
-  [...byStatus.entries()]
-    .sort((a, b) => b[1].count - a[1].count)
-    .forEach(([status, s]) => {
-      table += `<tr>${labelCell(status)}<td>${s.count}</td>${money(s.amount)}<td colspan="5"></td></tr>`;
+  try {
+    // 1. Normalize every appointment into one row object (exactly one bucket).
+    const rows = globalAppointmentsData.map((appt) => {
+      const serviceName = appt.service || appt.reason || "General Consultation";
+      const fee = reportFeeFor(serviceName);
+      const { bucket, label } = reportClassifyStatus(appt.status);
+      return {
+        date: appt.date || "N/A",
+        time: appt.time || "N/A",
+        patient: reportPatientName(appt),
+        service: serviceName,
+        fee,
+        status: label,
+        bucket,
+      };
     });
-  table += `<tr>${labelCell("TOTAL", TOTAL_BG)}<td style="${TOTAL_BG}">${grandCount}</td><td style="${TOTAL_BG}${NUM_FMT}">${grandAmount.toFixed(2)}</td><td colspan="5"></td></tr>`;
-  table += `<tr><td colspan="8"></td></tr>`;
+    rows.sort((a, b) =>
+      `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`),
+    );
 
-  // --- Section 3: Revenue by service ---
-  table += `<tr><td colspan="8" style="${SEC_BG}">3 · REVENUE BY SERVICE (amounts in PHP)</td></tr>`;
-  table += `<tr>${labelCell("Service", HEAD_BG)}${labelCell("Appointments", HEAD_BG)}${labelCell("Realized", HEAD_BG)}${labelCell("Scheduled", HEAD_BG)}${labelCell("Pending", HEAD_BG)}${labelCell("Lost", HEAD_BG)}${labelCell("Other", HEAD_BG)}${labelCell("Total", HEAD_BG)}</tr>`;
-  [...byService.entries()]
-    .sort((a, b) => b[1].total - a[1].total)
-    .forEach(([service, g]) => {
-      table += `<tr>${labelCell(service)}<td>${g.count}</td>${money(g.realized)}${money(g.scheduled)}${money(g.pending)}${money(g.lost)}${money(g.other)}${money(g.total)}</tr>`;
+    const buckets = {
+      realized: { label: "Realized (completed)", count: 0, amount: 0 },
+      scheduled: { label: "Scheduled pipeline", count: 0, amount: 0 },
+      pending: { label: "Pending approval", count: 0, amount: 0 },
+      lost: { label: "Lost (cancelled / missed)", count: 0, amount: 0 },
+      other: { label: "Other statuses", count: 0, amount: 0 },
+    };
+    const byStatus = new Map();
+    const byService = new Map();
+    rows.forEach((r) => {
+      buckets[r.bucket].count += 1;
+      buckets[r.bucket].amount += r.fee;
+      const s = byStatus.get(r.status) || { count: 0, amount: 0 };
+      s.count += 1;
+      s.amount += r.fee;
+      byStatus.set(r.status, s);
+      const g = byService.get(r.service) || {
+        count: 0, realized: 0, scheduled: 0, pending: 0, lost: 0, other: 0, total: 0,
+      };
+      g.count += 1;
+      g[r.bucket] += r.fee;
+      g.total += r.fee;
+      byService.set(r.service, g);
     });
-  const svcTotal = (key) => [...byService.values()].reduce((sum, g) => sum + g[key], 0);
-  table += `<tr>${labelCell("TOTAL", TOTAL_BG)}<td style="${TOTAL_BG}">${grandCount}</td>${money(svcTotal("realized"), TOTAL_BG)}${money(svcTotal("scheduled"), TOTAL_BG)}${money(svcTotal("pending"), TOTAL_BG)}${money(svcTotal("lost"), TOTAL_BG)}${money(svcTotal("other"), TOTAL_BG)}<td style="${TOTAL_BG}${NUM_FMT}">${grandAmount.toFixed(2)}</td></tr>`;
-  table += `<tr><td colspan="8"></td></tr>`;
+    const grandCount = rows.length;
+    const grandAmount = rows.reduce((sum, r) => sum + r.fee, 0);
 
-  // --- Section 4: Appointment details ---
-  table += `<tr><td colspan="8" style="${SEC_BG}">4 · APPOINTMENT DETAILS</td></tr>`;
-  table += `<tr>${labelCell("#", HEAD_BG)}${labelCell("Date", HEAD_BG)}${labelCell("Time", HEAD_BG)}${labelCell("Patient", HEAD_BG)}${labelCell("Service", HEAD_BG)}${labelCell("Fee (PHP)", HEAD_BG)}${labelCell("Status", HEAD_BG)}${labelCell("Bucket", HEAD_BG)}</tr>`;
-  const bucketLabel = { realized: "Realized", scheduled: "Scheduled", pending: "Pending", lost: "Lost", other: "Other" };
-  rows.forEach((r, i) => {
-    const zebra = i % 2 ? "background:#f8fafc;" : "";
-    table += `<tr>`
-      + `<td style="${zebra}">${i + 1}</td>`
-      + `${labelCell(r.date, zebra)}${labelCell(r.time, zebra)}${labelCell(r.patient, zebra)}${labelCell(r.service, zebra)}`
-      + `<td style="${zebra}${NUM_FMT}">${r.fee.toFixed(2)}</td>`
-      + `${labelCell(r.status, zebra)}${labelCell(bucketLabel[r.bucket], zebra)}`
-      + `</tr>`;
-  });
-  table += `<tr>${labelCell("TOTAL", TOTAL_BG)}<td colspan="4" style="${TOTAL_BG}"></td><td style="${TOTAL_BG}${NUM_FMT}">${grandAmount.toFixed(2)}</td><td colspan="2" style="${TOTAL_BG}"></td></tr>`;
-  table += `</table>`;
+    const clinicName =
+      document.getElementById("display-clinic-name")?.textContent?.trim() ||
+      localStorage.getItem("activeClinicSlug") ||
+      "Clinic";
+    const now = new Date();
+    const dateStr = now.toISOString().split("T")[0];
+    const generatedLabel = now.toLocaleString("en-PH", {
+      year: "numeric", month: "short", day: "numeric",
+      hour: "numeric", minute: "2-digit",
+    });
+    const datedRows = rows.filter((r) => r.date && r.date !== "N/A").map((r) => r.date).sort();
+    const period = datedRows.length
+      ? `${datedRows[0]} to ${datedRows[datedRows.length - 1]}`
+      : "All records";
 
-  const workbook =
-    `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">` +
-    `<head><meta charset="UTF-8"/></head><body>${table}</body></html>`;
+    // 2. Build a REAL .xlsx workbook with ExcelJS (styled, filtered, printable).
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "DentaCloud";
+    wb.created = now;
+    wb.properties.title = `Clinic Financial & Operations Report — ${clinicName}`;
 
-  // 3. Trigger the browser download (.xls opens directly in Excel).
-  const blob = new Blob(["\ufeff" + workbook], { type: "application/vnd.ms-excel;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const safeSlug = String(localStorage.getItem("activeClinicSlug") || "clinic").replace(/[^a-z0-9-_]+/gi, "-");
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `DentaCloud_${safeSlug}_Financial_Operations_Report_${dateStr}.xls`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
-  window.DashboardUI.toast(`Report exported: ${grandCount} appointment(s), 4 sections.`, "success");
+    const PESO_FMT = '"₱"#,##0.00';
+    const INK = "FF1E293B";
+    const PAPER = "FFFFFFFF";
+    const HEAD_FILL = "FFE2E8F0";
+    const TOTAL_FILL = "FFF1F5F9";
+    const ZEBRA_FILL = "FFF8FAFC";
+    const TITLE_FILL = "FF1E293B";
+    const SECTION_FILL = "FF4F46E5";
+    const thinBorder = {
+      top: { style: "thin", color: { argb: "FFCBD5E1" } },
+      bottom: { style: "thin", color: { argb: "FFCBD5E1" } },
+      left: { style: "thin", color: { argb: "FFCBD5E1" } },
+      right: { style: "thin", color: { argb: "FFCBD5E1" } },
+    };
+    const BUCKET_FILL = {
+      realized: "FFDCFCE7", scheduled: "FFDBEAFE", pending: "FFFEF9C3",
+      lost: "FFFFE4E6", other: "FFF1F5F9",
+    };
+
+    const paintTitle = (ws, rowNum, colCount, text) => {
+      const row = ws.getRow(rowNum);
+      row.height = 26;
+      ws.mergeCells(rowNum, 1, rowNum, colCount);
+      const cell = ws.getCell(rowNum, 1);
+      cell.value = text;
+      cell.font = { name: "Calibri", size: 14, bold: true, color: { argb: PAPER } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: TITLE_FILL } };
+      cell.alignment = { vertical: "middle", horizontal: "left" };
+    };
+
+    const paintSection = (ws, rowNum, colCount, text) => {
+      const row = ws.getRow(rowNum);
+      row.height = 20;
+      ws.mergeCells(rowNum, 1, rowNum, colCount);
+      const cell = ws.getCell(rowNum, 1);
+      cell.value = text;
+      cell.font = { name: "Calibri", size: 11, bold: true, color: { argb: PAPER } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: SECTION_FILL } };
+      cell.alignment = { vertical: "middle", horizontal: "left" };
+    };
+
+    const paintHeader = (ws, rowNum, colCount) => {
+      const row = ws.getRow(rowNum);
+      row.height = 20;
+      row.font = { name: "Calibri", size: 10, bold: true, color: { argb: INK } };
+      for (let c = 1; c <= colCount; c += 1) {
+        const cell = row.getCell(c);
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: HEAD_FILL } };
+        cell.border = thinBorder;
+        cell.alignment = { vertical: "middle", horizontal: c === 1 ? "left" : "center", wrapText: true };
+      }
+    };
+
+    const paintDataCell = (cell, { zebra = false, bold = false, numFmt = null, align = "left", fill = null } = {}) => {
+      cell.font = { name: "Calibri", size: 10, bold, color: { argb: INK } };
+      cell.border = thinBorder;
+      cell.alignment = { vertical: "middle", horizontal: align, wrapText: true };
+      const bg = fill || (zebra ? ZEBRA_FILL : PAPER);
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+      if (numFmt) cell.numFmt = numFmt;
+    };
+
+    const paintTotalRow = (ws, rowNum, colCount, moneyCols = []) => {
+      const row = ws.getRow(rowNum);
+      row.height = 20;
+      row.font = { name: "Calibri", size: 10, bold: true, color: { argb: INK } };
+      for (let c = 1; c <= colCount; c += 1) {
+        const cell = row.getCell(c);
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: TOTAL_FILL } };
+        cell.border = thinBorder;
+        cell.alignment = { vertical: "middle", horizontal: c === 1 ? "left" : "center" };
+        if (moneyCols.includes(c)) cell.numFmt = PESO_FMT;
+      }
+    };
+
+    const setupSheet = (ws, { freezeRow = 5, filterFrom = null, filterTo = null } = {}) => {
+      ws.views = [{ state: "frozen", ySplit: freezeRow }];
+      if (filterFrom && filterTo) ws.autoFilter = { from: filterFrom, to: filterTo };
+      ws.pageSetup = {
+        paperSize: 9, orientation: "landscape",
+        fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+      };
+      ws.pageMargins = { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 };
+      ws.oddFooter = `&C&8${clinicName} · Financial & Operations Report · ${dateStr}`;
+    };
+
+    // ---- Sheet 1: Summary ----
+    const ws1 = wb.addWorksheet("Summary", { properties: { tabColor: { argb: "FF4F46E5" } } });
+    ws1.columns = [
+      { header: "", key: "c1", width: 32 },
+      { header: "", key: "c2", width: 18 },
+      { header: "", key: "c3", width: 22 },
+      { header: "", key: "c4", width: 44 },
+    ];
+    paintTitle(ws1, 1, 4, "DentaCloud — Clinic Financial & Operations Report");
+    ws1.getRow(2).values = ["Clinic", clinicName, "Report period", period];
+    ws1.getRow(3).values = ["Generated on", generatedLabel, "Appointments covered", grandCount];
+    [2, 3].forEach((rn) => {
+      const row = ws1.getRow(rn);
+      row.height = 18;
+      [[1, true], [2, false], [3, true], [4, false]].forEach(([c, isLabel]) => {
+        const cell = row.getCell(c);
+        cell.font = { name: "Calibri", size: 10, bold: isLabel, color: { argb: INK } };
+        cell.border = thinBorder;
+        cell.alignment = { vertical: "middle", horizontal: "left" };
+        cell.fill = {
+          type: "pattern", pattern: "solid",
+          fgColor: { argb: isLabel ? HEAD_FILL : PAPER },
+        };
+        if (c === 4 && rn === 3) cell.alignment = { vertical: "middle", horizontal: "center" };
+      });
+    });
+    paintSection(ws1, 4, 4, "1 · FINANCIAL SUMMARY (amounts in PHP)");
+    ws1.getRow(5).values = ["Category", "Appointments", "Amount (PHP)", "Notes"];
+    paintHeader(ws1, 5, 4);
+
+    const finNotes = {
+      realized: "Service rendered — money earned",
+      scheduled: "Booked / in chair — expected, not yet earned",
+      pending: "Awaiting approval — expected, not yet earned",
+      lost: "Cancelled / declined / missed",
+      other: "Unrecognized statuses (see Appointments sheet)",
+    };
+    const finOrder = ["realized", "scheduled", "pending", "lost", "other"].filter(
+      (k) => k !== "other" || buckets.other.count > 0,
+    );
+    let r1 = 6;
+    finOrder.forEach((key, idx) => {
+      const b = buckets[key];
+      const row = ws1.getRow(r1);
+      row.height = 18;
+      row.values = [b.label, b.count, b.amount, finNotes[key]];
+      paintDataCell(row.getCell(1), { zebra: idx % 2 === 1 });
+      paintDataCell(row.getCell(2), { zebra: idx % 2 === 1, align: "center" });
+      paintDataCell(row.getCell(3), { zebra: idx % 2 === 1, numFmt: PESO_FMT, align: "right" });
+      paintDataCell(row.getCell(4), { zebra: idx % 2 === 1 });
+      r1 += 1;
+    });
+    const totalRow1 = r1;
+    ws1.getRow(totalRow1).values = [
+      "GRAND TOTAL",
+      { formula: `SUM(B6:B${totalRow1 - 1})` },
+      { formula: `SUM(C6:C${totalRow1 - 1})` },
+      "Must match the totals in the other sheets",
+    ];
+    paintTotalRow(ws1, totalRow1, 4, [3]);
+
+    const kpiRow = totalRow1 + 2;
+    paintSection(ws1, kpiRow, 4, "KEY INDICATORS");
+    ws1.getRow(kpiRow + 1).values = ["Indicator", "Value", "", "How to read it"];
+    paintHeader(ws1, kpiRow + 1, 4);
+    const realizedAmt = buckets.realized.amount;
+    const pipelineAmt = buckets.scheduled.amount + buckets.pending.amount;
+    const kpis = [
+      ["Collection (realized) share", grandAmount ? realizedAmt / grandAmount : 0, "", "Realized ÷ Grand total"],
+      ["Pipeline (scheduled + pending)", pipelineAmt, "", "Work still to convert"],
+      ["Loss exposure", buckets.lost.amount, "", "Cancelled / missed value"],
+      ["Avg. fee per appointment", grandCount ? grandAmount / grandCount : 0, "", "Grand total ÷ Appointments"],
+    ];
+    kpis.forEach(([label, val, extra, note], idx) => {
+      const row = ws1.getRow(kpiRow + 2 + idx);
+      row.height = 18;
+      const zebra = idx % 2 === 1;
+      row.getCell(1).value = label;
+      row.getCell(2).value = val;
+      row.getCell(3).value = extra;
+      row.getCell(4).value = note;
+      paintDataCell(row.getCell(1), { zebra });
+      paintDataCell(row.getCell(2), {
+        zebra, align: "right",
+        numFmt: idx === 0 ? "0.0%" : PESO_FMT,
+      });
+      paintDataCell(row.getCell(3), { zebra, align: "center" });
+      paintDataCell(row.getCell(4), { zebra });
+    });
+    // Fix % formula to stay live even if user edits the summary table.
+    // Realized amount is always row 6 (first data row); grand total is totalRow1.
+    ws1.getCell(`B${kpiRow + 2}`).value = grandAmount
+      ? { formula: `C6/C${totalRow1}` }
+      : 0;
+    setupSheet(ws1, { freezeRow: 5 });
+
+    // ---- Sheet 2: By Status ----
+    const ws2 = wb.addWorksheet("By Status", { properties: { tabColor: { argb: "FF0EA5E9" } } });
+    ws2.columns = [
+      { header: "", key: "s1", width: 30 },
+      { header: "", key: "s2", width: 18 },
+      { header: "", key: "s3", width: 24 },
+      { header: "", key: "s4", width: 16 },
+    ];
+    paintTitle(ws2, 1, 4, `Operations by Status — ${clinicName}`);
+    ws2.getRow(2).values = ["Report period", period, "Generated on", generatedLabel];
+    [2].forEach((rn) => {
+      const row = ws2.getRow(rn);
+      row.height = 18;
+      for (let c = 1; c <= 4; c += 1) {
+        const cell = row.getCell(c);
+        const isLabel = c % 2 === 1;
+        cell.font = { name: "Calibri", size: 10, bold: isLabel, color: { argb: INK } };
+        cell.border = thinBorder;
+        cell.alignment = { vertical: "middle", horizontal: "left" };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: isLabel ? HEAD_FILL : PAPER } };
+      }
+    });
+    paintSection(ws2, 3, 4, "2 · OPERATIONS BY STATUS");
+    ws2.getRow(4).values = ["Status", "Appointments", "Expected revenue (PHP)", "Share"];
+    paintHeader(ws2, 4, 4);
+    const statusEntries = [...byStatus.entries()].sort((a, b) => b[1].count - a[1].count);
+    const statusTotalRow = 5 + statusEntries.length;
+    let r2 = 5;
+    statusEntries.forEach(([status, s], idx) => {
+      const row = ws2.getRow(r2);
+      row.height = 18;
+      row.getCell(1).value = status;
+      row.getCell(2).value = s.count;
+      row.getCell(3).value = s.amount;
+      row.getCell(4).value = grandCount ? { formula: `B${r2}/B$${statusTotalRow}` } : 0;
+      paintDataCell(row.getCell(1), { zebra: idx % 2 === 1 });
+      paintDataCell(row.getCell(2), { zebra: idx % 2 === 1, align: "center" });
+      paintDataCell(row.getCell(3), { zebra: idx % 2 === 1, numFmt: PESO_FMT, align: "right" });
+      paintDataCell(row.getCell(4), { zebra: idx % 2 === 1, numFmt: "0.0%", align: "right" });
+      r2 += 1;
+    });
+    ws2.getRow(r2).values = [
+      "TOTAL",
+      { formula: `SUM(B5:B${r2 - 1})` },
+      { formula: `SUM(C5:C${r2 - 1})` },
+      { formula: `SUM(D5:D${r2 - 1})` },
+    ];
+    paintTotalRow(ws2, r2, 4, [3]);
+    setupSheet(ws2, {
+      freezeRow: 4,
+      filterFrom: { row: 4, column: 1 },
+      filterTo: { row: r2 - 1, column: 4 },
+    });
+
+    // ---- Sheet 3: By Service ----
+    const ws3 = wb.addWorksheet("By Service", { properties: { tabColor: { argb: "FF10B981" } } });
+    ws3.columns = [
+      { header: "", key: "v1", width: 36 },
+      { header: "", key: "v2", width: 16 },
+      { header: "", key: "v3", width: 18 },
+      { header: "", key: "v4", width: 18 },
+      { header: "", key: "v5", width: 18 },
+      { header: "", key: "v6", width: 18 },
+      { header: "", key: "v7", width: 18 },
+      { header: "", key: "v8", width: 20 },
+    ];
+    paintTitle(ws3, 1, 8, `Revenue by Service — ${clinicName}`);
+    ws3.getRow(2).values = ["Report period", period, "Generated on", generatedLabel, "", "", "", ""];
+    ws3.mergeCells(2, 2, 2, 3);
+    ws3.mergeCells(2, 4, 2, 8);
+    {
+      const row = ws3.getRow(2);
+      row.height = 18;
+      const vals = [null, "Report period", period, "Generated on", generatedLabel];
+      // Paint merged meta row simply: label cells shaded, value cells plain.
+      for (let c = 1; c <= 8; c += 1) {
+        const cell = row.getCell(c);
+        cell.font = { name: "Calibri", size: 10, bold: c === 1 || c === 4, color: { argb: INK } };
+        cell.border = thinBorder;
+        cell.alignment = { vertical: "middle", horizontal: "left" };
+        cell.fill = {
+          type: "pattern", pattern: "solid",
+          fgColor: { argb: c === 1 || c === 4 ? HEAD_FILL : PAPER },
+        };
+      }
+      row.getCell(1).value = vals[1];
+      row.getCell(2).value = vals[2];
+      row.getCell(4).value = vals[3];
+      row.getCell(5).value = vals[4];
+    }
+    paintSection(ws3, 3, 8, "3 · REVENUE BY SERVICE (amounts in PHP)");
+    ws3.getRow(4).values = ["Service", "Appointments", "Realized", "Scheduled", "Pending", "Lost", "Other", "Total"];
+    paintHeader(ws3, 4, 8);
+    const svcEntries = [...byService.entries()].sort((a, b) => b[1].total - a[1].total);
+    let r3 = 5;
+    svcEntries.forEach(([service, g], idx) => {
+      const row = ws3.getRow(r3);
+      row.height = 18;
+      row.getCell(1).value = service;
+      row.getCell(2).value = g.count;
+      row.getCell(3).value = g.realized;
+      row.getCell(4).value = g.scheduled;
+      row.getCell(5).value = g.pending;
+      row.getCell(6).value = g.lost;
+      row.getCell(7).value = g.other;
+      row.getCell(8).value = { formula: `SUM(C${r3}:G${r3})` };
+      const zebra = idx % 2 === 1;
+      paintDataCell(row.getCell(1), { zebra });
+      paintDataCell(row.getCell(2), { zebra, align: "center" });
+      [3, 4, 5, 6, 7, 8].forEach((c) =>
+        paintDataCell(row.getCell(c), { zebra, numFmt: PESO_FMT, align: "right" }),
+      );
+      r3 += 1;
+    });
+    {
+      const row = ws3.getRow(r3);
+      row.values = [
+        "TOTAL",
+        { formula: `SUM(B5:B${r3 - 1})` },
+        { formula: `SUM(C5:C${r3 - 1})` },
+        { formula: `SUM(D5:D${r3 - 1})` },
+        { formula: `SUM(E5:E${r3 - 1})` },
+        { formula: `SUM(F5:F${r3 - 1})` },
+        { formula: `SUM(G5:G${r3 - 1})` },
+        { formula: `SUM(H5:H${r3 - 1})` },
+      ];
+      paintTotalRow(ws3, r3, 8, [3, 4, 5, 6, 7, 8]);
+    }
+    setupSheet(ws3, {
+      freezeRow: 4,
+      filterFrom: { row: 4, column: 1 },
+      filterTo: { row: r3 - 1, column: 8 },
+    });
+
+    // ---- Sheet 4: Appointment details ----
+    const ws4 = wb.addWorksheet("Appointments", { properties: { tabColor: { argb: "FFF59E0B" } } });
+    ws4.columns = [
+      { header: "", key: "a0", width: 7 },
+      { header: "", key: "a1", width: 15 },
+      { header: "", key: "a2", width: 13 },
+      { header: "", key: "a3", width: 26 },
+      { header: "", key: "a4", width: 32 },
+      { header: "", key: "a5", width: 16 },
+      { header: "", key: "a6", width: 18 },
+      { header: "", key: "a7", width: 15 },
+    ];
+    paintTitle(ws4, 1, 8, `Appointment Details — ${clinicName} (${grandCount} rows)`);
+    ws4.getRow(2).values = ["Report period", period, "", "", "Generated on", generatedLabel, "", ""];
+    ws4.mergeCells(2, 2, 2, 4);
+    ws4.mergeCells(2, 6, 2, 8);
+    {
+      const row = ws4.getRow(2);
+      row.height = 18;
+      for (let c = 1; c <= 8; c += 1) {
+        const cell = row.getCell(c);
+        cell.font = { name: "Calibri", size: 10, bold: c === 1 || c === 5, color: { argb: INK } };
+        cell.border = thinBorder;
+        cell.alignment = { vertical: "middle", horizontal: "left" };
+        cell.fill = {
+          type: "pattern", pattern: "solid",
+          fgColor: { argb: c === 1 || c === 5 ? HEAD_FILL : PAPER },
+        };
+      }
+      row.getCell(1).value = "Report period";
+      row.getCell(2).value = period;
+      row.getCell(5).value = "Generated on";
+      row.getCell(6).value = generatedLabel;
+    }
+    paintSection(ws4, 3, 8, "4 · APPOINTMENT DETAILS");
+    ws4.getRow(4).values = ["#", "Date", "Time", "Patient", "Service", "Fee (PHP)", "Status", "Bucket"];
+    paintHeader(ws4, 4, 8);
+    const bucketLabel = { realized: "Realized", scheduled: "Scheduled", pending: "Pending", lost: "Lost", other: "Other" };
+    let r4 = 5;
+    rows.forEach((item, i) => {
+      const row = ws4.getRow(r4);
+      row.height = 17;
+      const zebra = i % 2 === 1;
+      row.getCell(1).value = i + 1;
+      row.getCell(2).value = item.date;
+      row.getCell(3).value = item.time;
+      row.getCell(4).value = item.patient;
+      row.getCell(5).value = item.service;
+      row.getCell(6).value = item.fee;
+      row.getCell(7).value = item.status;
+      row.getCell(8).value = bucketLabel[item.bucket] || "Other";
+      paintDataCell(row.getCell(1), { zebra, align: "center" });
+      paintDataCell(row.getCell(2), { zebra, align: "center" });
+      paintDataCell(row.getCell(3), { zebra, align: "center" });
+      paintDataCell(row.getCell(4), { zebra });
+      paintDataCell(row.getCell(5), { zebra });
+      paintDataCell(row.getCell(6), { zebra, numFmt: PESO_FMT, align: "right" });
+      paintDataCell(row.getCell(7), { zebra, align: "center" });
+      paintDataCell(row.getCell(8), {
+        zebra: false,
+        align: "center",
+        fill: BUCKET_FILL[item.bucket] || BUCKET_FILL.other,
+      });
+      // Keep zebra border for bucket cell while preserving its badge fill.
+      row.getCell(8).border = thinBorder;
+      row.getCell(8).font = { name: "Calibri", size: 10, bold: true, color: { argb: INK } };
+      r4 += 1;
+    });
+    {
+      const row = ws4.getRow(r4);
+      row.values = ["TOTAL", "", "", "", "", { formula: `SUM(F5:F${r4 - 1})` }, "", ""];
+      paintTotalRow(ws4, r4, 8, [6]);
+      row.getCell(1).alignment = { vertical: "middle", horizontal: "left" };
+    }
+    // Date column as text keeps "N/A" rows intact; real dates still sort correctly
+    // because the source list is pre-sorted before export.
+    setupSheet(ws4, {
+      freezeRow: 4,
+      filterFrom: { row: 4, column: 1 },
+      filterTo: { row: r4 - 1, column: 8 },
+    });
+
+    wb.views = [{ activeTab: 0 }];
+
+    // 3. Trigger the browser download as a genuine .xlsx file.
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const safeSlug = String(localStorage.getItem("activeClinicSlug") || "clinic").replace(/[^a-z0-9-_]+/gi, "-");
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `DentaCloud_${safeSlug}_Financial_Operations_Report_${dateStr}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    window.DashboardUI.toast(`Report exported: ${grandCount} appointment(s), 4 sheets (.xlsx).`, "success");
+  } catch (err) {
+    console.error("Excel export failed:", err);
+    window.DashboardUI.toast("Could not generate the Excel report. Please try again.", "error");
+  } finally {
+    if (exportBtn) {
+      exportBtn.disabled = false;
+      exportBtn.innerHTML = originalBtnHtml;
+    }
+  }
 }
 
 // Attach helpers to global window object
