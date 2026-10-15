@@ -25,6 +25,12 @@ const appointmentSchema = new mongoose.Schema(
       required: true,
       trim: true, // 💡 Dynamic fallback: strips accidental whitespaces automatically!
     },
+    // 🆕 MULTI-SERVICE: one appointment can hold many services (e.g. cleaning + braces)
+    // `service` is kept as legacy display / first-service fallback for old docs + old UI.
+    services: {
+      type: [String],
+      default: [],
+    },
     date: {
       type: String,
       // ⚠️ Optional: Walk-ins don't book a specific future date

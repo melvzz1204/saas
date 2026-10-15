@@ -29,6 +29,8 @@ import {
 import { sendVerificationEmail } from "../services/emailService.js";
 import { rateLimit } from "../middlewares/rateLimit.js";
 import { SubscriptionPlan } from "../models/billingModels.js";
+import DentalService from "../models/dentalServicePrice.js";
+import Appointment from "../models/appointmentModel.js";
 import { activatePaidSubscriptionForRegistration } from "../services/billing/billingService.js";
 
 const router = express.Router();
@@ -633,6 +635,63 @@ router.post("/register/check-email", checkEmailLimiter, async (req, res) => {
 // 🌐 ENDPOINT 2: Public Approved Clinic Directory
 // GET /api/v1/tenants/public
 // ==========================================
+// ==========================================
+// 🔍 SERVICE SEARCH: match a treatment/service, return approved clinics
+// offering it (ranked by booking evidence).
+// GET /api/v1/tenants/search-services?q=cleaning
+// ==========================================
+router.get("/search-services", async (req, res) => {
+  try {
+    const q = String(req.query.q || "").trim();
+    if (q.length < 2) {
+      return res.status(400).json({ success: false, message: "Type at least 2 characters to search." });
+    }
+    const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+
+    const services = await DentalService.find({
+      isAvailable: { $ne: false },
+      $or: [{ name: rx }, { description: rx }],
+    })
+      .select("slug name description basePricePhp")
+      .limit(10)
+      .lean();
+    if (!services.length) {
+      return res.status(200).json({ success: true, data: { services: [], clinics: [] } });
+    }
+    const serviceNames = services.map((s) => s.name);
+
+    const clinics = await Clinic.find({ applicationStatus: "Approved", isActive: true })
+      .select("name slug address description")
+      .sort({ createdAt: -1 })
+      .limit(12)
+      .lean();
+
+    // Booking evidence per clinic for the matched services (social proof ranking).
+    const evidence = await Appointment.aggregate([
+      {
+        $match: {
+          status: { $nin: ["cancelled", "Declined"] },
+          $or: [
+            { service: { $in: serviceNames } },
+            { services: { $in: serviceNames } },
+          ],
+        },
+      },
+      { $group: { _id: "$clinicId", bookings: { $sum: 1 } } },
+    ]);
+    const bookingsByClinic = new Map(evidence.map((e) => [String(e._id), e.bookings]));
+
+    const ranked = clinics
+      .map((c) => ({ ...c, bookings: bookingsByClinic.get(String(c._id)) || 0 }))
+      .sort((a, b) => b.bookings - a.bookings);
+
+    return res.status(200).json({ success: true, data: { services, clinics: ranked } });
+  } catch (error) {
+    console.error("Service Search Error:", error);
+    return res.status(500).json({ success: false, message: "Search failed. Please try again." });
+  }
+});
+
 router.get("/public", async (req, res) => {
   try {
     const clinics = await Clinic.find({
@@ -829,6 +888,70 @@ router.post(
       });
     } catch (error) {
       console.error("Document Upload Fault:", error);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  },
+);
+// Clinic administrators can replace their displayed permits anytime
+// (e.g. re-upload after storage loss). Replaces the set and preserves
+// the application status — these are the exact files shown on the
+// public landing page "Verified & Licensed" section.
+router.post(
+  "/:id/permit-docs",
+  protectRoute,
+  uploadDocuments.array("documents", 5),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const role = String(req.user?.role || "").toUpperCase();
+      const ownsClinic = String(req.user?.clinicId || req.clinicId || "") === String(id);
+      if (role !== "SUPER_ADMIN" && !(role === "CLINIC_ADMIN" && ownsClinic)) {
+        return res.status(403).json({
+          success: false,
+          message: "Only the clinic administrator can update permits.",
+        });
+      }
+      if (!req.files || req.files.length !== 2) {
+        return res.status(400).json({
+          success: false,
+          message: "Attach exactly two files: Business License first and Medical License second.",
+        });
+      }
+
+      const uploadedDocs = req.files.map((file, index) => ({
+        documentName: file.originalname,
+        documentType: index === 0 ? "Business License" : "Medical License",
+        fileUrl: `${req.protocol}://${req.get("host")}/uploads/documents/${file.filename}`,
+      }));
+
+      // Best-effort cleanup of the replaced files from local disk.
+      try {
+        const old = await Clinic.findById(id).select("submittedDocuments").lean();
+        (old?.submittedDocuments || []).forEach((doc) => {
+          const filename = String(doc?.fileUrl || "").split("/").pop();
+          if (!filename || filename.includes("..")) return;
+          const full = path.join(LANDING_UPLOAD_DIR, filename);
+          if (fs.existsSync(full)) fs.unlinkSync(full);
+        });
+      } catch (cleanupError) {
+        console.warn("Permit cleanup warning:", cleanupError.message);
+      }
+
+      const clinic = await Clinic.findByIdAndUpdate(
+        id,
+        { $set: { submittedDocuments: uploadedDocs } },
+        { new: true, runValidators: true },
+      );
+      if (!clinic) {
+        return res.status(404).json({ success: false, message: "Clinic not found." });
+      }
+      return res.status(200).json({
+        success: true,
+        message: "Permits updated. The new documents are now shown on your public landing page.",
+        data: clinic.submittedDocuments,
+      });
+    } catch (error) {
+      console.error("Permit Update Fault:", error);
       return res.status(500).json({ success: false, message: error.message });
     }
   },

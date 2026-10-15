@@ -89,12 +89,14 @@ async function loadClinicProfile(slug) {
   const full = fullResult?.data || {};
 
   renderClinicIdentity(clinicName);
+  renderTopVerifiedBadge(full);
   renderContactInfo(full);
   updateDOMText(
     "clinic-description",
     String(full.description || "Our clinic provides trusted, personalized care for every smile.").trim(),
   );
   renderHours(full.operatingHours);
+  renderPermits(full);
   applyLandingConfig(full);
 
   document.title = `${clinicName} | Book Your Appointment`;
@@ -161,8 +163,10 @@ function applyBranding(landing) {
   const rules = [];
   if (HEX_COLOR.test(primary)) {
     rules.push(
-      `.book-treatment-btn{background-color:${primary}!important;border-color:${primary}!important;}`,
-      `.book-treatment-btn:hover{filter:brightness(0.92);}`,
+      // NOTE: #final-book-btn is intentionally white-on-dark-gradient — keep it
+      // out of the brand-bg override so its dark text stays readable.
+      `.book-treatment-btn:not(#final-book-btn){background-color:${primary}!important;border-color:${primary}!important;}`,
+      `.book-treatment-btn:not(#final-book-btn):hover{filter:brightness(0.92);}`,
       `#clinic-tagline{color:${primary}!important;}`,
     );
   }
@@ -441,6 +445,146 @@ function showPreviewBanner() {
     "fixed bottom-0 inset-x-0 z-50 bg-amber-500 text-slate-900 text-xs font-bold text-center py-2 px-4";
   bar.textContent = "Preview mode — showing unpublished draft changes.";
   document.body.appendChild(bar);
+}
+
+// -------------------------------------------------------------------------
+// 🛡️ PERMITS / LEGITIMACY — "Verified & Licensed" section injected before
+// #visit so it appears on all landing templates (classic/split/scroll).
+// Shows the clinic's approved permit documents as trust proof.
+// -------------------------------------------------------------------------
+function escHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]));
+}
+
+function resolveDocUrl(raw) {
+  const url = String(raw || "").trim();
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url)) return url;
+  const base = String(API_BASE_URL || "").replace(/\/+$/, "");
+  return `${base}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
+function renderPermits(clinic) {
+  document.getElementById("clinic-permits")?.remove();
+  const anchor = document.getElementById("visit");
+  if (!anchor || !anchor.parentNode) return;
+
+  const docs = Array.isArray(clinic?.submittedDocuments) ? clinic.submittedDocuments : [];
+  const isApproved = String(clinic?.applicationStatus || "").toLowerCase() === "approved";
+  if (!isApproved && docs.length === 0) return;
+
+  // Only render documents that actually resolve — a stored URL whose file is
+  // gone (e.g. wiped ephemeral storage) must never show as a broken card.
+  resolveViewableDocs(docs).then((viewable) => {
+    if (!document.getElementById("visit")) return;
+    document.getElementById("clinic-permits")?.remove();
+    mountPermitsSection(anchor, viewable, isApproved, docs.length);
+  });
+}
+
+// HEAD-checks each permit URL (6s timeout). Unreachable files are dropped.
+async function resolveViewableDocs(docs) {
+  const checks = (docs || []).map(async (doc) => {
+    const url = resolveDocUrl(doc?.fileUrl);
+    if (!url) return null;
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 6000);
+      const res = await fetch(url, { method: "HEAD", signal: ctrl.signal });
+      clearTimeout(timer);
+      // Some static hosts reject HEAD — fall back to a ranged GET.
+      if (res.ok) return doc;
+      const get = await fetch(url, { method: "GET", headers: { Range: "bytes=0-0" } });
+      return get.ok ? doc : null;
+    } catch {
+      return null;
+    }
+  });
+  return (await Promise.all(checks)).filter(Boolean);
+}
+
+function mountPermitsSection(anchor, docs, isApproved, totalStored) {
+  const cards = (docs || [])
+    .map((doc) => {
+      const url = resolveDocUrl(doc?.fileUrl);
+      if (!url) return "";
+      const name = escHtml(doc?.documentName || doc?.documentType || "Permit");
+      const type = escHtml(doc?.documentType || "Verification Document");
+      const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)(\?.*)?$/i.test(url);
+      if (isImage) {
+        return `
+          <a href="${url}" target="_blank" rel="noopener" title="View full ${name}"
+             class="group block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-teal-300 transition-all">
+            <div class="aspect-[4/3] overflow-hidden bg-slate-100">
+              <img src="${url}" alt="${name}" loading="lazy" onerror="this.closest('a').style.display='none'"
+                   class="h-full w-full object-cover group-hover:scale-[1.03] transition-transform" />
+            </div>
+            <div class="p-3">
+              <p class="text-xs font-bold text-slate-800 truncate">📜 ${name}</p>
+              <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mt-0.5">${type} · tap to view</p>
+            </div>
+          </a>`;
+      }
+      return `
+        <a href="${url}" target="_blank" rel="noopener" title="Open ${name}"
+           class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md hover:border-teal-300 transition-all">
+          <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rose-50 border border-rose-100 text-xl" aria-hidden="true">📄</span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-xs font-bold text-slate-800 truncate">📜 ${name}</span>
+            <span class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mt-0.5">${type}</span>
+          </span>
+          <span class="shrink-0 rounded-lg bg-slate-900 px-3 py-2 text-[11px] font-bold text-white">View</span>
+        </a>`;
+    })
+    .join("");
+
+  const section = document.createElement("section");
+  section.id = "clinic-permits";
+  section.className = "scroll-mt-24 py-10 sm:py-12";
+  section.setAttribute("aria-label", "Clinic permits and verification");
+  section.innerHTML = `
+    <div class="mx-auto max-w-5xl px-4 sm:px-6">
+      <div class="rounded-3xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-6 sm:p-8 shadow-sm">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500 text-white text-xl shadow-md shadow-emerald-500/30" aria-hidden="true">🛡️</span>
+          <div class="min-w-0 flex-1">
+            <h2 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Verified &amp; Licensed Clinic</h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">Legit clinic — approval and permit documents on file. Tap any document to inspect it.</p>
+          </div>
+          ${isApproved ? `<span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500 px-3.5 py-1.5 text-[11px] font-black uppercase tracking-wider text-white shadow-sm">✓ Verified Clinic</span>` : ""}
+        </div>
+        ${cards ? `<div class="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">${cards}</div>` : `<p class="mt-4 text-xs text-slate-500 italic">${totalStored > 0 ? "Permit files are being refreshed — copies are also available at the clinic front desk." : "Permit copies are available at the clinic front desk."}</p>`}
+      </div>
+    </div>`;
+  anchor.parentNode.insertBefore(section, anchor);
+}
+
+// -------------------------------------------------------------------------
+// ✅ TOP VERIFIED BADGE — injected right under the hero clinic title on all
+// landing templates. Shows for Approved clinics so legitimacy is visible
+// immediately without scrolling.
+// -------------------------------------------------------------------------
+function renderTopVerifiedBadge(clinic) {
+  document.getElementById("top-verified-badge")?.remove();
+  const title = document.getElementById("clinic-title");
+  if (!title || !title.parentNode) return;
+  const isApproved = String(clinic?.applicationStatus || "").toLowerCase() === "approved";
+  if (!isApproved) return;
+
+  const badge = document.createElement("p");
+  badge.id = "top-verified-badge";
+  badge.className = "mt-3";
+  badge.innerHTML = `
+    <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500 px-3.5 py-1.5 text-[11px] font-black uppercase tracking-wider text-white shadow-md shadow-emerald-500/30">
+      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+      </svg>
+      Verified Clinic
+    </span>
+    <span class="ml-2 text-[11px] font-semibold text-slate-400">Licensed &amp; approved permits on file</span>`;
+  title.parentNode.insertBefore(badge, title.nextSibling);
 }
 
 function renderContactInfo(clinic) {

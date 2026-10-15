@@ -158,9 +158,11 @@ async function fetchClinicName() {
 
 // 2. Fetch Live Dynamic Pricing & Populate UI Form/Ledger
 async function syncDynamicPricingElements() {
-  const serviceSelect = document.getElementById("booking-service");
+  const serviceBox = document.getElementById("booking-services");
+  const serviceSelect = document.getElementById("booking-service"); // legacy fallback
   const pricingLedgerBody = document.getElementById("pricing-ledger-body");
   const formPriceIndicator = document.getElementById("form-price-indicator");
+  const countIndicator = document.getElementById("service-count-indicator");
 
   try {
     const { data: resData } = await AppFeedback.request(API_PRICING_URL);
@@ -179,6 +181,9 @@ async function syncDynamicPricingElements() {
     );
 
     if (!services || services.length === 0) {
+      if (serviceBox)
+        serviceBox.innerHTML =
+          '<p class="text-xs text-slate-400 italic">No active services available for booking</p>';
       if (serviceSelect)
         serviceSelect.innerHTML =
           '<option value="" disabled selected>No active services available for booking</option>';
@@ -188,21 +193,63 @@ async function syncDynamicPricingElements() {
       return;
     }
 
+    const fmtPhp = (n) =>
+      `₱${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    const refreshTotal = () => {
+      const checked = serviceBox
+        ? serviceBox.querySelectorAll('input[type="checkbox"]:checked')
+        : [];
+      let total = 0;
+      checked.forEach((b) => {
+        total += Number(b.getAttribute("data-price-num") || 0);
+      });
+      if (formPriceIndicator) formPriceIndicator.textContent = fmtPhp(total);
+      if (countIndicator) countIndicator.textContent = `${checked.length} selected`;
+      if (typeof window.updateMultiServiceTotal === "function" && !serviceBox) {
+        // noop — inline helper handles its own DOM query
+      }
+    };
+
+    if (serviceBox) {
+      serviceBox.innerHTML = services
+        .map((service) => {
+          const priceNum = Number(service.basePricePhp || 0);
+          return `<label class="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-3 py-2.5 cursor-pointer hover:border-teal-300 hover:bg-teal-50/40 transition-all has-checked:border-teal-500 has-checked:bg-teal-50/60 has-checked:ring-2 has-checked:ring-teal-500/20">
+            <input type="checkbox" name="booking-services" value="${escAttr(service.name)}" data-price-num="${priceNum}"
+              class="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer shrink-0" />
+            <span class="flex-1 min-w-0">
+              <span class="block text-sm font-bold text-slate-800 truncate">${escAttr(service.name)}</span>
+              <span class="block text-[11px] text-slate-400 truncate">${escAttr(service.description || "")}</span>
+            </span>
+            <span class="text-xs font-black text-slate-900 whitespace-nowrap">${fmtPhp(priceNum)}</span>
+          </label>`;
+        })
+        .join("");
+      serviceBox.querySelectorAll('input[type="checkbox"]').forEach((box) => {
+        box.addEventListener("change", () => {
+          refreshTotal();
+          if (typeof window.updateMultiServiceTotal === "function") window.updateMultiServiceTotal();
+        });
+      });
+      refreshTotal();
+    }
+
     if (serviceSelect) {
       serviceSelect.innerHTML =
         '<option value="" disabled selected>-- Select an available service --</option>' +
         services
           .map((service) => {
-            const formattedPrice = `₱${Number(service.basePricePhp).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            return `<option value="${service.name}" data-price="${formattedPrice}">${service.name}</option>`;
+            const formattedPrice = fmtPhp(service.basePricePhp);
+            return `<option value="${escAttr(service.name)}" data-price="${formattedPrice}">${escAttr(service.name)}</option>`;
           })
           .join("");
 
-      // Update price indicator when selection changes
+      // Update price indicator when selection changes (legacy single-select)
       serviceSelect.addEventListener("change", (e) => {
         const selectedOption =
           serviceSelect.options[serviceSelect.selectedIndex];
-        if (selectedOption && formPriceIndicator) {
+        if (selectedOption && formPriceIndicator && !serviceBox) {
           formPriceIndicator.textContent =
             selectedOption.getAttribute("data-price") || "₱0.00";
         }
@@ -317,6 +364,13 @@ function renderDoctorName(booking) {
   return booking.dentistName || "To be assigned";
 }
 
+function getBookingServices(booking) {
+  if (Array.isArray(booking.services) && booking.services.length)
+    return booking.services;
+  if (booking.service) return [booking.service];
+  return ["General Consultation"];
+}
+
 function renderBookingsList(appointmentsList) {
   const container = appointmentsCards;
   if (!container) return;
@@ -383,11 +437,11 @@ function renderBookingsList(appointmentsList) {
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">
           <div class="flex items-center gap-2 mb-1">
-            <span class="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Service</span>
+            <span class="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Service${getBookingServices(booking).length > 1 ? "s" : ""} (${getBookingServices(booking).length})</span>
             <span class="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase ${badge.cls}">${badge.label}</span>
           </div>
-          <h3 class="text-base font-black text-slate-900">${booking.service || "General Consultation"}</h3>
-          <p class="text-xs text-slate-500 mt-0.5">${renderDoctorName(booking)}</p>
+          <div class="flex flex-wrap gap-1.5 mt-1">${getBookingServices(booking).map((sv) => `<span class="inline-flex items-center bg-teal-50 border border-teal-200 text-teal-800 text-[11px] font-bold px-2.5 py-1 rounded-lg">${escAttr(sv)}</span>`).join("")}</div>
+          <p class="text-xs text-slate-500 mt-1.5">${renderDoctorName(booking)}</p>
         </div>
         <div class="text-right shrink-0">
           <p class="text-sm font-black text-slate-800">${dt.date}</p>
@@ -426,7 +480,7 @@ function renderBookingsList(appointmentsList) {
               }
               ${
                 reschedulable
-                  ? `<button type="button" data-resched-id="${booking._id}" data-service="${escAttr(booking.service || "")}" class="btn-rs btn-base text-xs px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100">Reschedule</button>`
+                  ? `<button type="button" data-resched-id="${booking._id}" data-service="${escAttr(getBookingServices(booking).join(" + "))}" class="btn-rs btn-base text-xs px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100">Reschedule</button>`
                   : ""
               }
               ${
@@ -1044,6 +1098,70 @@ async function loadPatientClinicalHistory() {
   } catch (error) {
     console.error("❌ Error loading clinical history:", error);
   }
+  await loadMyPrescriptions();
+}
+
+// 💊 Patient's own prescriptions (reseta from dentist)
+async function loadMyPrescriptions() {
+  const container = document.getElementById("my-prescriptions-container");
+  if (!container || !isLoggedIn) return;
+  try {
+    const response = await fetch(window.apiUrl("/api/v1/prescriptions/my-prescriptions"), {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-clinic-id": DYNAMIC_CLINIC_ID,
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || "Unable to load prescriptions.");
+    renderMyPrescriptions(result.data || []);
+  } catch (error) {
+    console.error("❌ Error loading prescriptions:", error);
+  }
+}
+
+function renderMyPrescriptions(list) {
+  const container = document.getElementById("my-prescriptions-container");
+  if (!container) return;
+  if (!Array.isArray(list) || list.length === 0) {
+    container.innerHTML = "";
+    return;
+  }
+  const dateFmt = (d) => {
+    const dt = new Date(d);
+    return isNaN(dt.getTime()) ? "" : dt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
+  const dentistName = (rx) => {
+    const d = rx.dentistId;
+    if (d && typeof d === "object") return d.fullName ? `Dr. ${d.fullName}` : "Your dentist";
+    return "Your dentist";
+  };
+  container.innerHTML =
+    `<h3 class="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">💊 My Prescriptions</h3>` +
+    list.map((rx) => `
+      <div class="bg-teal-50/60 border border-teal-200/70 rounded-2xl p-5 shadow-xs space-y-3">
+        <div class="flex justify-between items-start gap-3">
+          <div>
+            <span class="text-[10px] font-black text-teal-700 bg-teal-100/70 border border-teal-200 px-2.5 py-1 rounded-md uppercase tracking-wider">${dateFmt(rx.createdAt)}</span>
+            ${rx.diagnosis ? `<p class="text-xs font-bold text-slate-700 mt-2">Diagnosis: ${rx.diagnosis}</p>` : ""}
+          </div>
+          <div class="text-right shrink-0">
+            <p class="text-xs font-bold text-slate-800">${dentistName(rx)}</p>
+            <p class="text-[10px] text-slate-400">${rx.dentistId?.specialization || ""}</p>
+          </div>
+        </div>
+        <div class="space-y-2">
+          ${(rx.medications || []).map((m, i) => `
+            <div class="bg-white border border-slate-200/80 rounded-xl p-3">
+              <p class="text-sm font-black text-slate-900">${i + 1}. ${m.name}${m.dosage ? ` — ${m.dosage}` : ""}</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">${[m.frequency, m.duration ? "for " + m.duration : "", m.quantity ? "Qty: " + m.quantity : ""].filter(Boolean).join(" · ")}</p>
+              ${m.instructions ? `<p class="text-[11px] text-teal-800 italic mt-0.5">Sig: ${m.instructions}</p>` : ""}
+            </div>`).join("")}
+        </div>
+        ${rx.advice ? `<div class="bg-sky-50/70 p-3 rounded-xl border border-sky-100/80"><p class="text-xs text-sky-900 italic">💡 ${rx.advice}</p></div>` : ""}
+      </div>`).join("");
 }
 
 // 7. Submit New Appointment Action
@@ -1067,10 +1185,23 @@ if (bookingForm) {
       return;
     }
 
+    const checkedBoxes = Array.from(
+      document.querySelectorAll('#booking-services input[type="checkbox"]:checked'),
+    ).map((b) => b.value);
+    // legacy single-select fallback (if old HTML cached)
+    const legacySingle = document.getElementById("booking-service")?.value || "";
+    const serviceList = [...new Set([...checkedBoxes, ...(legacySingle ? [legacySingle] : [])].map((s) => String(s).trim()).filter(Boolean))];
+
+    if (!serviceList.length) {
+      window.Toast?.warning("Please select at least 1 service (e.g. cleaning + braces).");
+      return;
+    }
+
     const payload = {
       patientId: verifiedPatientId,
       dentistId: document.getElementById("booking-dentist").value,
-      service: document.getElementById("booking-service").value,
+      services: serviceList,
+      service: serviceList[0],
       date: selectedDateStr,
       time: selectedTimeStr,
     };
@@ -1093,9 +1224,14 @@ if (bookingForm) {
 
       if (response.ok) {
         window.Toast?.success(
-          "Appointment request submitted! Awaiting administrator approval.",
+          `Appointment request submitted (${serviceList.join(" + ")})! Awaiting administrator approval.`,
         );
         bookingForm.reset();
+        if (typeof window.updateMultiServiceTotal === "function") window.updateMultiServiceTotal();
+        const priceEl = document.getElementById("form-price-indicator");
+        if (priceEl) priceEl.textContent = "₱0.00";
+        const cntEl = document.getElementById("service-count-indicator");
+        if (cntEl) cntEl.textContent = "0 selected";
         await loadPatientBookings();
       } else {
         window.Toast?.error(`Booking failed: ${result.message}`);

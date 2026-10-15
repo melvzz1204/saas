@@ -194,7 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <span class="text-xs font-bold text-slate-800">${patientName}</span>
       <div class="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
         <span class="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">${app.time || "No Time Set"}</span>
-        <span class="truncate">${app.service || "General Consult"}</span>
+        <span class="truncate">${(Array.isArray(app.services) && app.services.length ? app.services.join(" + ") : null) || app.service || "General Consult"}</span>
       </div>
     </div>
     <button onclick="executeLobbyCheckIn('${app._id || app.id}')"
@@ -451,7 +451,7 @@ document.addEventListener("DOMContentLoaded", () => {
         patientName = app.patientName || app.firstName || patientName;
       }
 
-      const procedure = app.service || app.treatmentName || "Consultation";
+      const procedure = (Array.isArray(app.services) && app.services.length ? app.services.join(" + ") : null) || app.service || app.treatmentName || "Consultation";
 
       let doctorName = "Unassigned Operator";
       if (app.doctorName) {
@@ -704,7 +704,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <td class="p-3 text-sm font-semibold text-slate-800">${patientDisplayName.trim()}</td>
         <td class="p-3 text-sm text-slate-600 font-medium">${dateString}</td>
         <td class="p-3 text-sm font-mono text-slate-600">${app.time || "TBD"}</td>
-        <td class="p-3 text-sm text-slate-600">${app.service || app.treatmentName || "Consultation"}</td>
+        <td class="p-3 text-sm text-slate-600">${(Array.isArray(app.services) && app.services.length ? app.services.join(" + ") : null) || app.service || app.treatmentName || "Consultation"}</td>
         <td class="p-3">
           <span class="text-[11px] font-bold bg-blue-50 text-blue-600 border border-blue-200 px-2.5 py-0.5 rounded-full uppercase tracking-wider">${app.status}</span>
         </td>

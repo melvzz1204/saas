@@ -123,6 +123,7 @@ export const protectStaffRoute = (req, res, next) => {
       "SUPER_ADMIN",
       "CLINIC_ADMIN",
       "CLINIC_STAFF",
+      "STAFF",
       "DENTIST",
     ];
 

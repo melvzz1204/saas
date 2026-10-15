@@ -167,6 +167,7 @@ export const loginAdmin = async (req, res) => {
       "SUPER_ADMIN",
       "CLINIC_ADMIN",
       "CLINIC_STAFF",
+      "STAFF",
       "DENTIST",
     ];
 

@@ -8,7 +8,7 @@ import Clinic from "../models/clinicModel.js";
 export const bookAppointment = async (req, res) => {
   try {
     // 🆕 ADDED: Extract dentistId from req.body
-    const { patientId, service, date, time, dentistId } = req.body;
+    const { patientId, service, services, date, time, dentistId } = req.body;
 
     let rawClinicId =
       req.body.clinicId || req.headers["x-clinic-id"] || req.clinicId;
@@ -20,7 +20,19 @@ export const bookAppointment = async (req, res) => {
     const clinicId = String(rawClinicId || "").trim();
     const cleanPatientId = String(patientId || "").trim();
 
-    if (!clinicId || !cleanPatientId || !service || !date || !time) {
+    // 🆕 MULTI-SERVICE: normalize `services[]` + legacy `service` into one array
+    const normalizeServices = (single, multi) => {
+      const out = [];
+      if (Array.isArray(multi)) out.push(...multi);
+      else if (typeof multi === "string" && multi.trim()) out.push(multi);
+      if (single && typeof single === "string" && single.trim())
+        out.push(single);
+      // dedupe + trim + drop empties
+      return [...new Set(out.map((s) => String(s).trim()).filter(Boolean))];
+    };
+    const serviceList = normalizeServices(service, services);
+
+    if (!clinicId || !cleanPatientId || !serviceList.length || !date || !time) {
       return res.status(400).json({
         success: false,
         message: "Missing required booking details or tenant headers.",
@@ -47,7 +59,8 @@ export const bookAppointment = async (req, res) => {
       clinicId: new mongoose.Types.ObjectId(clinicId),
       patientId: new mongoose.Types.ObjectId(cleanPatientId),
       dentistId: validDentistId, // 🆕 ADDED: Save it to the database!
-      service,
+      service: serviceList[0],
+      services: serviceList,
       date,
       time,
       status: "Pending",
@@ -109,7 +122,15 @@ export const getPatientAppointments = async (req, res) => {
 
     const serviceNames = [
       ...new Set(
-        appointments.map((a) => a.service).filter(Boolean),
+        appointments.flatMap((a) => {
+          const list =
+            Array.isArray(a.services) && a.services.length
+              ? a.services
+              : a.service
+                ? [a.service]
+                : [];
+          return list;
+        }).filter(Boolean),
       ),
     ];
     const services = serviceNames.length
@@ -122,14 +143,25 @@ export const getPatientAppointments = async (req, res) => {
       priceByService[s.name] = s.basePricePhp;
     });
 
+    const getServiceList = (a) =>
+      Array.isArray(a.services) && a.services.length
+        ? a.services
+        : a.service
+          ? [a.service]
+          : [];
+    const sumServicePrices = (list) =>
+      list.reduce((sum, n) => sum + Number(priceByService[n] ?? 0), 0);
+
     const data = appointments.map((a) => {
       const raw = a.toJSON();
+      // 🆕 Always expose normalized services[] for new multi-service UI
+      raw.services = getServiceList(a);
       const tx = treatmentByAppointment[String(a._id)];
       const txPendingBill =
         tx && String(tx.status || "").toUpperCase() === "COMPLETED_PENDING_BILL";
       const requiresPayment = Boolean(txPendingBill);
       const amount = Number(
-        tx?.billingAmount ?? priceByService[a.service] ?? 0,
+        tx?.billingAmount ?? sumServicePrices(raw.services) ?? 0,
       );
       return {
         ...raw,
@@ -449,6 +481,12 @@ export const updateAppointmentStatus = async (req, res) => {
         : null;
 
       try {
+        const serviceList =
+          Array.isArray(appointment.services) && appointment.services.length
+            ? appointment.services
+            : appointment.service
+              ? [appointment.service]
+              : [];
         await Treatment.findOneAndUpdate(
           { appointmentId: appointment._id },
           {
@@ -456,7 +494,7 @@ export const updateAppointmentStatus = async (req, res) => {
             dentistId: validDentist,
             patientName: pName,
             procedureName:
-              appointment.service ||
+              serviceList.join(" + ") ||
               appointment.treatmentName ||
               "General Consultation",
             status: "IN_CHAIR",
@@ -517,7 +555,7 @@ export const updateAppointmentStatus = async (req, res) => {
 // 8. Create Standard Appointment
 export const createAppointment = async (req, res) => {
   try {
-    const { date, time, service, patientId, clinicId } = req.body;
+    const { date, time, service, services, patientId, clinicId } = req.body;
     const appointmentDateTime = new Date(`${date} ${time}`);
     const systemNow = new Date();
 
@@ -528,10 +566,17 @@ export const createAppointment = async (req, res) => {
       });
     }
 
+    const rawList = Array.isArray(services) ? services : service ? [service] : [];
+    const serviceList = [...new Set(rawList.map((s) => String(s).trim()).filter(Boolean))];
+    if (!serviceList.length) {
+      return res.status(400).json({ success: false, message: "At least one service is required." });
+    }
+
     const newAppointment = await Appointment.create({
       clinicId,
       patientId,
-      service,
+      service: serviceList[0],
+      services: serviceList,
       date,
       time,
       status: "Pending",
@@ -575,10 +620,19 @@ export const settlePayment = async (req, res) => {
       if (existingTreatment && existingTreatment.billingAmount) {
         calculatedBilling = existingTreatment.billingAmount;
       } else {
-        const matchedService = await DentalService.findOne({
-          name: updatedAppointment.service,
-        });
-        calculatedBilling = matchedService ? matchedService.basePricePhp : 0;
+        const serviceList =
+          Array.isArray(updatedAppointment.services) && updatedAppointment.services.length
+            ? updatedAppointment.services
+            : updatedAppointment.service
+              ? [updatedAppointment.service]
+              : [];
+        const matchedServices = serviceList.length
+          ? await DentalService.find({ name: { $in: serviceList } }).select("basePricePhp").lean()
+          : [];
+        calculatedBilling = matchedServices.reduce(
+          (sum, s) => sum + Number(s.basePricePhp || 0),
+          0,
+        );
       }
     }
 

@@ -272,18 +272,19 @@
                                 </select>
                             </div>
 
-                            <!-- SERVICE -->
+                            <!-- SERVICE (multi-select checkboxes) -->
                             <div>
-                                <label for="booking-service" class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Select Service</label>
-                                <select id="booking-service" required onchange="updateFormPriceIndicator(this)"
-                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-sm font-medium text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20 transition-all cursor-pointer">
-                                    <option value="" disabled selected>Retrieving treatments...</option>
-                                </select>
+                                <span class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Select Service/s <span class="text-slate-400 normal-case">(you can select multiple services)</span></span>
+                                <div id="booking-services"
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 space-y-2 max-h-56 overflow-y-auto">
+                                    <p class="text-xs text-slate-400 italic">Retrieving treatments...</p>
+                                </div>
+                                <p class="mt-1.5 text-[11px] text-slate-400"><span id="service-count-indicator" class="font-bold text-slate-600">0 selected</span> · tick cleaning + braces in one booking</p>
                             </div>
 
-                            <!-- PRICE INDICATOR -->
+                            <!-- PRICE INDICATOR (total) -->
                             <div class="bg-indigo-50/70 border border-indigo-100 rounded-xl p-3.5 flex justify-between items-center text-sm">
-                                <span class="font-bold text-indigo-800/80 uppercase text-[10px] tracking-wider">Price:</span>
+                                <span class="font-bold text-indigo-800/80 uppercase text-[10px] tracking-wider">Total Price:</span>
                                 <span id="form-price-indicator" class="font-black text-indigo-700 text-base">₱0.00</span>
                             </div>
 
@@ -417,6 +418,7 @@
                             <p class="text-xs text-slate-500 mt-1">Review your past treatments and care notes.</p>
                         </div>
                         <div class="p-5 lg:p-6">
+                            <div id="my-prescriptions-container" class="space-y-4 mb-6"></div>
                             <div id="my-history-container" class="space-y-4"></div>
                         </div>
                     </div>
@@ -559,9 +561,24 @@
         })();
 
         function updateFormPriceIndicator(selectElement) {
+            // Legacy single-select fallback — kept so old cached JS doesn't break.
+            // New multi-checkbox UI is handled by updateMultiServiceTotal() in patientDashboard.js
+            if (!selectElement || !selectElement.options) return;
             const selectedOption = selectElement.options[selectElement.selectedIndex];
+            if (!selectedOption) return;
             const price = selectedOption.getAttribute('data-price') || "₱0.00";
-            document.getElementById('form-price-indicator').textContent = price;
+            const el = document.getElementById('form-price-indicator');
+            if (el) el.textContent = price;
+        }
+
+        function updateMultiServiceTotal() {
+            const boxes = document.querySelectorAll('#booking-services input[type="checkbox"]:checked');
+            let total = 0;
+            boxes.forEach(b => { total += Number(b.getAttribute('data-price-num') || 0); });
+            const el = document.getElementById('form-price-indicator');
+            if (el) el.textContent = `₱${total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const cnt = document.getElementById('service-count-indicator');
+            if (cnt) cnt.textContent = `${boxes.length} selected`;
         }
     </script>
 

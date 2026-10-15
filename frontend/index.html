@@ -71,6 +71,25 @@
 
     <main id="main">
 
+        <!-- Service search strip (sticky under nav): find treatments, see clinics offering them -->
+        <div style="position: sticky; top: var(--header-h, 72px); z-index: 40; background: rgba(10, 15, 20, 0.82); backdrop-filter: blur(14px); border-bottom: 1px solid var(--border);">
+            <div class="container" style="padding-block: 10px;">
+                <div id="service-search" style="position: relative; max-width: 720px; margin-inline: auto;">
+                    <label class="sr-only" for="service-search-input">Search dental services</label>
+                    <div style="display: flex; gap: var(--sp-2);">
+                        <input id="service-search-input" class="input" type="search" autocomplete="off"
+                            placeholder="🔍 Search services"
+                            aria-expanded="false" aria-controls="service-search-results-list" role="combobox"
+                            aria-autocomplete="list" style="flex: 1;" />
+                        <button type="button" id="service-search-btn" class="btn btn-primary">Search</button>
+                    </div>
+                    <ul id="service-search-results-list" role="listbox" aria-label="Matching services"
+                        style="position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; right: 0; margin: 0; padding: 6px; list-style: none; background: var(--surface, #fff); border: 1px solid var(--border, #e2e8f0); border-radius: 12px; box-shadow: 0 18px 40px -18px rgba(2,6,23,.35); max-height: 300px; overflow-y: auto;"
+                        hidden></ul>
+                </div>
+            </div>
+        </div>
+
         <!-- ============================================================
              HERO
              ============================================================ -->
@@ -92,7 +111,8 @@
                     <p class="lead">
                         DentaCloud is the all-in-one web app for booking, patient records, staff schedules, and a live
                         treatment board made for small clinics, at a flat
-                        <strong style="color: var(--text);">₱3,000</strong> per branch per month.
+                        <strong style="color: var(--text);">₱3,000</strong> per branch per month —
+                        or <a href="#pricing" style="color: var(--accent); font-weight: 700;">₱25,000/year promo (save ₱11,000) 🎉</a>.
                     </p>
 
                     <div class="hero-ctas">
@@ -168,6 +188,20 @@
                         Reminder sent to patient
                     </span>
                 </div>
+            </div>
+        </section>
+
+        <!-- ============================================================
+             SERVICE SEARCH RESULTS (clinics offering the searched service)
+             ============================================================ -->
+        <section id="service-results" class="section" style="padding-block: clamp(2rem, 5vw, 3.5rem);" hidden>
+            <div class="container">
+                <div class="section-head">
+                    <span class="eyebrow">Search results</span>
+                    <h2 class="section-title" id="service-results-title">Clinics offering this service</h2>
+                    <p class="lead" id="service-results-sub">Verified clinics where you can book this treatment.</p>
+                </div>
+                <div id="service-results-grid" class="grid grid-3" style="gap: var(--sp-5);"></div>
             </div>
         </section>
 
@@ -392,31 +426,92 @@
                     <span class="eyebrow">Pricing</span>
                     <h2 class="section-title">One plan. Everything included.</h2>
                     <p class="lead">No per-seat fees, no hidden surcharges, no feature lockups. Just one flat price per
-                        branch.</p>
+                        branch — <strong>mas tipid pag yearly.</strong></p>
                 </div>
 
-                <div class="reveal" style="max-width: 560px; margin-inline: auto;">
-                    <div class="card pricing-card">
-                        <span class="badge badge-emerald" style="margin-bottom: var(--sp-4);">Most popular</span>
-                        <h3 style="font-size: var(--fs-2xl);">Full-Access Branch Plan</h3>
-                        <p class="price-line">
-                            <span class="stat-value" style="font-size: clamp(2.5rem, 6vw, 3.25rem);">₱3,000</span>
-                            <span class="price-period">/ branch / month</span>
-                        </p>
+                <div class="reveal" style="max-width: 960px; margin-inline: auto;">
+                    <div style="display: grid; grid-template-columns: 1fr; gap: var(--sp-5);">
+                        <style>
+                            @media (min-width: 820px) {
+                                .promo-grid { grid-template-columns: 1fr 1.15fr !important; align-items: stretch; }
+                            }
+                            .promo-glow {
+                                border-color: rgba(45, 212, 191, 0.65) !important;
+                                box-shadow: 0 0 0 1px rgba(45,212,191,.35), 0 18px 50px -18px rgba(45,212,191,.45);
+                                position: relative;
+                                overflow: hidden;
+                            }
+                            .promo-ribbon {
+                                position: absolute; top: 14px; right: -42px;
+                                transform: rotate(35deg);
+                                background: linear-gradient(90deg, #14b8a6, #6366f1);
+                                color: #fff; font-weight: 800; font-size: 11px;
+                                letter-spacing: .12em; text-transform: uppercase;
+                                padding: 6px 48px;
+                                box-shadow: 0 6px 18px rgba(20,184,166,.4);
+                            }
+                            .price-strike { color: var(--text-3); text-decoration: line-through; font-weight: 600; font-size: var(--fs-sm); }
+                            .save-pill {
+                                display: inline-block; margin-top: 6px;
+                                background: rgba(16,185,129,.14); color: #10b981;
+                                border: 1px solid rgba(16,185,129,.35);
+                                font-weight: 800; font-size: 12px; letter-spacing: .04em;
+                                padding: 4px 12px; border-radius: 999px;
+                            }
+                        </style>
+                        <div class="promo-grid" style="display: grid; grid-template-columns: 1fr; gap: var(--sp-5);">
+                            <!-- MONTHLY -->
+                            <div class="card pricing-card" style="display:flex; flex-direction:column;">
+                                <h3 style="font-size: var(--fs-2xl);">Monthly</h3>
+                                <p class="price-note" style="margin-top:4px;">Flexible · cancel anytime</p>
+                                <p class="price-line">
+                                    <span class="stat-value" style="font-size: clamp(2.2rem, 5vw, 2.75rem);">₱3,000</span>
+                                    <span class="price-period">/ branch / month</span>
+                                </p>
+                                <ul class="plan-list">
+                                    <li class="chip">✓ Live real-time appointment board</li>
+                                    <li class="chip">✓ Online booking &amp; automated reminders</li>
+                                    <li class="chip">✓ Unlimited patient profiles &amp; charts</li>
+                                    <li class="chip">✓ Public clinic page with pricing &amp; reviews</li>
+                                    <li class="chip">✓ Walk-in management &amp; daily reports</li>
+                                </ul>
+                                <button type="button" class="btn btn-secondary btn-lg btn-block" data-auth="register"
+                                    style="margin-top: var(--sp-6);">
+                                    Start monthly
+                                </button>
+                                <p class="price-note">No credit card required to apply.</p>
+                            </div>
 
-                        <ul class="plan-list">
-                            <li class="chip">✓ Live real-time appointment board</li>
-                            <li class="chip">✓ Online booking &amp; automated reminders</li>
-                            <li class="chip">✓ Unlimited patient profiles &amp; charts</li>
-                            <li class="chip">✓ Public clinic page with pricing &amp; reviews</li>
-                            <li class="chip">✓ Walk-in management &amp; daily reports</li>
-                        </ul>
+                            <!-- YEARLY PROMO -->
+                            <div class="card pricing-card promo-glow" style="display:flex; flex-direction:column;">
+                                <span class="promo-ribbon" aria-hidden="true">Save ₱11k</span>
+                                <span class="badge badge-emerald" style="margin-bottom: var(--sp-3); align-self:center;">🎉 1-Year Promo · Best Value</span>
+                                <h3 style="font-size: var(--fs-2xl);">Full-Access Branch Plan</h3>
+                                <p style="margin-top:4px;">
+                                    <span class="price-strike">₱36,000 / year</span><br>
+                                    <span class="stat-value" style="font-size: clamp(2.5rem, 6vw, 3.25rem);">₱25,000</span>
+                                    <span class="price-period">/ branch / year</span>
+                                </p>
+                                <span class="save-pill">SAVE ₱11,000 · ₱2,083/mo · 2+ months FREE</span>
+                                <p id="promo-countdown" role="status" aria-live="polite"
+                                    style="margin-top:10px; font-size:12px; font-weight:800; letter-spacing:.03em; color:#b45309; background:rgba(251,191,36,.14); border:1px dashed rgba(251,191,36,.6); border-radius:10px; padding:8px 12px;">
+                                    ⏳ Promo ends in <span id="promo-countdown-timer">…</span>
+                                </p>
 
-                        <button type="button" class="btn btn-primary btn-lg btn-block" data-auth="register"
-                            style="margin-top: var(--sp-6);">
-                            Register your clinic
-                        </button>
-                        <p class="price-note">No credit card required to apply.</p>
+                                <ul class="plan-list">
+                                    <li class="chip">✓ Everything in Monthly, locked for 12 months</li>
+                                    <li class="chip">✓ Priority onboarding &amp; approval</li>
+                                    <li class="chip">✓ Price-locked — no increases for 1 year</li>
+                                    <li class="chip">✓ 1 invoice / year, less hassle sa books</li>
+                                </ul>
+
+                                <button type="button" class="btn btn-primary btn-lg btn-block" data-auth="register"
+                                    style="margin-top: var(--sp-6);">
+                                    Claim 1-Year Promo
+                                </button>
+                                <p class="price-note">No credit card required to apply. Billed yearly after approval.</p>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Security / trust badges -->
@@ -441,6 +536,16 @@
                 </div>
 
                 <div class="reveal">
+                    <details class="faq-item">
+                        <summary>Is there a 1-year promo?</summary>
+                        <div class="faq-body">
+                            <p>Yes. Yearly is <strong>₱25,000 per branch</strong> instead of ₱36,000 — you save
+                                <strong>₱11,000</strong> (about ₱2,083/mo, 2+ months free). Same full-access plan,
+                                price-locked for 12 months, one invoice per year. You can switch monthly ↔ yearly
+                                anytime from My Subscription.</p>
+                        </div>
+                    </details>
+
                     <details class="faq-item">
                         <summary>How long does clinic approval take?</summary>
                         <div class="faq-body">
@@ -847,6 +952,255 @@
     <script src="./src/components/paymongoCheckout.js"></script>
     <script src="./src/util/landingAuth.js"></script>
     <script src="./src/pages/publicClinics.js"></script>
+    <script>
+        // Service search: autocomplete treatments, list clinics offering them.
+        (function () {
+            var input = document.getElementById("service-search-input");
+            var btn = document.getElementById("service-search-btn");
+            var list = document.getElementById("service-search-results-list");
+            var section = document.getElementById("service-results");
+            var grid = document.getElementById("service-results-grid");
+            var title = document.getElementById("service-results-title");
+            var sub = document.getElementById("service-results-sub");
+            if (!input || !list) return;
+
+            var API = window.apiUrl("/");
+            var catalog = null;
+            var clinicDir = null;
+
+            function esc(s) {
+                return String(s || "").replace(/[&<>"']/g, function (c) {
+                    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+                });
+            }
+            function peso(n) {
+                return "₱" + Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+
+            async function getCatalog() {
+                if (catalog) return catalog;
+                var res = await fetch(window.apiUrl("/api/v1/dental-price/services"));
+                var out = await res.json().catch(function () { return {}; });
+                catalog = ((out && out.data) || []).filter(function (s) { return s.isAvailable !== false; });
+                return catalog;
+            }
+
+            async function getClinics() {
+                if (clinicDir) return clinicDir;
+                var res = await fetch(window.apiUrl("/api/v1/tenants/public"));
+                var out = await res.json().catch(function () { return {}; });
+                clinicDir = (out && out.data) || [];
+                return clinicDir;
+            }
+
+            function closeList() {
+                list.hidden = true;
+                input.setAttribute("aria-expanded", "false");
+            }
+
+            function rowStyle() {
+                return 'padding: 10px 12px; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; align-items: center;';
+            }
+            function hoverAttrs() {
+                return 'onmouseover="this.style.background=\'var(--surface-2,#f1f5f9)\'" onmouseout="this.style.background=\'\'"';
+            }
+            function groupLabel(text) {
+                return '<li aria-hidden="true" style="padding: 8px 12px 2px; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3);">' + text + '</li>';
+            }
+
+            async function suggest() {
+                var q = input.value.trim();
+                if (q.length < 2) { closeList(); return; }
+                // Backend matches services AND ranks clinics offering them.
+                var out = await fetch(window.apiUrl("/api/v1/tenants/search-services?q=" + encodeURIComponent(q)))
+                    .then(function (r) { return r.json().catch(function () { return {}; }); })
+                    .catch(function () { return {}; });
+                var services = (out && out.data && out.data.services) || [];
+                var clinics = (out && out.data && out.data.clinics) || [];
+                // Fallback: direct clinic-name matches from cached directory.
+                if (!clinics.length) {
+                    var dir = await getClinics().catch(function () { return []; });
+                    var ql = q.toLowerCase();
+                    clinics = dir.filter(function (c) {
+                        return ((c.name || "") + " " + (c.slug || "")).toLowerCase().indexOf(ql) !== -1;
+                    }).slice(0, 5).map(function (c) { c.bookings = 0; return c; });
+                }
+                var html = "";
+                if (services.length) {
+                    html += groupLabel("Matched service" + (services.length > 1 ? "s" : ""));
+                    html += services.slice(0, 3).map(function (s) {
+                        return '<li data-search-service="' + esc(s.name) + '" tabindex="0" style="' + rowStyle() + '" ' + hoverAttrs() + '>'
+                            + '<span><strong>🦷 ' + esc(s.name) + '</strong><br><small style="color: var(--text-3);">' + esc((s.description || "").slice(0, 60)) + '</small></span>'
+                            + '<span style="font-weight: 800; white-space: nowrap;">' + peso(s.basePricePhp) + '</span></li>';
+                    }).join("");
+                }
+                if (clinics.length) {
+                    var svcName = services.length ? services[0].name : "";
+                    var svcPrice = services.length ? peso(services[0].basePricePhp) : "";
+                    html += groupLabel(svcName ? "Clinics offering “" + esc(svcName) + "”" : "Clinics");
+                    html += clinics.slice(0, 5).map(function (c) {
+                        var proof = c.bookings > 0 ? c.bookings + " booking" + (c.bookings === 1 ? "" : "s") : "Now accepting";
+                        return '<li role="option" data-clinic="' + esc(c.slug || "") + '" tabindex="0" style="' + rowStyle() + '" ' + hoverAttrs() + '>'
+                            + '<span><strong>🏥 ' + esc(c.name) + '</strong><br><small style="color: var(--text-3);">' + esc(proof) + (svcPrice ? " · <strong>" + svcPrice + "</strong>" : "") + '</small></span>'
+                            + '<span style="font-weight: 800; white-space: nowrap; color: var(--accent);">Visit →</span></li>';
+                    }).join("");
+                    html += '<li data-show-all="1" tabindex="0" style="' + rowStyle() + ' justify-content: center;" ' + hoverAttrs() + '>'
+                        + '<span style="font-weight: 800; color: var(--accent);">Show all results for “' + esc(q) + '” ↓</span></li>';
+                }
+                if (!html) {
+                    html = '<li style="padding: 10px 12px; font-size: var(--fs-sm); color: var(--text-3);">No matches found.</li>';
+                }
+                list.innerHTML = html;
+                list.hidden = false;
+                input.setAttribute("aria-expanded", "true");
+            }
+
+            function goClinic(slug) {
+                if (!slug) return;
+                window.location.href = "/clinicHomePage.html?clinic=" + encodeURIComponent(slug);
+            }
+
+            list.addEventListener("click", function (e) {
+                var cli = e.target.closest("[data-clinic]");
+                if (cli) {
+                    closeList();
+                    goClinic(cli.dataset.clinic);
+                    return;
+                }
+                var svc = e.target.closest("[data-search-service]");
+                if (svc) {
+                    input.value = svc.dataset.searchService;
+                    closeList();
+                    runSearch();
+                    return;
+                }
+                if (e.target.closest("[data-show-all]")) {
+                    closeList();
+                    runSearch();
+                }
+            });
+            list.addEventListener("keydown", function (e) {
+                if (e.key !== "Enter" && e.key !== " ") return;
+                var cli = e.target.closest("[data-clinic]");
+                if (cli) {
+                    e.preventDefault();
+                    closeList();
+                    goClinic(cli.dataset.clinic);
+                    return;
+                }
+                var svc = e.target.closest("[data-search-service]");
+                if (svc) {
+                    e.preventDefault();
+                    input.value = svc.dataset.searchService;
+                    closeList();
+                    runSearch();
+                    return;
+                }
+                if (e.target.closest("[data-show-all]")) {
+                    e.preventDefault();
+                    closeList();
+                    runSearch();
+                }
+            });
+
+            var debounce = null;
+            input.addEventListener("input", function () {
+                clearTimeout(debounce);
+                debounce = setTimeout(suggest, 350);
+            });
+            input.addEventListener("keydown", function (e) {
+                if (e.key === "Escape") closeList();
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    var first = !list.hidden && list.querySelector("[data-clinic], [data-search-service]");
+                    if (first && first.hasAttribute("data-clinic")) {
+                        var slug = first.dataset.clinic;
+                        closeList();
+                        goClinic(slug);
+                        return;
+                    }
+                    if (first) input.value = first.dataset.searchService;
+                    closeList();
+                    runSearch();
+                }
+            });
+            document.addEventListener("click", function (e) {
+                if (!document.getElementById("service-search").contains(e.target)) closeList();
+            });
+            btn.addEventListener("click", function () { closeList(); runSearch(); });
+
+            async function runSearch() {
+                var q = input.value.trim();
+                if (q.length < 2 || !section || !grid) return;
+                grid.innerHTML = '<div class="clinic-card" style="grid-column: 1 / -1; text-align: center; padding-block: var(--sp-8);"><p style="color: var(--text-3); font-size: var(--fs-sm);" role="status">Searching clinics…</p></div>';
+                section.hidden = false;
+                try {
+                    var res = await fetch(window.apiUrl("/api/v1/tenants/search-services?q=" + encodeURIComponent(q)));
+                    var out = await res.json();
+                    if (!res.ok || !out.success) throw new Error((out && out.message) || "Search failed.");
+                    var services = out.data.services || [];
+                    var clinics = out.data.clinics || [];
+                    var label = services.length ? services[0].name : q;
+                    title.textContent = 'Clinics offering "' + label + '"';
+                    sub.textContent = services.length > 1
+                        ? "Also matches: " + services.slice(1, 4).map(function (s) { return s.name; }).join(", ")
+                        : (services[0] ? services[0].description + " · " + peso(services[0].basePricePhp) : "Verified clinics where you can book this treatment.");
+                    if (!clinics.length) {
+                        grid.innerHTML = '<div class="clinic-card" style="grid-column: 1 / -1; text-align: center; padding-block: var(--sp-8);"><p style="color: var(--text-2); font-size: var(--fs-sm);">No clinics found for this service yet.</p></div>';
+                    } else {
+                        grid.innerHTML = clinics.map(function (c) {
+                            var slug = encodeURIComponent(c.slug || "");
+                            var initials = esc((c.name || "NC").split(/\s+/).slice(0, 2).map(function (w) { return w[0]; }).join("").toUpperCase());
+                            var proof = c.bookings > 0 ? c.bookings + " booking" + (c.bookings === 1 ? "" : "s") : "Now accepting";
+                            var price = services.length ? peso(services[0].basePricePhp) : "";
+                            return '<article class="clinic-card">'
+                                + '<div class="clinic-card-head"><span class="avatar" aria-hidden="true">' + initials + '</span>'
+                                + '<span class="badge badge-emerald"><span aria-hidden="true">✓</span> Verified clinic</span></div>'
+                                + "<h3>" + esc(c.name) + "</h3>"
+                                + '<p class="clinic-slug">' + esc(label) + (price ? " · <strong>" + price + "</strong>" : "") + " · " + esc(proof) + "</p>"
+                                + '<div class="clinic-card-foot"><span>' + esc((c.address || "Visit clinic").slice(0, 40)) + "</span>"
+                                + '<a href="/clinicHomePage.html?clinic=' + slug + '">Book ' + esc(label.split(" ")[0]) + " →</a></div></article>";
+                        }).join("");
+                    }
+                } catch (err) {
+                    grid.innerHTML = '<div class="clinic-card" style="grid-column: 1 / -1; text-align: center; padding-block: var(--sp-8);"><p style="color: var(--text-2); font-size: var(--fs-sm);">Search failed — please try again.</p></div>';
+                }
+                section.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        })();
+    </script>
+    <script>
+        // 1-Year Promo countdown — evergreen 7 days per visitor (stored in localStorage,
+        // auto-rolls a fresh 7 days on expiry so it never shows as expired).
+        (function () {
+            var el = document.getElementById("promo-countdown");
+            var timer = document.getElementById("promo-countdown-timer");
+            if (!el || !timer) return;
+            var KEY = "dentacloud_promo_deadline";
+            var SEVEN_DAYS = 7 * 864e5;
+            var deadline = parseInt(localStorage.getItem(KEY) || "0", 10);
+            if (!deadline || isNaN(deadline) || deadline - Date.now() > SEVEN_DAYS) {
+                deadline = Date.now() + SEVEN_DAYS;
+                try { localStorage.setItem(KEY, String(deadline)); } catch (e) {}
+            }
+            var pad = function (n) { return String(n).padStart(2, "0"); };
+            function tick() {
+                var diff = deadline - Date.now();
+                if (diff <= 0) {
+                    deadline = Date.now() + SEVEN_DAYS;
+                    try { localStorage.setItem(KEY, String(deadline)); } catch (e) {}
+                    diff = deadline - Date.now();
+                }
+                var d = Math.floor(diff / 864e5);
+                var h = Math.floor(diff / 36e5) % 24;
+                var m = Math.floor(diff / 6e4) % 60;
+                var s = Math.floor(diff / 1e3) % 60;
+                timer.textContent = d + "d : " + pad(h) + "h : " + pad(m) + "m : " + pad(s) + "s";
+                setTimeout(tick, 1000);
+            }
+            tick();
+        })();
+    </script>
 </body>
 
 </html>

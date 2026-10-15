@@ -1991,6 +1991,41 @@
                         </div>
                     </div>
                 </form>
+
+                <!-- ═══════ CLINIC PERMITS (shown on public landing page) ═══════ -->
+                <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                🛡️ Clinic Permits
+                                <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Shown publicly</span>
+                            </h3>
+                            <p class="text-[13px] text-slate-500 mt-1">These exact files appear in the "Verified &amp; Licensed" section of your public landing page. Re-upload both to replace them.</p>
+                        </div>
+                    </div>
+                    <div id="permits-current" class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <p class="text-xs text-slate-400 italic">Loading current permits…</p>
+                    </div>
+                    <form id="permits-form" class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="permits-business" class="block text-[13px] font-semibold text-slate-700 mb-1.5">Business License <span class="text-rose-500">*</span></label>
+                            <input type="file" id="permits-business" accept=".pdf,.jpg,.jpeg,.png,.webp" required
+                                class="w-full text-[13px] text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-900 file:text-white file:text-xs file:font-bold hover:file:bg-slate-700 file:cursor-pointer" />
+                        </div>
+                        <div>
+                            <label for="permits-medical" class="block text-[13px] font-semibold text-slate-700 mb-1.5">Medical License <span class="text-rose-500">*</span></label>
+                            <input type="file" id="permits-medical" accept=".pdf,.jpg,.jpeg,.png,.webp" required
+                                class="w-full text-[13px] text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-900 file:text-white file:text-xs file:font-bold hover:file:bg-slate-700 file:cursor-pointer" />
+                        </div>
+                        <div class="sm:col-span-2 flex items-center gap-3">
+                            <button type="submit" id="permits-submit"
+                                class="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-700 text-white text-xs font-bold px-5 py-2.5 rounded-lg transition-all cursor-pointer">
+                                Update Permits
+                            </button>
+                            <p id="permits-feedback" class="text-xs font-semibold hidden"></p>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             <!-- ═══════ TESTIMONIALS MODERATION ═══════ -->

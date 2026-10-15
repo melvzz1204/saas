@@ -80,6 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (gatedLogoutBtn) gatedLogoutBtn.addEventListener("click", handleLogout);
 
   setupLandingBuilder();
+  initPermitsCard();
 
   // Deep link support: opening the dashboard with #/landing-page jumps
   // straight to the merged landing/profile editor.
@@ -134,6 +135,117 @@ async function fetchClinicMetadata() {
   } catch (err) {
     console.error("Failed to load landing editor settings:", err);
   }
+}
+
+// =========================================================================
+// 🛡️ CLINIC PERMITS CARD (public landing page "Verified & Licensed")
+// =========================================================================
+function permitsFeedback(message, type = "info") {
+  const el = document.getElementById("permits-feedback");
+  if (!el) return;
+  el.classList.remove("hidden");
+  el.textContent = message;
+  el.className = `text-xs font-semibold ${type === "error" ? "text-rose-600" : type === "success" ? "text-emerald-600" : "text-slate-500"}`;
+}
+
+function renderPermitsCurrent(docs) {
+  const box = document.getElementById("permits-current");
+  if (!box) return;
+  const list = Array.isArray(docs) ? docs : [];
+  if (!list.length) {
+    box.innerHTML = `<p class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3 sm:col-span-2">⚠️ No permits on file — upload both below so patients can verify your clinic.</p>`;
+    return;
+  }
+  box.innerHTML = "";
+  list.forEach((doc) => {
+    const url = doc?.fileUrl || "";
+    const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)(\?.*)?$/i.test(url);
+    const card = document.createElement(isImage ? "div" : "a");
+    card.className = "rounded-xl border border-slate-200 overflow-hidden bg-slate-50";
+    if (!isImage) {
+      card.href = url;
+      card.target = "_blank";
+      card.rel = "noopener";
+    }
+    const label = document.createElement("p");
+    label.className = "text-[11px] font-bold text-slate-700 px-3 pt-2.5";
+    label.textContent = `📜 ${doc?.documentType || "Permit"}`;
+    card.appendChild(label);
+    if (isImage) {
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = doc?.documentType || "Permit";
+      img.loading = "lazy";
+      img.className = "mt-2 w-full aspect-[4/3] object-cover bg-white";
+      img.onerror = () => {
+        card.innerHTML = "";
+        const warn = document.createElement("p");
+        warn.className = "text-[11px] text-rose-600 p-3";
+        warn.textContent = `⚠️ ${doc?.documentType || "Permit"} file is missing on the server — re-upload below.`;
+        card.appendChild(warn);
+      };
+      card.appendChild(img);
+    } else {
+      const link = document.createElement("p");
+      link.className = "text-[11px] text-indigo-600 font-semibold px-3 pb-2.5 mt-0.5";
+      link.textContent = "Open PDF ↗";
+      card.appendChild(link);
+    }
+    box.appendChild(card);
+  });
+}
+
+async function loadPermitsCurrent() {
+  if (!clinicId) return;
+  try {
+    const response = await fetch(window.apiUrl(`/api/v1/tenants/${clinicId}`), {
+      headers: { Authorization: `Bearer ${token}`, "x-clinic-id": clinicId },
+    });
+    const result = await response.json();
+    if (response.ok && result.success) renderPermitsCurrent(result.data?.submittedDocuments);
+  } catch (err) {
+    console.error("Failed to load current permits:", err);
+  }
+}
+
+function initPermitsCard() {
+  const form = document.getElementById("permits-form");
+  if (!form || form.dataset.bound) return;
+  form.dataset.bound = "true";
+  loadPermitsCurrent();
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const businessFile = document.getElementById("permits-business")?.files?.[0];
+    const medicalFile = document.getElementById("permits-medical")?.files?.[0];
+    const submitBtn = document.getElementById("permits-submit");
+    if (!businessFile || !medicalFile) {
+      permitsFeedback("Attach both files first.", "error");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("documents", businessFile);
+    formData.append("documents", medicalFile);
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Uploading…";
+    permitsFeedback("Uploading permits…", "info");
+    try {
+      const upload = await fetch(window.apiUrl(`/api/v1/tenants/${clinicId}/permit-docs`), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "x-clinic-id": clinicId },
+        body: formData,
+      });
+      const result = await upload.json();
+      if (!upload.ok || !result.success) throw new Error(result.message || "Upload failed.");
+      permitsFeedback("✅ Permits updated — now visible on your public landing page.", "success");
+      form.reset();
+      renderPermitsCurrent(result.data);
+    } catch (error) {
+      permitsFeedback(error.message || "Upload failed.", "error");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Update Permits";
+    }
+  });
 }
 
 async function fetchApplicationStatus() {
@@ -1054,7 +1166,8 @@ function bookingPatientName(appt) {
 
 function notifyNewBooking(appt) {
   const when = [appt.date, appt.time].filter(Boolean).join(" @ ");
-  const detail = [appt.service || appt.reason || "General Consultation", when]
+  const svc = (Array.isArray(appt.services) && appt.services.length ? appt.services.join(" + ") : null) || appt.service || appt.reason || "General Consultation";
+  const detail = [svc, when]
     .filter(Boolean)
     .join(" · ");
   const message = `New booking: ${bookingPatientName(appt)}${detail ? ` — ${detail}` : ""}`;
@@ -1160,7 +1273,7 @@ function renderAppointmentsTable(appointments) {
       }
 
       const calculatedService =
-        appt.service || appt.reason || "General Consultation";
+        (Array.isArray(appt.services) && appt.services.length ? appt.services.join(" + ") : null) || appt.service || appt.reason || "General Consultation";
       let statusClass =
         "bg-amber-500/10 text-amber-400 border border-amber-500/20";
 
@@ -1725,7 +1838,7 @@ async function generateClinicReportExcel() {
   try {
     // 1. Normalize every appointment into one row object (exactly one bucket).
     const rows = globalAppointmentsData.map((appt) => {
-      const serviceName = appt.service || appt.reason || "General Consultation";
+      const serviceName = (Array.isArray(appt.services) && appt.services.length ? appt.services.join(" + ") : null) || appt.service || appt.reason || "General Consultation";
       const fee = reportFeeFor(serviceName);
       const { bucket, label } = reportClassifyStatus(appt.status);
       return {

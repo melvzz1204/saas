@@ -78,6 +78,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // 4. Form Action Processing Submission Bind
   bindProcedureSubmission();
   bindXrayReferral();
+  bindPrescription();
   bindPatientIntakeReview();
 
   // 5. Navigation scroll-spy for the workspace rail
@@ -370,6 +371,9 @@ async function hydrateActiveChairView(patient) {
 
   // 2. EXTRACT PROCEDURE NAME
   activeProcedureName =
+    (Array.isArray(patient.services) && patient.services.length
+      ? patient.services.join(" + ")
+      : null) ||
     patient.procedureName ||
     patient.service ||
     patient.treatmentName ||
@@ -782,7 +786,7 @@ window.renderDentistQueue = function (queue) {
         patientName = app.patientName || app.firstName || "Walk-In Patient";
       }
 
-      const procedure = app.service || app.treatmentName || "Consultation";
+      const procedure = (Array.isArray(app.services) && app.services.length ? app.services.join(" + ") : null) || app.service || app.treatmentName || "Consultation";
 
       const card = document.createElement("div");
       card.className = `p-4 rounded-xl border transition-all flex flex-col gap-2 ${
@@ -1173,6 +1177,282 @@ function downloadReferralPdf(values) {
 function escapeReferralText(value = "") {
   const text = String(value);
   return text.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
+}
+
+// ============================================================
+// 💊 PATIENT PRESCRIPTION (RESeta)
+// ============================================================
+
+// ============================================================
+// 💊 PATIENT PRESCRIPTION (RESeta)
+// ============================================================
+let rxHistoryCache = [];
+
+function rxSession() {
+  const { token, userData, clinicId, staffId } = getStoredSession();
+  return { token, userData, clinicId, dentistId: staffId };
+}
+
+function bindPrescription() {
+  document.getElementById("write-rx-btn")?.addEventListener("click", openRxModal);
+  document.getElementById("close-rx-modal")?.addEventListener("click", closeRxModal);
+  document.getElementById("cancel-rx")?.addEventListener("click", closeRxModal);
+  document.getElementById("rx-modal")?.addEventListener("click", (e) => {
+    if (e.target.id === "rx-modal") closeRxModal();
+  });
+  document.getElementById("rx-add-med")?.addEventListener("click", () => addMedRow());
+  document.getElementById("rx-form")?.addEventListener("submit", submitRxForm);
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    const modal = document.getElementById("rx-modal");
+    if (modal && !modal.classList.contains("hidden")) closeRxModal();
+  });
+  // Delegated actions inside the issued-prescriptions list
+  document.getElementById("rx-history-list")?.addEventListener("click", async (e) => {
+    const dlBtn = e.target.closest("[data-rx-pdf]");
+    const cxBtn = e.target.closest("[data-rx-cancel]");
+    if (dlBtn) {
+      const rx = rxHistoryCache.find((r) => String(r._id) === dlBtn.dataset.rxPdf);
+      if (rx) downloadRxPdf(rx);
+    } else if (cxBtn) {
+      await cancelRx(cxBtn.dataset.rxCancel);
+    }
+  });
+}
+
+function openRxModal() {
+  if (!activePatientId) {
+    notify("Load a patient into the chair before writing a prescription.", "warning");
+    return;
+  }
+  const modal = document.getElementById("rx-modal");
+  if (!modal) return;
+  const name = document.getElementById("active-patient-name")?.textContent?.trim() || "Active patient";
+  document.getElementById("rx-patient-name").textContent = name;
+  document.getElementById("rx-diagnosis").value = "";
+  document.getElementById("rx-advice").value = "";
+  document.getElementById("rx-meds").innerHTML = "";
+  addMedRow();
+  modal.classList.remove("hidden");
+  document.body.classList.add("overflow-hidden");
+  loadRxHistory();
+}
+
+function closeRxModal() {
+  document.getElementById("rx-modal")?.classList.add("hidden");
+  const anyOpen = ["queue-modal", "history-modal", "patient-intake-review", "xray-referral-modal"].some(
+    (mid) => !document.getElementById(mid)?.classList.contains("hidden"),
+  );
+  if (!anyOpen) document.body.classList.remove("overflow-hidden");
+}
+
+function addMedRow(prefill = {}) {
+  const wrap = document.getElementById("rx-meds");
+  if (!wrap) return;
+  const row = document.createElement("div");
+  row.className = "rx-med-row grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-50 border border-slate-200 rounded-xl p-3";
+  const val = (k) => String(prefill[k] || "").replace(/"/g, "&quot;");
+  row.innerHTML = `
+    <input data-m="name" class="referral-input sm:col-span-2" placeholder="Medicine name *" value="${val("name")}" />
+    <input data-m="dosage" class="referral-input" placeholder="Dosage (e.g. 500mg)" value="${val("dosage")}" />
+    <input data-m="frequency" class="referral-input" placeholder="Frequency (e.g. 3x a day)" value="${val("frequency")}" />
+    <input data-m="duration" class="referral-input" placeholder="Duration (e.g. 7 days)" value="${val("duration")}" />
+    <div class="flex gap-2">
+      <input data-m="quantity" class="referral-input" placeholder="Qty (e.g. 21 caps)" value="${val("quantity")}" />
+      <button type="button" class="rx-remove shrink-0 w-10 rounded-lg border border-rose-200 text-rose-500 hover:bg-rose-50 font-black cursor-pointer" title="Remove">×</button>
+    </div>
+    <input data-m="instructions" class="referral-input sm:col-span-3" placeholder="Instructions (e.g. Take after meals)" value="${val("instructions")}" />`;
+  row.querySelector(".rx-remove").addEventListener("click", () => {
+    if (wrap.children.length > 1) row.remove();
+    else notify("At least one medicine row is required.", "warning");
+  });
+  wrap.appendChild(row);
+}
+
+function collectMeds() {
+  const meds = [];
+  document.querySelectorAll("#rx-meds .rx-med-row").forEach((row) => {
+    const get = (k) => row.querySelector(`[data-m="${k}"]`)?.value.trim() || "";
+    const name = get("name");
+    if (!name) return;
+    meds.push({ name, dosage: get("dosage"), frequency: get("frequency"), duration: get("duration"), quantity: get("quantity"), instructions: get("instructions") });
+  });
+  return meds;
+}
+
+async function submitRxForm(e) {
+  e.preventDefault();
+  const { token, clinicId, dentistId } = rxSession();
+  const meds = collectMeds();
+  if (!meds.length) {
+    notify("Add at least one medicine with a name.", "error");
+    return;
+  }
+  const patientName = document.getElementById("active-patient-name")?.textContent?.trim() || "";
+  const btn = document.getElementById("save-rx-btn");
+  try {
+    btn.disabled = true;
+    btn.textContent = "Saving... ⏳";
+    const res = await fetch(window.apiUrl("/api/v1/prescriptions"), {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "x-clinic-id": clinicId },
+      body: JSON.stringify({
+        clinicId, dentistId, patientId: activePatientId, patientName,
+        appointmentId: activeSessionId,
+        diagnosis: document.getElementById("rx-diagnosis").value.trim(),
+        medications: meds,
+        advice: document.getElementById("rx-advice").value.trim(),
+      }),
+    });
+    const out = await res.json();
+    if (!res.ok) throw new Error(out.message || "Failed to save prescription.");
+    notify("Prescription saved to patient record. 💊", "success");
+    document.getElementById("rx-diagnosis").value = "";
+    document.getElementById("rx-advice").value = "";
+    document.getElementById("rx-meds").innerHTML = "";
+    addMedRow();
+    await loadRxHistory();
+  } catch (err) {
+    notify(err.message, "error");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Save Prescription 💊";
+  }
+}
+
+async function loadRxHistory() {
+  const list = document.getElementById("rx-history-list");
+  if (!list || !activePatientId) return;
+  const { token, clinicId } = rxSession();
+  list.innerHTML = `<p class="text-xs text-slate-400">Loading...</p>`;
+  try {
+    const res = await fetch(window.apiUrl(`/api/v1/prescriptions/patient/${activePatientId}`), {
+      headers: { Authorization: `Bearer ${token}`, "x-clinic-id": clinicId },
+    });
+    const out = await res.json();
+    if (!res.ok) throw new Error(out.message || "Failed to load prescriptions.");
+    rxHistoryCache = out.data || [];
+    if (!rxHistoryCache.length) {
+      list.innerHTML = `<p class="text-xs text-slate-400 italic">No prescriptions issued yet for this patient.</p>`;
+      return;
+    }
+    list.innerHTML = "";
+    rxHistoryCache.forEach((rx) => {
+      const meds = (rx.medications || []).map((m) => m.name).filter(Boolean).join(", ");
+      const date = rx.createdAt ? new Date(rx.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+      const cancelled = rx.status === "Cancelled";
+      const item = document.createElement("div");
+      item.className = `flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2.5 ${cancelled ? "border-slate-200 bg-slate-50 opacity-70" : "border-teal-200 bg-teal-50/50"}`;
+      item.innerHTML = `
+        <div class="flex-1 min-w-[180px]">
+          <p class="text-xs font-bold text-slate-800">${meds || "Prescription"} ${cancelled ? '<span class="text-rose-500">(Cancelled)</span>' : ""}</p>
+          <p class="text-[10px] text-slate-400">${date}${rx.diagnosis ? " · " + rx.diagnosis : ""}</p>
+        </div>
+        <button type="button" data-rx-pdf="${rx._id}" class="text-[11px] font-bold text-sky-700 bg-white border border-sky-200 px-3 py-1.5 rounded-lg hover:bg-sky-50 cursor-pointer">PDF ⬇</button>
+        ${cancelled ? "" : `<button type="button" data-rx-cancel="${rx._id}" class="text-[11px] font-bold text-rose-600 bg-white border border-rose-200 px-3 py-1.5 rounded-lg hover:bg-rose-50 cursor-pointer">Cancel</button>`}`;
+      list.appendChild(item);
+    });
+  } catch (err) {
+    list.innerHTML = `<p class="text-xs text-rose-600">${err.message}</p>`;
+  }
+}
+
+async function cancelRx(id) {
+  const { token, clinicId } = rxSession();
+  try {
+    const res = await fetch(window.apiUrl(`/api/v1/prescriptions/${id}/cancel`), {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "x-clinic-id": clinicId },
+    });
+    const out = await res.json();
+    if (!res.ok) throw new Error(out.message || "Failed to cancel.");
+    notify("Prescription cancelled.", "success");
+    await loadRxHistory();
+  } catch (err) {
+    notify(err.message, "error");
+  }
+}
+
+function downloadRxPdf(rx) {
+  const JsPdf = window.jspdf?.jsPDF;
+  if (!JsPdf) {
+    notify("PDF download is unavailable. Please refresh the page and try again.", "error");
+    return;
+  }
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const clinicName = localStorage.getItem("clinicName") || user.clinicName || "Dental Clinic";
+  const dentistName = localStorage.getItem("staffName") || `${user.firstName || ""} ${user.lastName || ""}`.trim() || rx.dentistId?.fullName || "Dentist";
+  const license = user.licenseNumber || localStorage.getItem("staffLicenseNumber") || "Not provided";
+  const patientName = rx.patientName || document.getElementById("active-patient-name")?.textContent?.trim() || "Patient";
+  const dateStr = rx.createdAt ? new Date(rx.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : new Date().toLocaleDateString();
+
+  const pdf = new JsPdf({ unit: "mm", format: "a5", orientation: "portrait" });
+  const margin = 12;
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const contentWidth = pageWidth - margin * 2;
+  let y = 12;
+  const ensureSpace = (h = 12) => { if (y + h > pageHeight - margin) { pdf.addPage(); y = margin; } };
+
+  pdf.setFillColor(13, 148, 136);
+  pdf.roundedRect(margin, y, contentWidth, 22, 2, 2, "F");
+  pdf.setFont("helvetica", "bold"); pdf.setFontSize(15); pdf.setTextColor(255, 255, 255);
+  pdf.text(clinicName, margin + 5, y + 8);
+  pdf.setFont("helvetica", "normal"); pdf.setFontSize(8);
+  pdf.text("MEDICAL PRESCRIPTION", margin + 5, y + 14);
+  pdf.setFontSize(7);
+  pdf.text(`Date: ${dateStr}`, pageWidth - margin - 42, y + 10);
+  y += 29;
+
+  pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(13, 148, 136);
+  pdf.text("PATIENT", margin, y); y += 5;
+  pdf.setFont("helvetica", "normal"); pdf.setFontSize(10); pdf.setTextColor(15, 23, 42);
+  pdf.text(patientName, margin, y); y += 8;
+
+  if (rx.diagnosis) {
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(13, 148, 136);
+    pdf.text("DIAGNOSIS", margin, y); y += 5;
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(10); pdf.setTextColor(15, 23, 42);
+    const dl = pdf.splitTextToSize(rx.diagnosis, contentWidth);
+    pdf.text(dl, margin, y); y += dl.length * 4.5 + 4;
+  }
+
+  pdf.setFont("helvetica", "bold"); pdf.setFontSize(14); pdf.setTextColor(13, 148, 136);
+  pdf.text("Rx", margin, y); y += 6;
+  (rx.medications || []).forEach((m, i) => {
+    ensureSpace(20);
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(10); pdf.setTextColor(15, 23, 42);
+    pdf.text(`${i + 1}. ${m.name || ""}${m.dosage ? " " + m.dosage : ""}`, margin + 2, y); y += 4.5;
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(8); pdf.setTextColor(71, 85, 105);
+    const parts = [m.frequency, m.duration && `for ${m.duration}`, m.quantity && `Qty: ${m.quantity}`].filter(Boolean).join(" · ");
+    if (parts) { pdf.text(parts, margin + 6, y); y += 4; }
+    if (m.instructions) {
+      const il = pdf.splitTextToSize(`Sig: ${m.instructions}`, contentWidth - 6);
+      pdf.text(il, margin + 6, y); y += il.length * 3.6 + 2;
+    }
+    y += 2;
+  });
+
+  if (rx.advice) {
+    ensureSpace(14);
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(13, 148, 136);
+    pdf.text("ADVICE", margin, y); y += 5;
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.setTextColor(15, 23, 42);
+    const al = pdf.splitTextToSize(rx.advice, contentWidth);
+    pdf.text(al, margin, y); y += al.length * 4 + 6;
+  }
+
+  ensureSpace(26);
+  pdf.setFont("helvetica", "bold"); pdf.setFontSize(10); pdf.setTextColor(15, 23, 42);
+  pdf.text(dentistName.startsWith("Dr") ? dentistName : `Dr. ${dentistName}`, margin, y); y += 4;
+  pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(100, 116, 139);
+  pdf.text(`License: ${license}`, margin, y); y += 8;
+  pdf.setDrawColor(51, 65, 85); pdf.setLineWidth(0.3);
+  pdf.line(margin, y, margin + 55, y);
+  pdf.text("Dentist signature", margin, y + 4);
+
+  const safeName = patientName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase();
+  pdf.save(`prescription-${safeName || "patient"}.pdf`);
 }
 
 function buildXrayReferral(values) {
