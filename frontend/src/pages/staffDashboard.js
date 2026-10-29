@@ -199,7 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
     </div>
     <button onclick="executeLobbyCheckIn('${app._id || app.id}')"
             class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold text-[10px] py-1.5 px-3 rounded-md shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-1">
-      📥 Check In
+      📥 Seat Patient
     </button>`;
       colUpcoming.appendChild(card);
     });
@@ -320,7 +320,7 @@ document.addEventListener("DOMContentLoaded", () => {
               body: JSON.stringify({
                 appointmentId: window.activeCheckoutAppointmentId,
                 paymentMethod: selectedMethod,
-                finalAmount: 1500.0, // You can replace this with a dynamic amount later if needed
+                finalAmount: parseFloat(document.getElementById("modal-checkout-amount")?.value || "0") || undefined,
               }),
             },
           );
@@ -543,7 +543,11 @@ document.addEventListener("DOMContentLoaded", () => {
             Collect Payment 💳
           </button>`;
         } else {
-          const finalPaymentAmount = app.amount || "₱1,500.00";
+          const amt = Number(app.amount ?? app.billing?.amount ?? 0);
+          const finalPaymentAmount =
+            amt > 0
+              ? `₱${amt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : "₱1,500.00";
           card.className =
             "bg-slate-50/60 border border-slate-200/60 p-4 rounded-xl space-y-3 opacity-85 hover:opacity-100 transition-opacity flex flex-col";
           card.innerHTML = `
@@ -555,8 +559,8 @@ document.addEventListener("DOMContentLoaded", () => {
             <span class="text-[9px] font-mono font-bold text-slate-400">${transactionTime}</span>
           </div>
           <p class="text-[11px] font-semibold text-emerald-700">Paid Amount: ${finalPaymentAmount}</p>
-          <button class="w-full mt-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 font-bold text-[10px] py-1.5 rounded-lg uppercase tracking-wider transition-all cursor-pointer shadow-2xs"           onclick="window.DashboardUI&&window.DashboardUI.toast('Printing receipt · #PT-${shortId}','info')">
-            Print Receipt 📄
+          <button class="w-full mt-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 font-bold text-[10px] py-1.5 rounded-lg uppercase tracking-wider transition-all cursor-pointer shadow-2xs"           onclick="window.downloadReceipt('${currentAppointmentId}')">
+            Download Receipt 📄
           </button>`;
         }
       }
@@ -836,13 +840,101 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("modal-checkout-app-id").value = appointmentId;
     document.getElementById("modal-checkout-name").textContent = patientName;
-    document.getElementById("modal-checkout-amount").value = 1500;
+    const computedAmount = Number(
+      targetApp?.amount ?? targetApp?.billing?.amount ?? 0,
+    );
+    document.getElementById("modal-checkout-amount").value =
+      computedAmount > 0 ? computedAmount : 1500;
     document.getElementById("checkout-modal").classList.remove("hidden");
   };
 
   window.closeCheckoutModal = function () {
     const modal = document.getElementById("checkout-modal");
     if (modal) modal.classList.add("hidden");
+  };
+
+  window.downloadReceipt = function (appointmentId) {
+    const JsPdf = window.jspdf?.jsPDF;
+    if (!JsPdf) {
+      notify("Receipt download is unavailable. Please refresh the page and try again.", "error");
+      return;
+    }
+    const targetApp = (globalAppointmentsArray || []).find(
+      (a) => (a._id || a.id) === appointmentId,
+    );
+    if (!targetApp) {
+      notify("Record out of sync. Please refresh the dashboard and try again.", "error");
+      return;
+    }
+    const shortId = String(appointmentId).slice(-6).toUpperCase();
+    const patientName =
+      targetApp.patientId && typeof targetApp.patientId === "object"
+        ? `${targetApp.patientId.firstName || ""} ${targetApp.patientId.lastName || ""}`.trim()
+        : targetApp.patientName || targetApp.firstName || "Walk-In Patient";
+    const procedure =
+      (Array.isArray(targetApp.services) && targetApp.services.length
+        ? targetApp.services.join(" + ")
+        : null) ||
+      targetApp.service ||
+      targetApp.treatmentName ||
+      "Consultation";
+    const amt = Number(targetApp.amount ?? targetApp.billing?.amount ?? 0);
+    const paidAmount =
+      amt > 0
+        ? amt
+        : 1500;
+    const doctorName =
+      targetApp.dentistId && typeof targetApp.dentistId === "object"
+        ? targetApp.dentistId.fullName ||
+          `Dr. ${targetApp.dentistId.firstName || ""} ${targetApp.dentistId.lastName || ""}`.trim()
+        : targetApp.doctorName || "Attending Dentist";
+    const clinicName =
+      localStorage.getItem("clinicName") || "Dental Clinic";
+    const now = new Date();
+    const receiptNo = `RCPT-${shortId}-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+
+    const pdf = new JsPdf({ unit: "mm", format: "a5", orientation: "portrait" });
+    const margin = 12;
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    let y = 14;
+    const line = (text, size = 10, bold = false, align = "left") => {
+      pdf.setFontSize(size);
+      pdf.setFont("helvetica", bold ? "bold" : "normal");
+      if (align === "center") {
+        pdf.text(text, pageWidth / 2, y, { align: "center" });
+      } else {
+        pdf.text(text, margin, y);
+      }
+      y += size * 0.5 + 2;
+    };
+    const divider = () => {
+      pdf.setDrawColor(200);
+      pdf.line(margin, y, pageWidth - margin, y);
+      y += 4;
+    };
+
+    line(clinicName, 14, true, "center");
+    line("Official Payment Receipt", 10, false, "center");
+    y += 2;
+    divider();
+    line(`Receipt No: ${receiptNo}`, 9, true);
+    line(`Date: ${now.toLocaleString("en-PH")}`, 9);
+    line(`Patient: ${patientName}`, 9);
+    line(`Doctor: ${doctorName}`, 9);
+    line(`Procedure: ${procedure}`, 9);
+    line(`Appointment ID: #PT-${shortId}`, 9);
+    divider();
+    pdf.setFontSize(11);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Amount Paid:", margin, y);
+    pdf.text(`PHP ${paidAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, pageWidth - margin, y, { align: "right" });
+    y += 8;
+    divider();
+    line("Thank you for your payment.", 9, false, "center");
+    line("This receipt serves as proof of payment.", 8, false, "center");
+
+    pdf.save(`${receiptNo}.pdf`);
+    notify(`Receipt downloaded: ${receiptNo}.pdf`, "success");
   };
 
   window.submitCheckoutPayment = async function () {
@@ -1125,6 +1217,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
           notify(`Payment captured successfully via ${selectedMethod}.`, "success");
 
+           const settledId2 = window.activeCheckoutAppointmentId;
+
           closeCheckoutModal();
 
           // Refresh the kanban board to move the card to the Checked Out column
@@ -1132,6 +1226,9 @@ document.addEventListener("DOMContentLoaded", () => {
             await window.fetchDailyQueue();
           } else if (typeof fetchDailyQueue === "function") {
             await fetchDailyQueue();
+          }
+          if (settledId2 && typeof window.downloadReceipt === "function") {
+            setTimeout(() => window.downloadReceipt(settledId2), 300);
           }
         } catch (err) {
           notify(`Billing error: ${err.message}`, "error");

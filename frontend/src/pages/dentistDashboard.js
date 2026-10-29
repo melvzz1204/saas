@@ -608,13 +608,15 @@ function bindProcedureSubmission() {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    if (!activeSessionId || !activePatientId) {
+    if (!activeSessionId) {
       notify(
         "No patient is loaded in the active chair. Seat a patient first.",
         "error",
       );
       return;
     }
+
+    const isWalkIn = !activePatientId;
 
     const token = localStorage.getItem("token");
     const userData = JSON.parse(localStorage.getItem("user") || "{}");
@@ -651,13 +653,15 @@ function bindProcedureSubmission() {
       // ------------------------------------------
 
       // --- STEP B: POST TO CLINICAL NOTES USING SHARED MODULE ---
-      const savedNote = await saveNewClinicalNote(
-        activePatientId,
-        activeSessionId,
-      );
-
-      if (!savedNote) {
-        throw new Error("Failed to save clinical note to record history.");
+      // Walk-in patients have no patient record, so skip the clinical-note
+      // save and just finalize the appointment (notes are still stored on
+      // the appointment via the status update below).
+      let savedNote = null;
+      if (!isWalkIn) {
+        savedNote = await saveNewClinicalNote(activePatientId, activeSessionId);
+        if (!savedNote) {
+          throw new Error("Failed to save clinical note to record history.");
+        }
       }
 
       // --- STEP C: UPDATE APPOINTMENT STATUS ---
@@ -676,7 +680,6 @@ function bindProcedureSubmission() {
             status: "COMPLETED_PENDING_BILL",
             clinicalNotes: noteText,
             treatedTooth: selectedTeeth.length > 0 ? selectedTeeth[0] : null,
-            billingAmount: 250.0,
           }),
         },
       );
@@ -687,7 +690,12 @@ function bindProcedureSubmission() {
           statusData.message || "Failed to finalize appointment status.",
         );
 
-      notify("Procedure completed. Clinical note saved to medical history.", "success");
+      notify(
+        isWalkIn
+          ? "Walk-in procedure completed. Patient released to billing."
+          : "Procedure completed. Clinical note saved to medical history.",
+        "success",
+      );
 
       // ✅ ADDED THIS HERE: Instantly clear all input fields in the form!
       if (typeof clearClinicalNoteForm === "function") {

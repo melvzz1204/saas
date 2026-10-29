@@ -23,11 +23,33 @@ export const completeProcedure = async (req, res) => {
     if (finalBillingAmount === undefined || finalBillingAmount === null) {
       const existingSession = await Treatment.findById(treatmentId);
       if (existingSession?.procedureName) {
-        const matchingService = await DentalService.findOne({
-          name: existingSession.procedureName,
-        });
-        if (matchingService) {
-          finalBillingAmount = matchingService.basePricePhp;
+        const serviceNames = String(existingSession.procedureName)
+          .split(/\s*\+\s*|\s*,\s*/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const matchedServices = serviceNames.length
+          ? await DentalService.find({ name: { $in: serviceNames } })
+              .select("basePricePhp")
+              .lean()
+          : [];
+        // Fall back to per-name lookup when the joined name didn't match
+        // (e.g. legacy single-service records).
+        if (matchedServices.length === 0 && serviceNames.length === 1) {
+          const single = await DentalService.findOne({
+            name: serviceNames[0],
+          }).select("basePricePhp").lean();
+          if (single) matchedServices.push(single);
+        }
+        if (matchedServices.length) {
+          finalBillingAmount = matchedServices.reduce(
+            (sum, s) => sum + Number(s.basePricePhp || 0),
+            0,
+          );
+        } else {
+          const single = await DentalService.findOne({
+            name: existingSession.procedureName,
+          }).select("basePricePhp").lean();
+          if (single) finalBillingAmount = single.basePricePhp;
         }
       }
     }

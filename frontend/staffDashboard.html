@@ -116,7 +116,7 @@
                 <div class="flex items-center justify-between mb-4 px-1 pb-2 border-b border-slate-100">
                     <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.4)]"></span>
-                        Expected Today
+                        Expected Arrivals
                     </h3>
                     <span id="count-upcoming"
                         class="bg-sky-50 text-sky-700 border border-sky-200 text-[10px] font-black px-2 py-0.5 rounded-md">0</span>
@@ -282,8 +282,8 @@
             class="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-md w-full overflow-hidden transform transition-all flex flex-col">
             <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                 <div>
-                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Patient Settlement</h3>
-                    <p class="text-xs text-slate-500 mt-0.5">Finalize invoice billing records</p>
+                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Checkout Payment</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Finalize billing and collect payment</p>
                 </div>
                 <button onclick="closeCheckoutModal()"
                     class="text-slate-400 hover:text-slate-600 transition-colors text-lg cursor-pointer">✕</button>
@@ -326,7 +326,7 @@
                     class="w-1/3 bg-white hover:bg-slate-100 border border-slate-200 text-slate-500 font-bold text-[10px] py-2 rounded-lg uppercase tracking-wider transition-all cursor-pointer">Cancel</button>
                 <button onclick="submitCheckoutPayment()"
                     class="w-2/3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] py-2 rounded-lg uppercase tracking-wider transition-all cursor-pointer shadow-xs">Confirm
-                    & Close Invoice 🚀</button>
+                    Payment 🚀</button>
             </div>
         </div>
     </div>
@@ -352,7 +352,8 @@
     <script src="src/util/apiBase.js"></script>
     <script src="src/util/toast.js"></script>
     <script src="src/util/dashboardUI.js"></script>
-    <script type="module" src="src/pages/staffDashboard.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script type="module" src="src/pages/staffDashboard.js"></script>
     <script type="module" src="src/util/dentistSelection.js"></script>
 </body>
 

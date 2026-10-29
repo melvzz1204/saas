@@ -203,7 +203,53 @@ export const getAdminAppointments = async (req, res) => {
     })
       .populate("patientId", "firstName lastName email phone")
       .populate("dentistId", "fullName specialization")
-      .sort({ date: 1, time: 1 });
+      .sort({ createdAt: -1 });
+
+    // Attach computed billing amount (sum of selected service prices) for
+    // multi-service appointments so the admin queue/reporting can use it.
+    try {
+      const serviceNames = [
+        ...new Set(
+          appointments.flatMap((a) => {
+            const list =
+              Array.isArray(a.services) && a.services.length
+                ? a.services
+                : a.service
+                  ? [a.service]
+                  : [];
+            return list;
+          }).filter(Boolean),
+        ),
+      ];
+      const services = serviceNames.length
+        ? await DentalService.find({ name: { $in: serviceNames } })
+            .select("name basePricePhp")
+            .lean()
+        : [];
+      const priceByService = {};
+      services.forEach((s) => {
+        priceByService[s.name] = s.basePricePhp;
+      });
+      appointments.forEach((a) => {
+        const list =
+          Array.isArray(a.services) && a.services.length
+            ? a.services
+            : a.service
+              ? [a.service]
+              : [];
+        const computed = list.reduce(
+          (sum, n) => sum + Number(priceByService[n] ?? 0),
+          0,
+        );
+        const finalAmount =
+          a.amount !== null && a.amount !== undefined ? a.amount : computed;
+        a.amount = finalAmount;
+        if (!a.billing) a.billing = {};
+        a.billing.amount = finalAmount;
+      });
+    } catch (priceErr) {
+      console.warn("⚠️ Failed to attach billing amounts:", priceErr.message);
+    }
 
     return res.status(200).json({ success: true, data: appointments });
   } catch (error) {
@@ -216,7 +262,7 @@ export const getAdminAppointments = async (req, res) => {
 export const modifyAppointmentStatus = async (req, res) => {
   try {
     const { appointmentId } = req.params;
-    const { status } = req.body;
+    const { status, amount } = req.body;
 
     if (!appointmentId || !mongoose.Types.ObjectId.isValid(appointmentId)) {
       return res.status(422).json({
@@ -225,16 +271,22 @@ export const modifyAppointmentStatus = async (req, res) => {
       });
     }
 
-    if (!status) {
+    const updatePayload = {};
+    if (status !== undefined && status !== null && status !== "") {
+      updatePayload.status = status;
+    }
+    if (amount !== undefined && amount !== null && amount !== "") {
+      updatePayload.amount = Number(amount) || 0;
+    }
+    if (Object.keys(updatePayload).length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Target state updates must be declared.",
+        message: "No updatable fields provided.",
       });
     }
-
     const updatedAppointment = await Appointment.findByIdAndUpdate(
       appointmentId,
-      { status: status },
+      updatePayload,
       { new: true, runValidators: true },
     )
       .populate("patientId")
@@ -248,7 +300,7 @@ export const modifyAppointmentStatus = async (req, res) => {
     }
 
     const ioInstance = global.io;
-    if (ioInstance) {
+    if (ioInstance && status) {
       ioInstance.emit("pipeline-update", {
         message: `Appointment status reassigned to ${updatedAppointment.status}.`,
         appointmentId: updatedAppointment._id,
@@ -306,6 +358,9 @@ export const getTodayAppointments = async (req, res) => {
             $in: ["checked-in", "waiting", "in-treatment", "treatment"],
           },
         },
+        // Walk-in records have no scheduled date but must stay visible across
+        // every stage of the board (including completed-pending-bill).
+        { isWalkIn: true },
       ],
       status: {
         $in: [
@@ -336,6 +391,53 @@ export const getTodayAppointments = async (req, res) => {
       .populate("patientId", "firstName lastName email phone")
       .populate("dentistId", "fullName specialization firstName lastName name")
       .sort({ date: 1, time: 1 });
+
+    // Attach a computed billing amount (sum of selected service prices) so
+    // staff/admin queues show the correct total for multi-service appointments.
+    try {
+      const serviceNames = [
+        ...new Set(
+          allAppointments.flatMap((a) => {
+            const list =
+              Array.isArray(a.services) && a.services.length
+                ? a.services
+                : a.service
+                  ? [a.service]
+                  : [];
+            return list;
+          }).filter(Boolean),
+        ),
+      ];
+      const services = serviceNames.length
+        ? await DentalService.find({ name: { $in: serviceNames } })
+            .select("name basePricePhp")
+            .lean()
+        : [];
+      const priceByService = {};
+      services.forEach((s) => {
+        priceByService[s.name] = s.basePricePhp;
+      });
+      allAppointments.forEach((a) => {
+        const list =
+          Array.isArray(a.services) && a.services.length
+            ? a.services
+            : a.service
+              ? [a.service]
+              : [];
+        const computed = list.reduce(
+          (sum, n) => sum + Number(priceByService[n] ?? 0),
+          0,
+        );
+        const finalAmount =
+          a.amount !== null && a.amount !== undefined ? a.amount : computed;
+        // Expose both `amount` (legacy staff UI) and `billing.amount`.
+        a.amount = finalAmount;
+        if (!a.billing) a.billing = {};
+        a.billing.amount = finalAmount;
+      });
+    } catch (priceErr) {
+      console.warn("⚠️ Failed to attach billing amounts:", priceErr.message);
+    }
 
     // 👈 3. Return single object if requested for patient tracker
     if (patientId) {
@@ -431,7 +533,7 @@ export const createWalkInAppointment = async (req, res) => {
 export const updateAppointmentStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, dentistId } = req.body;
+    const { status, dentistId, amount } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res
@@ -440,6 +542,9 @@ export const updateAppointmentStatus = async (req, res) => {
     }
 
     const updatePayload = { status };
+    if (amount !== undefined && amount !== null && amount !== "") {
+      updatePayload.amount = Number(amount) || 0;
+    }
     if (dentistId && mongoose.Types.ObjectId.isValid(dentistId)) {
       updatePayload.dentistId = String(dentistId);
     }

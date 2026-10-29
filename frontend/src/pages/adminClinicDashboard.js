@@ -1289,32 +1289,72 @@ function renderAppointmentsTable(appointments) {
           "bg-slate-500/10 text-slate-400 border border-slate-500/20";
       }
 
-      const matchedTreatment = (
-        typeof globalTreatmentsData !== "undefined" ? globalTreatmentsData : []
-      ).find((t) => {
-        if (!t.name) return false;
-        const dbName = t.name.toLowerCase().trim();
-        const apptService = calculatedService.toLowerCase().trim();
-        const dbSlug = t.slug ? t.slug.toLowerCase().trim() : "";
-
-        if (dbName === apptService || dbSlug === apptService) return true;
-        return dbName.includes(apptService) || apptService.includes(dbName);
-      });
-
-      const calculatedFee =
-        matchedTreatment && matchedTreatment.basePricePhp !== undefined
-          ? `₱${Number(matchedTreatment.basePricePhp).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-          : "₱0.00";
+      // Sum prices for every selected service (multi-service aware).
+      const svcList =
+        Array.isArray(appt.services) && appt.services.length
+          ? appt.services
+          : calculatedService
+            ? [calculatedService]
+            : [];
+      const treatments =
+        typeof globalTreatmentsData !== "undefined" ? globalTreatmentsData : [];
+      const findTreatment = (needle) => {
+        const n = String(needle || "").toLowerCase().trim();
+        if (!n) return null;
+        const exact = treatments.find(
+          (t) => String(t.name || "").toLowerCase().trim() === n,
+        );
+        if (exact) return exact;
+        const slugExact = treatments.find(
+          (t) => String(t.slug || "").toLowerCase().trim() === n,
+        );
+        if (slugExact) return slugExact;
+        return (
+          treatments.find((t) => {
+            if (!t.name) return false;
+            const dbName = String(t.name).toLowerCase().trim();
+            const dbSlug = t.slug ? String(t.slug).toLowerCase().trim() : "";
+            return (
+              dbName.includes(n) ||
+              n.includes(dbName) ||
+              (dbSlug && (dbSlug.includes(n) || n.includes(dbSlug)))
+            );
+          }) || null
+        );
+      };
+      let totalFee = Number(appt?.amount ?? appt?.billing?.amount ?? 0);
+      if (!totalFee) {
+        totalFee = svcList.reduce((sum, s) => {
+          const t = findTreatment(s);
+          return sum + Number(t?.basePricePhp || 0);
+        }, 0);
+      }
+      const calculatedFee = `₱${Number(totalFee || 0).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
 
       return `
         <tr class="hover:bg-slate-900/10 transition-colors">
           <td class="p-4 font-bold text-slate-700">${calculatedPatientName}</td>
-          <td class="p-4 font-mono text-[11px] text-slate-400 uppercase">${appt.date} @ ${appt.time}</td>
+          <td class="p-4 font-mono text-[11px] text-slate-400 uppercase">${
+            appt.isWalkIn || String(appt.time || "").toUpperCase() === "WALK-IN"
+              ? "Walk-in"
+              : `${appt.date || "N/A"} @ ${appt.time || "TBD"}`
+          }</td>
           <td class="p-4 text-slate-400 truncate max-w-[150px]">${calculatedService}</td>
           <td class="p-4">
-              <span class="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200/60">
-                  ${calculatedFee}
-              </span>
+            ${
+              appt.isWalkIn || String(appt.time || "").toUpperCase() === "WALK-IN"
+                ? `<input type="number" step="0.01" min="0"
+                    value="${Number(totalFee || 0)}"
+                    data-appt-id="${appt._id}"
+                    onchange="window.updateAppointmentAmount && window.updateAppointmentAmount('${appt._id}', this.value)"
+                    class="w-24 font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200/60 text-right" />`
+                : `<span class="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200/60">
+                    ${calculatedFee}
+                  </span>`
+            }
           </td>
           <td class="p-4">
               <span class="px-2.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider ${statusClass}">
@@ -1366,6 +1406,34 @@ async function modifyAppointmentStatus(appointmentId, newStatus) {
   }
 }
 window.modifyAppointmentStatus = modifyAppointmentStatus;
+
+async function updateAppointmentAmount(appointmentId, value) {
+  try {
+    const response = await fetch(
+      window.apiUrl(`/api/v1/admin/appointments/${appointmentId}`),
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          "x-clinic-id": clinicId,
+        },
+        body: JSON.stringify({ amount: Number(value) || 0 }),
+      },
+    );
+    const result = await response.json();
+    if (result.success) {
+      window.DashboardUI?.toast("Amount updated.", "success");
+      fetchDashboardData();
+    } else {
+      window.DashboardUI?.toast(`Action error: ${result.message}`, "error");
+    }
+  } catch (err) {
+    console.error("Failed to update amount:", err);
+    window.DashboardUI?.toast("Failed to update amount.", "error");
+  }
+}
+window.updateAppointmentAmount = updateAppointmentAmount;
 
 async function handleStaffOnboarding(e) {
   e.preventDefault();
@@ -1838,8 +1906,22 @@ async function generateClinicReportExcel() {
   try {
     // 1. Normalize every appointment into one row object (exactly one bucket).
     const rows = globalAppointmentsData.map((appt) => {
-      const serviceName = (Array.isArray(appt.services) && appt.services.length ? appt.services.join(" + ") : null) || appt.service || appt.reason || "General Consultation";
-      const fee = reportFeeFor(serviceName);
+      const svcList =
+        Array.isArray(appt.services) && appt.services.length
+          ? appt.services
+          : appt.service
+            ? [appt.service]
+            : appt.reason
+              ? [appt.reason]
+              : [];
+      const serviceName =
+        svcList.join(" + ") || "General Consultation";
+      const backendAmount = Number(appt?.amount ?? appt?.billing?.amount ?? 0);
+      const fee =
+        backendAmount > 0
+          ? backendAmount
+          : svcList.reduce((sum, s) => sum + reportFeeFor(s), 0) ||
+            reportFeeFor(serviceName);
       const { bucket, label } = reportClassifyStatus(appt.status);
       return {
         date: appt.date || "N/A",

@@ -549,7 +549,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const tr = el("tr");
       const td = el("td", "py-6");
       td.colSpan = 7;
-      td.appendChild(errorState("Failed to load tenants.", fetchAllTenants));
+      td.appendChild(errorState("Failed to load clients.", fetchAllTenants));
       tr.appendChild(td);
       tbody.appendChild(tr);
     }
@@ -603,8 +603,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const td = el("td", "text-center py-6 text-slate-500");
       td.colSpan = 7;
       td.textContent = allTenants.length
-        ? "No tenants match your filters."
-        : "No registered tenants found.";
+        ? "No clients match your filters."
+        : "No registered clients found.";
       tr.appendChild(td);
       tbody.appendChild(tr);
       return;
@@ -754,7 +754,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function openTenantDetailsModal(clinicId) {
     if (!clinicId) return;
-    setText("tenant-modal-title", "Tenant details");
+    setText("tenant-modal-title", "Client details");
     setText("tenant-modal-sub", "Loading…");
     if (tenantModalBody) {
       clear(tenantModalBody);
@@ -771,7 +771,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const rosters = d.rosters || { dentists: [], staff: [] };
       const sub = d.subscription || null;
 
-      setText("tenant-modal-title", clinic.name || "Tenant details");
+      setText("tenant-modal-title", clinic.name || "Client details");
       setText(
         "tenant-modal-sub",
         `${clinic.slug ? `Code: ${clinic.slug} · ` : ""}Created: ${formatDate(clinic.createdAt)}`,
@@ -877,7 +877,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setText("tenant-modal-sub", "Couldn't load details.");
       if (tenantModalBody) {
         clear(tenantModalBody);
-        tenantModalBody.appendChild(errorState(err.message || "Failed to load tenant details.", () => openTenantDetailsModal(clinicId)));
+        tenantModalBody.appendChild(errorState(err.message || "Failed to load client details.", () => openTenantDetailsModal(clinicId)));
       }
     }
   }

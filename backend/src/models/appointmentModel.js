@@ -63,6 +63,12 @@ const appointmentSchema = new mongoose.Schema(
       default: "",
     },
 
+    // 💰 Editable billing amount (used for walk-ins / manual overrides)
+    amount: {
+      type: Number,
+      default: null,
+    },
+
     // 🚀 Walk-in specific tracking
     isWalkIn: {
       type: Boolean,
