@@ -165,7 +165,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const appDate = app.date ? app.date.split("T")[0] : "";
       return (
         appDate === todayString &&
-        (status === "approved" || status === "pending" || status === "expected")
+        status === "approved"
       );
     });
 
